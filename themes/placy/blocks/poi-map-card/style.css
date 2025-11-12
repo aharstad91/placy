@@ -1,0 +1,104 @@
+/**
+ * POI Map Card Block Styles
+ * Shared between frontend and editor
+ *
+ * @package Placy
+ * @since 1.0.0
+ */
+
+.poi-map-card-block {
+    margin: 2rem 0;
+}
+
+.poi-map-preview {
+    position: relative;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.poi-map-preview:hover {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* POI Tags Container */
+.poi-tags-container {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+    scrollbar-width: thin;
+}
+
+.poi-tags-container::-webkit-scrollbar {
+    height: 4px;
+}
+
+.poi-tags-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.poi-tags-container::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 2px;
+}
+
+.poi-tag {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(8px);
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+}
+
+.poi-tag:hover {
+    background: rgba(255, 255, 255, 1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.poi-tag-icon {
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.poi-tag-text {
+    white-space: nowrap;
+}
+
+/* Editor specific styles */
+.block-editor-block-list__block .poi-map-card-block {
+    margin: 1rem 0;
+}
+
+.block-editor-block-list__block .poi-map-preview {
+    min-height: 300px;
+}
+
+/* Admin preview mode */
+.acf-block-preview .poi-map-preview {
+    pointer-events: none;
+}
+
+.acf-block-preview .poi-tag {
+    pointer-events: none;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+    .poi-tags-container {
+        padding-bottom: 1rem;
+    }
+    
+    .poi-tag {
+        font-size: 0.75rem;
+        padding: 0.375rem 0.75rem;
+    }
+}
