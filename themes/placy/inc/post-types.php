@@ -115,10 +115,7 @@ function placy_register_story_post_type() {
         'show_ui'               => true,
         'show_in_menu'          => true,
         'query_var'             => true,
-        'rewrite'               => array( 
-            'slug' => 'story',
-            'with_front' => false
-        ),
+        'rewrite'               => false, // Use custom rewrite rules
         'capability_type'       => 'post',
         'hierarchical'          => false,
         'menu_position'         => 22,

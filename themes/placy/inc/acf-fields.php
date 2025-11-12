@@ -57,6 +57,60 @@ if ( function_exists( 'acf_add_local_field_group' ) ) {
 }
 
 /**
+ * Register Story Fields
+ */
+if ( function_exists( 'acf_add_local_field_group' ) ) {
+    acf_add_local_field_group( array(
+        'key' => 'group_story_fields',
+        'title' => 'Story Fields',
+        'fields' => array(
+            array(
+                'key' => 'field_story_customer',
+                'label' => 'Kunde',
+                'name' => 'customer',
+                'type' => 'post_object',
+                'instructions' => 'Velg hvilken kunde denne historien tilhører',
+                'required' => 1,
+                'post_type' => array(
+                    0 => 'customer',
+                ),
+                'allow_null' => 0,
+                'multiple' => 0,
+                'return_format' => 'object',
+            ),
+            array(
+                'key' => 'field_story_project',
+                'label' => 'Prosjekt',
+                'name' => 'project',
+                'type' => 'post_object',
+                'instructions' => 'Velg hvilket prosjekt denne historien tilhører',
+                'required' => 1,
+                'post_type' => array(
+                    0 => 'project',
+                ),
+                'allow_null' => 0,
+                'multiple' => 0,
+                'return_format' => 'object',
+            ),
+        ),
+        'location' => array(
+            array(
+                array(
+                    'param' => 'post_type',
+                    'operator' => '==',
+                    'value' => 'story',
+                ),
+            ),
+        ),
+        'menu_order' => 0,
+        'position' => 'normal',
+        'style' => 'default',
+        'label_placement' => 'top',
+        'instruction_placement' => 'label',
+    ) );
+}
+
+/**
  * Register POI Fields
  */
 if ( function_exists( 'acf_add_local_field_group' ) ) {

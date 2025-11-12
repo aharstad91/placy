@@ -12,10 +12,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Add custom rewrite rules for customer/project structure
+ * Add custom rewrite rules for customer/project and customer/project/story structure
  */
 function placy_custom_rewrites() {
-    // Pattern: customer-slug/project-slug
+    // Pattern: customer-slug/project-slug/story-slug (for stories)
+    add_rewrite_rule(
+        '^([^/]+)/([^/]+)/([^/]+)/?$',
+        'index.php?post_type=story&name=$matches[3]&customer_slug=$matches[1]&project_slug=$matches[2]',
+        'top'
+    );
+    
+    // Pattern: customer-slug/project-slug (for projects)
     add_rewrite_rule(
         '^([^/]+)/([^/]+)/?$',
         'index.php?post_type=project&name=$matches[2]&customer_slug=$matches[1]',
@@ -25,33 +32,44 @@ function placy_custom_rewrites() {
 add_action( 'init', 'placy_custom_rewrites' );
 
 /**
- * Add customer_slug query var
+ * Add custom query vars
  */
 function placy_query_vars( $vars ) {
     $vars[] = 'customer_slug';
+    $vars[] = 'project_slug';
     return $vars;
 }
 add_filter( 'query_vars', 'placy_query_vars' );
 
 /**
- * Modify project permalink to include customer slug
+ * Modify project and story permalinks to include customer/project slugs
  */
-function placy_project_permalink( $post_link, $post ) {
-    if ( $post->post_type !== 'project' ) {
-        return $post_link;
+function placy_custom_permalinks( $post_link, $post ) {
+    if ( $post->post_type === 'project' ) {
+        $customer = get_field( 'customer', $post->ID );
+        
+        if ( $customer ) {
+            $customer_slug = $customer->post_name;
+            $project_slug = $post->post_name;
+            return home_url( "/{$customer_slug}/{$project_slug}/" );
+        }
     }
-
-    $customer = get_field( 'customer', $post->ID );
     
-    if ( $customer ) {
-        $customer_slug = $customer->post_name;
-        $project_slug = $post->post_name;
-        return home_url( "/{$customer_slug}/{$project_slug}/" );
+    if ( $post->post_type === 'story' ) {
+        $customer = get_field( 'customer', $post->ID );
+        $project = get_field( 'project', $post->ID );
+        
+        if ( $customer && $project ) {
+            $customer_slug = $customer->post_name;
+            $project_slug = $project->post_name;
+            $story_slug = $post->post_name;
+            return home_url( "/{$customer_slug}/{$project_slug}/{$story_slug}/" );
+        }
     }
 
     return $post_link;
 }
-add_filter( 'post_type_link', 'placy_project_permalink', 10, 2 );
+add_filter( 'post_type_link', 'placy_custom_permalinks', 10, 2 );
 
 /**
  * Flush rewrite rules on theme activation
@@ -61,3 +79,16 @@ function placy_flush_rewrites() {
     flush_rewrite_rules();
 }
 register_activation_hook( __FILE__, 'placy_flush_rewrites' );
+
+/**
+ * Force flush rewrite rules when needed
+ * Call this function manually or on init if permalinks aren't working
+ */
+function placy_maybe_flush_rewrites() {
+    $flush = get_option( 'placy_flush_rewrite_rules' );
+    if ( $flush !== 'done' ) {
+        flush_rewrite_rules();
+        update_option( 'placy_flush_rewrite_rules', 'done' );
+    }
+}
+add_action( 'init', 'placy_maybe_flush_rewrites', 999 );
