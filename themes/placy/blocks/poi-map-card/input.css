@@ -1,4 +1,4 @@
-@tailwind base;
+/* Only load Tailwind utilities, not base (which resets WordPress styles) */
 @tailwind components;
 @tailwind utilities;
 
