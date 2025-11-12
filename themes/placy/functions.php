@@ -117,3 +117,18 @@ add_action( 'widgets_init', 'placy_widgets_init' );
 if ( ! isset( $content_width ) ) {
     $content_width = 1200;
 }
+
+/**
+ * Include custom post types
+ */
+require_once get_template_directory() . '/inc/post-types.php';
+
+/**
+ * Include ACF field groups
+ */
+require_once get_template_directory() . '/inc/acf-fields.php';
+
+/**
+ * Include custom rewrites
+ */
+require_once get_template_directory() . '/inc/rewrites.php';
