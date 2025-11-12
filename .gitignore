@@ -1,0 +1,14 @@
+# Exclude uploads directory
+uploads/
+
+# Exclude ALL plugins by default
+plugins/*
+
+# But INCLUDE custom plugins (add your custom plugins here)
+# Example: !plugins/my-custom-plugin/
+!plugins/.gitkeep
+
+# WordPress cache and backup files
+*.log
+*.cache
+.DS_Store

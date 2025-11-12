@@ -1,0 +1,2378 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Placy Prototype</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'overvik-green': '#78908E',
+                        'overvik-light': '#D1E5E6',
+                    },
+                    fontFamily: {
+                        'campaign': ['campaign', 'Raleway', 'sans-serif'],
+                        'campaign-serif': ['campaign-serif', 'Raleway', 'serif'],
+                        'raleway': ['Raleway', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Overvik Fonts from Adobe Typekit -->
+    <link rel="stylesheet" href="https://use.typekit.net/jlp3dzl.css">
+    <!-- Raleway from Google Fonts as fallback -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Overvik Brand Fonts */
+        :root {
+            --overvik-green: #78908E;
+            --overvik-light: #D1E5E6;
+        }
+        
+        body {
+            font-family: 'campaign', 'Raleway', sans-serif;
+            margin: 0;
+            padding: 0;
+            /* Fix for mobile browser UI */
+            height: 100%;
+            overflow-x: hidden;
+            /* Use CSS custom property for stable viewport height */
+            --viewport-height: 100vh;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'campaign-serif', 'Raleway', serif;
+        }
+        
+        .nav-font {
+            font-family: 'Raleway', sans-serif;
+        }
+
+        /* Layout for header at top and content at bottom with dynamic spacing */
+        .section {
+            padding: 0; /* Add some content to avoid empty ruleset */
+        }
+        .full-height {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 100vh;
+            height: var(--viewport-height, 100vh); /* Use stable custom property */
+        }
+        .half-height {
+            height: 50vh;
+            height: calc(var(--viewport-height, 100vh) / 2); /* Use stable custom property */
+        }
+
+        /* Modal styles */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            height: var(--viewport-height, 100vh); /* Use stable custom property */
+            background: white;
+            z-index: 9999;
+            display: none;
+            flex-direction: column;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            width: 40px;
+            height: 40px;
+            background: rgba(0, 0, 0, 0.1);
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: #374151;
+            z-index: 10000; /* Higher than map canvas and POI elements */
+        }
+
+        .modal-close:hover {
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-map {
+            flex: 1;
+            background: #d1d5db;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-cards {
+            flex-shrink: 0;
+            padding: 1rem;
+            background: white;
+        }
+
+        /* Make map and cards clickable */
+        .clickable {
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .clickable:hover {
+            transform: scale(1.02);
+        }
+
+        /* Custom scrollbar styling for horizontal scroll */
+        .horizontal-scroll::-webkit-scrollbar {
+            height: 4px;
+        }
+        .horizontal-scroll::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        .horizontal-scroll::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+        .horizontal-scroll::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        /* Prevent body scroll when modal is open */
+        body.modal-open {
+            overflow: hidden;
+        }
+
+        /* Map Canvas Styles */
+        .map-canvas {
+            position: relative;
+            flex: 1;
+            background: linear-gradient(135deg, #e8f4f8 0%, #d1e7dd 100%);
+            background-image: 
+                radial-gradient(circle at 20% 30%, rgba(34, 197, 94, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 80%, rgba(168, 85, 247, 0.05) 0%, transparent 50%);
+            overflow: hidden;
+            display: none; /* Hidden by default, shown for idrett modal */
+        }
+
+        .map-canvas.active {
+            display: block;
+        }
+
+        /* POI Marker Styles */
+        .poi-marker {
+            position: absolute;
+            width: 32px;
+            height: 32px;
+            background: #059669;
+            border: 3px solid white;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            transition: all 0.2s ease;
+            z-index: 10;
+        }
+
+        .poi-marker:hover,
+        .poi-marker:focus {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            outline: none;
+        }
+
+        .poi-marker.coming-soon {
+            background: #6b7280;
+            cursor: not-allowed;
+        }
+
+        .poi-marker svg {
+            width: 16px;
+            height: 16px;
+            fill: white;
+        }
+
+        /* POI Label */
+        .poi-label {
+            position: absolute;
+            top: 36px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 500;
+            white-space: nowrap;
+            pointer-events: none;
+        }
+
+        /* POI Sheet (Bottom Drawer) */
+        .poi-sheet {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-radius: 16px 16px 0 0;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+            transition: height 0.3s ease;
+            z-index: 100;
+            overflow: hidden;
+        }
+
+        .poi-sheet.closed {
+            height: 0;
+        }
+
+        .poi-sheet.peek {
+            height: 88px;
+        }
+
+        .poi-sheet.open {
+            height: 60vh;
+        }
+
+        .poi-sheet-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: white;
+        }
+
+        .poi-sheet-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #111827;
+            margin: 0;
+        }
+
+        .poi-sheet-close {
+            width: 32px;
+            height: 32px;
+            background: #f3f4f6;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: #6b7280;
+        }
+
+        .poi-sheet-close:hover {
+            background: #e5e7eb;
+        }
+
+        .poi-sheet-content {
+            padding: 20px;
+            overflow-y: auto;
+            height: calc(100% - 69px); /* Subtract header height */
+        }
+
+        .poi-image-placeholder {
+            width: 100%;
+            height: 120px;
+            background: #f3f4f6;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6b7280;
+        }
+
+        .poi-metadata {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 16px;
+            font-size: 14px;
+            color: #6b7280;
+        }
+
+        .poi-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .poi-button {
+            flex: 1;
+            padding: 8px 16px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            background: white;
+            color: #374151;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .poi-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .poi-button.primary {
+            background: #059669;
+            color: white;
+            border-color: #059669;
+        }
+
+        /* POI Tags */
+        .poi-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 16px 20px;
+            min-height: 64px;
+            background: white;
+            border: 1px solid #d1d5db;
+            border-radius: 12px;
+            font-size: 14px;
+            color: #374151;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .poi-tag:hover {
+            background: white;
+            border-color: #059669;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .poi-tag.coming-soon {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .poi-tag.coming-soon:hover {
+            transform: none;
+            border-color: #d1d5db;
+            background: white;
+        }
+
+        .poi-tag-icon {
+            font-size: 20px;
+        }
+
+        .poi-tag-text {
+            font-weight: 500;
+        }
+
+        /* POI Tags Container - Horizontal scroll */
+        .poi-tags-container {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* IE/Edge */
+        }
+
+        .poi-tags-container::-webkit-scrollbar {
+            display: none; /* Chrome/Safari */
+        }
+
+        /* Ensure tags don't wrap */
+        .poi-tags-container .poi-tag {
+            flex-shrink: 0;
+            white-space: nowrap;
+        }
+
+        /* Table of Contents */
+        .toc-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            text-decoration: none;
+            color: inherit;
+        }
+        
+        .toc-item:hover {
+            border-color: #059669;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            background: rgba(0, 0, 0, 0.02);
+        }
+        
+        .toc-icon {
+            width: 32px;
+            height: 32px;
+            background: #f3f4f6;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+        
+        .toc-content h3 {
+            margin: 0;
+            font-size: 14px;
+            font-weight: 600;
+            color: #111827;
+            line-height: 1.2;
+        }
+        
+        .toc-content p {
+            margin: 2px 0 0 0;
+            font-size: 12px;
+            color: #6b7280;
+            line-height: 1.2;
+        }
+
+        /* Sticky Navigation Buttons Container */
+        .sticky-nav-container {
+            position: fixed;
+            bottom: 0;
+            left: 20px;
+            right: 20px;
+            padding-bottom: 40px;
+            display: flex;
+            gap: 12px;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(20px) scale(0.8);
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        @media (max-width: 400px) {
+            .sticky-nav-container {
+                gap: 8px;
+                left: 24px;
+                right: 24px;
+                padding-bottom: 32px;
+            }
+            
+            .sticky-nav-button {
+                min-width: 120px;
+                padding: 0 12px;
+            }
+            
+            .sticky-contact {
+                padding: 0 12px;
+                min-width: 70px;
+            }
+        }
+
+        .sticky-nav-container.visible {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0) scale(1);
+        }
+
+        .sticky-nav-container.visible::before {
+            content: '';
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 120px;
+            background: linear-gradient(to top, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.4) 40%, transparent 100%);
+            z-index: -1;
+            pointer-events: none;
+            border-radius: 0;
+        }
+
+        @media (max-width: 400px) {
+            .sticky-nav-container.visible::before {
+                left: 0;
+                right: 0;
+            }
+        }
+
+        /* Base button styling */
+        .sticky-button-base {
+            height: 44px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(32px) saturate(1.2);
+            -webkit-backdrop-filter: blur(32px) saturate(1.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.12), 
+                0 2px 8px rgba(0, 0, 0, 0.08),
+                inset 0 1px 0 rgba(255, 255, 255, 0.5);
+        }
+
+        .sticky-button-base:hover {
+            background: rgba(5, 150, 105, 0.9);
+            backdrop-filter: blur(40px) saturate(1.4);
+            -webkit-backdrop-filter: blur(40px) saturate(1.4);
+            border-color: rgba(5, 150, 105, 0.3);
+            transform: scale(1.02);
+            box-shadow: 0 12px 40px rgba(5, 150, 105, 0.2), 0 4px 16px rgba(0, 0, 0, 0.12);
+        }
+
+        .sticky-button-base:active {
+            transform: scale(0.98);
+        }
+
+        /* Navigation button - takes available space but has min-width */
+        .sticky-nav-button {
+            flex: 1;
+            min-width: 140px;
+            padding: 0 16px;
+            gap: 10px;
+        }
+
+        .sticky-nav-button:hover .hamburger-icon,
+        .sticky-nav-button:hover .sticky-nav-label {
+            color: white;
+        }
+
+        /* Contact button - flexible but compact */
+        .sticky-contact {
+            flex: 0 0 auto;
+            padding: 0 16px;
+            white-space: nowrap;
+            min-width: 80px;
+        }
+
+        /* Scroll to top button - fixed width */
+        .sticky-scroll-top {
+            width: 44px;
+            flex: 0 0 44px;
+        }
+
+        .sticky-scroll-top:hover .scroll-top-icon {
+            color: white;
+        }
+
+        .sticky-contact:hover .contact-label {
+            color: white;
+        }
+
+        .contact-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1d1d1f;
+            transition: all 0.3s ease;
+            letter-spacing: -0.01em;
+        }
+
+        .scroll-top-icon {
+            color: #059669;
+            transition: color 0.3s ease;
+            font-size: 18px;
+        }
+
+        .sticky-nav-hamburger {
+            width: 26px;
+            height: 26px;
+            background: rgba(5, 150, 105, 0.1);
+            border-radius: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+
+        .sticky-nav-button:hover .sticky-nav-hamburger {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .sticky-nav-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1d1d1f;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            letter-spacing: -0.01em;
+        }
+
+        .sticky-nav-counter {
+            background: rgba(5, 150, 105, 0.1);
+            color: #059669;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 1px 6px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            min-width: 18px;
+            text-align: center;
+        }
+
+        .sticky-nav-button:hover .sticky-nav-counter {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .hamburger-icon {
+            width: 16px;
+            height: 16px;
+            position: relative;
+            color: #059669;
+            transition: color 0.3s ease;
+        }
+
+        .hamburger-icon span:first-child {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1.5px;
+            background: currentColor;
+            transform: translateY(-50%);
+            transition: all 0.3s ease;
+        }
+
+        .hamburger-icon span:last-child {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            width: 1.5px;
+            background: currentColor;
+            transform: translateX(-50%);
+            transition: all 0.3s ease;
+        }
+
+        .hamburger-icon span:nth-child(2) {
+            display: none;
+        }
+
+        /* Navigation Popup - Apple-inspired design */
+        .nav-popup {
+            position: fixed;
+            bottom: calc(44px + 40px); /* Button height + padding-bottom */
+            left: 1rem;
+            right: 1rem;
+            max-width: min(90vw, 380px);
+            margin: 0 auto;
+            transform: translateY(1.25rem) scale(0.95);
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(32px) saturate(1.2);
+            -webkit-backdrop-filter: blur(32px) saturate(1.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 1rem;
+            box-shadow: 
+                0 1.25rem 3.75rem rgba(0, 0, 0, 0.15), 
+                0 0.5rem 2rem rgba(0, 0, 0, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.5);
+            z-index: 999;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            max-height: 70vh;
+        }
+
+        @media (max-width: 480px) {
+            .nav-popup {
+                max-width: none;
+                max-height: 60vh;
+            }
+        }
+
+        @media (max-height: 600px) {
+            .nav-popup {
+                max-height: 50vh;
+                bottom: calc(44px + 32px);
+            }
+        }
+
+        .nav-popup.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0) scale(1);
+        }
+
+        .nav-popup-header {
+            padding: 1.25rem 1.25rem 1rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .nav-popup-header h3 {
+            margin: 0;
+            font-size: clamp(1rem, 4vw, 1.125rem);
+            font-weight: 600;
+            color: #1d1d1f;
+            letter-spacing: -0.01em;
+        }
+
+        .nav-popup-content {
+            padding: 0.5rem;
+            max-height: calc(70vh - 80px); /* Popup height minus header */
+            overflow-y: auto;
+        }
+
+        @media (max-width: 480px) {
+            .nav-popup-header {
+                padding: 1rem 1rem 0.75rem;
+            }
+            
+            .nav-popup-content {
+                max-height: calc(60vh - 60px);
+            }
+        }
+
+        @media (max-height: 600px) {
+            .nav-popup-content {
+                max-height: calc(50vh - 60px);
+            }
+        }
+
+        .nav-popup-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            border-radius: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            text-decoration: none;
+            color: inherit;
+            min-height: 3rem;
+        }
+
+        .nav-popup-item:hover {
+            background: rgba(0, 0, 0, 0.04);
+            transform: translateX(0.125rem);
+        }
+
+        .nav-popup-item:active {
+            transform: translateX(0.125rem) scale(0.98);
+            background: rgba(0, 0, 0, 0.06);
+        }
+
+        .nav-popup-icon {
+            width: 2rem;
+            height: 2rem;
+            background: #f3f4f6;
+            border-radius: 0.375rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(0.875rem, 3vw, 1rem);
+            flex-shrink: 0;
+        }
+
+        .nav-popup-text h4 {
+            margin: 0;
+            font-size: clamp(0.75rem, 3.5vw, 0.875rem);
+            font-weight: 600;
+            color: #111827;
+            line-height: 1.2;
+        }
+
+        .nav-popup-text p {
+            margin: 0.125rem 0 0 0;
+            font-size: clamp(0.625rem, 3vw, 0.75rem);
+            color: #6b7280;
+            line-height: 1.2;
+        }
+
+        @media (max-width: 480px) {
+            .nav-popup-item {
+                gap: 0.5rem;
+                padding: 0.625rem;
+                min-height: 2.75rem;
+            }
+            
+            .nav-popup-icon {
+                width: 1.75rem;
+                height: 1.75rem;
+            }
+        }
+
+        /* Overlay for closing popup */
+        .nav-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 998;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .nav-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+    </style>
+</head>
+<body class="font-sans">
+    <!-- Header Navigation -->
+    <header class="bg-[#76908D] fixed top-0 left-0 right-0 z-50 ">
+        <div class="max-w-7xl mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <!-- Logo -->
+                <div class="flex-shrink-0">
+                    <img src="overvik-logo.svg" 
+                         alt="Overvik" 
+                         class="h-8 w-auto">
+                </div>
+                
+                <!-- Navigation Menu (Desktop) -->
+                <nav class="hidden md:flex space-x-8 nav-font">
+                    <a href="#" class="text-gray-700 hover:text-overvik-green transition-colors font-medium">Vi er Overvik</a>
+                    <a href="#" class="text-gray-700 hover:text-overvik-green transition-colors font-medium">Boligvelger</a>
+                    <a href="#" class="text-gray-700 hover:text-overvik-green transition-colors font-medium">Leiligheter</a>
+                    <a href="#" class="text-gray-700 hover:text-overvik-green transition-colors font-medium">Rekkehus</a>
+                    <a href="#" class="text-gray-700 hover:text-overvik-green transition-colors font-medium">Galleri</a>
+                    <a href="#" class="text-gray-700 hover:text-overvik-green transition-colors font-medium">Nyheter</a>
+                </nav>
+                
+                <!-- CTA Button -->
+                <div class="">
+                    <a href="#" class="bg-overvik-green text-white py-2 rounded-full nav-font font-medium hover:bg-opacity-90 transition-all">
+                        Meld interesse
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+    
+    <!-- Hero Section: Overvik -->
+    <section class="relative w-full bg-cover bg-center bg-no-repeat flex items-end" 
+             style="background-image: url('overvik-hero.jpg'); height: calc(var(--viewport-height, 100vh) * 0.9);">
+        <!-- Overlay for better text readability -->
+        <div class="absolute inset-0 bg-black bg-opacity-30"></div>
+        
+        <!-- Hero content positioned at bottom -->
+        <div class="relative z-10 w-full px-6 pb-16">
+            <div class="max-w-4xl">
+                <h1 class="text-4xl md:text-5xl font-bold text-white mb-6 drop-shadow-lg font-campaign-serif">
+                    Velkommen over til Overvik
+                </h1>
+                <p class="text-white text-lg md:text-xl leading-relaxed drop-shadow-md font-campaign">
+                    Velkommen til en helt ny bydel på Ranheim – midt mellom fjorden og marka. Et sjønært nabolag som gjør hverdagen enkel.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Table of Contents -->
+    <section class="table-of-contents bg-gray-50 py-16">
+        <div class="max-w-4xl mx-auto px-6">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-gray-900 mb-4 font-campaign-serif">Utforsk Overvik</h2>
+                <p class="text-gray-600 text-lg">Oppdag alt som gjør Overvik til det perfekte stedet å kalle hjem</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <a href="#mikrolokasjon" class="toc-item" onclick="event.preventDefault(); navigateToSection('mikrolokasjon');">
+                    <div class="toc-icon">
+                        <span>📍</span>
+                    </div>
+                    <div class="toc-content">
+                        <h3>Mikrolokasjon & stemning</h3>
+                        <p>Midt mellom fjorden og marka</p>
+                    </div>
+                </a>
+                
+                <a href="#hverdagsliv" class="toc-item" onclick="event.preventDefault(); navigateToSection('hverdagsliv');">
+                    <div class="toc-icon">
+                        <span>🛒</span>
+                    </div>
+                    <div class="toc-content">
+                        <h3>Hverdagsliv</h3>
+                        <p>Alt du trenger i nærheten</p>
+                    </div>
+                </a>
+                
+                <a href="#kafe-spisesteder" class="toc-item" onclick="event.preventDefault(); navigateToSection('kafe-spisesteder');">
+                    <div class="toc-icon">
+                        <span>☕</span>
+                    </div>
+                    <div class="toc-content">
+                        <h3>Kafé & spisesteder</h3>
+                        <p>Hyggelige møteplasser</p>
+                    </div>
+                </a>
+                
+                <a href="#friluftsomrader" class="toc-item" onclick="event.preventDefault(); navigateToSection('friluftsomrader');">
+                    <div class="toc-icon">
+                        <span>🌲</span>
+                    </div>
+                    <div class="toc-content">
+                        <h3>De rike friluftsområdene</h3>
+                        <p>Naturen på dørstokken</p>
+                    </div>
+                </a>
+                
+                <a href="#narhet-marka" class="toc-item" onclick="event.preventDefault(); navigateToSection('narhet-marka');">
+                    <div class="toc-icon">
+                        <span>🥾</span>
+                    </div>
+                    <div class="toc-content">
+                        <h3>Nærhet til marka</h3>
+                        <p>Turmuligheter året rundt</p>
+                    </div>
+                </a>
+                
+                <a href="#idrettsbydelen" class="toc-item" onclick="event.preventDefault(); navigateToSection('idrettsbydelen');">
+                    <div class="toc-icon">
+                        <span>⚽</span>
+                    </div>
+                    <div class="toc-content">
+                        <h3>Idrettsbydelen</h3>
+                        <p>Aktiv livsstil og fellesskap</p>
+                    </div>
+                </a>
+                
+                <a href="#kollektiv-mobilitet" class="toc-item" onclick="event.preventDefault(); navigateToSection('kollektiv-mobilitet');">
+                    <div class="toc-icon">
+                        <span>🚌</span>
+                    </div>
+                    <div class="toc-content">
+                        <h3>Kollektiv & mobilitet</h3>
+                        <p>Enkel transport til byen</p>
+                    </div>
+                </a>
+                
+                <a href="#oppvekst" class="toc-item" onclick="event.preventDefault(); navigateToSection('oppvekst');">
+                    <div class="toc-icon">
+                        <span>🎓</span>
+                    </div>
+                    <div class="toc-content">
+                        <h3>Oppvekst</h3>
+                        <p>Trygg og god oppvekst for barna</p>
+                    </div>
+                </a>
+                
+                <a href="#fellesskap" class="toc-item" onclick="event.preventDefault(); navigateToSection('fellesskap');">
+                    <div class="toc-icon">
+                        <span>🏘️</span>
+                    </div>
+                    <div class="toc-content">
+                        <h3>Velkommen over til fellesskapet</h3>
+                        <p>Bli en del av det levende nabolaget</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 1: Mikrolokasjon & stemning -->
+    <section id="mikrolokasjon" class="section px-6 py-6 mb-16">
+        <!-- Section Image -->
+        <div class="relative bg-gray-200 rounded-lg mb-6" style="height: calc(var(--viewport-height, 100vh) * 0.33);">
+            <div class="absolute top-4 left-4 w-8 h-8 text-overvik-green bg-white rounded-full p-2 shadow-md">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                    <circle cx="12" cy="10" r="3"/>
+                </svg>
+            </div>
+        </div>
+        
+        <header class="section-header">
+            <div class="mb-4">
+                <h1 class="text-2xl font-bold text-gray-900 w-full text-left">Mikrolokasjon & stemning</h1>
+            </div>
+            <p class="text-gray-700 text-base leading-relaxed mb-6">
+                Ligger som en naturlig forlengelse av Ranheim: åpent og skjermet, med kort vei til fjorden og grønne lommer. Identiteten er sjønær, aktiv og familievennlig.
+            </p>
+        </header>
+        <div class="section-content">
+            <div>
+                <!-- Map Placeholder -->
+                <div class="bg-gray-200 rounded-lg h-48 flex items-center justify-center mb-6 clickable" onclick="openMapModal('mikrolokasjon')">
+                    <div class="text-center">
+                        <div class="text-gray-600 text-lg font-medium">Mapbox Kart</div>
+                        <div class="text-gray-500 text-sm mt-1">Klikk for fullskjerm</div>
+                    </div>
+                </div>
+                
+                <!-- Cards Section with Horizontal Scroll -->
+                <div class="overflow-x-auto horizontal-scroll clickable mb-16" onclick="openMapModal('mikrolokasjon')">
+                    <div class="flex gap-4 pb-6" style="width: max-content;">
+                        <!-- Card 1 -->
+                        <div class="bg-white rounded-lg shadow-md overflow-hidden" style="width: 33vw; min-width: 200px;">
+                            <div class="h-24 bg-gray-200"></div>
+                            <div class="p-4">
+                                <h3 class="font-semibold text-gray-900 mb-2">Overvik/Nergrenda</h3>
+                                <p class="text-gray-600 text-sm">
+                                    Nytt boligprosjekt som skaper en moderne og attraktiv bydel.
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <!-- Card 2 -->
+                        <div class="bg-white rounded-lg shadow-md overflow-hidden" style="width: 33vw; min-width: 200px;">
+                            <div class="h-24 bg-gray-200"></div>
+                            <div class="p-4">
+                                <h3 class="font-semibold text-gray-900 mb-2">Ranheim sentrum</h3>
+                                <p class="text-gray-600 text-sm">
+                                    Etablert sentrumsområde med handel og tjenester i gangavstand.
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <!-- Card 3 -->
+                        <div class="bg-white rounded-lg shadow-md overflow-hidden" style="width: 33vw; min-width: 200px;">
+                            <div class="h-24 bg-gray-200"></div>
+                            <div class="p-4">
+                                <h3 class="font-semibold text-gray-900 mb-2">Være/Vikåsen</h3>
+                                <p class="text-gray-600 text-sm">
+                                    Nærliggende områder som utvider tilbudet av tjenester og aktiviteter.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 2: Hverdagsliv -->
+    <section id="hverdagsliv" class="section px-6 py-6 mb-16">
+        <!-- Section Image -->
+        <div class="relative bg-gray-200 rounded-lg mb-6" style="height: calc(var(--viewport-height, 100vh) * 0.33);">
+            <div class="absolute top-4 left-4 w-8 h-8 text-overvik-green bg-white rounded-full p-2 shadow-md">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17M17 13v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6.5"/>
+                    <circle cx="9" cy="19" r="1"/>
+                    <circle cx="20" cy="19" r="1"/>
+                </svg>
+            </div>
+        </div>
+        
+        <header class="section-header">
+            <div class="mb-4">
+                <h1 class="text-2xl font-bold text-gray-900 w-full text-left">Hverdagsliv</h1>
+            </div>
+            <p class="text-gray-700 text-base leading-relaxed mb-6">
+                Dagligvare, apotek og pakkepunkt i nærområdet – det meste løses til fots eller på sykkel. Et planlagt nærsenter vil samle flere tilbud lokalt.
+            </p>
+        </header>
+        <div class="section-content">
+            <div>
+                <!-- Map Placeholder -->
+                <div class="bg-gray-200 rounded-lg h-48 flex items-center justify-center mb-6 clickable" onclick="openMapModal('hverdagsliv')">
+                    <div class="text-center">
+                        <div class="text-gray-600 text-lg font-medium">Hverdagsliv Kart</div>
+                        <div class="text-gray-500 text-sm mt-1">Klikk for fullskjerm</div>
+                    </div>
+                </div>
+                
+                <!-- Cards Section with Horizontal Scroll -->
+                <div class="overflow-x-auto horizontal-scroll clickable mb-16" onclick="openMapModal('hverdagsliv')">
+                    <div class="flex gap-4 pb-6" style="width: max-content;">
+                        <!-- Card 1 -->
+                        <div class="bg-white rounded-lg shadow-md overflow-hidden" style="width: 33vw; min-width: 200px;">
+                            <div class="h-24 bg-gray-200"></div>
+                            <div class="p-4">
+                                <h3 class="font-semibold text-gray-900 mb-2">Kiwi Ranheim</h3>
+                                <p class="text-gray-600 text-sm">
+                                    Dagligvarebutikk på Humlamyra for dine daglige innkjøp.
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <!-- Card 2 -->
+                        <div class="bg-white rounded-lg shadow-md overflow-hidden" style="width: 33vw; min-width: 200px;">
+                            <div class="h-24 bg-gray-200"></div>
+                            <div class="p-4">
+                                <h3 class="font-semibold text-gray-900 mb-2">Coop Prix Olderdalen</h3>
+                                <p class="text-gray-600 text-sm">
+                                    Alternativ dagligvarebutikk med godt utvalg.
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <!-- Card 3 -->
+                        <div class="bg-white rounded-lg shadow-md overflow-hidden" style="width: 33vw; min-width: 200px;">
+                            <div class="h-24 bg-gray-200"></div>
+                            <div class="p-4">
+                                <h3 class="font-semibold text-gray-900 mb-2">Extra Grilstad</h3>
+                                <p class="text-gray-600 text-sm">
+                                    Større handelsområde med utvidet utvalg av varer.
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <!-- Card 4 -->
+                        <div class="bg-white rounded-lg shadow-md overflow-hidden" style="width: 33vw; min-width: 200px;">
+                            <div class="h-24 bg-gray-200"></div>
+                            <div class="p-4">
+                                <h3 class="font-semibold text-gray-900 mb-2">Post/Pakkeboks</h3>
+                                <p class="text-gray-600 text-sm">
+                                    Praktisk postløsning for sending og mottak av pakker.
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <!-- Card 5 -->
+                        <div class="bg-white rounded-lg shadow-md overflow-hidden" style="width: 33vw; min-width: 200px;">
+                            <div class="h-24 bg-gray-200"></div>
+                            <div class="p-4">
+                                <h3 class="font-semibold text-gray-900 mb-2">Apotek</h3>
+                                <p class="text-gray-600 text-sm">
+                                    Apotek på Ranheim/Charlottenlund for legemidler og helseprodukter.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 3: Kafé & spisesteder -->
+    <section id="kafe-spisesteder" class="section px-6 py-6 mb-16">
+        <!-- Section Image -->
+        <div class="relative bg-gray-200 rounded-lg mb-6" style="height: calc(var(--viewport-height, 100vh) * 0.33);">
+            <div class="absolute top-4 left-4 w-8 h-8 text-overvik-green bg-white rounded-full p-2 shadow-md">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 8h1a4 4 0 010 8h-1"/>
+                    <path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/>
+                    <line x1="6" y1="1" x2="6" y2="4"/>
+                    <line x1="10" y1="1" x2="10" y2="4"/>
+                    <line x1="14" y1="1" x2="14" y2="4"/>
+                </svg>
+            </div>
+        </div>
+        
+        <header class="section-header">
+            <div class="mb-4">
+                <h1 class="text-2xl font-bold text-gray-900 w-full text-left">Kafé & spisesteder</h1>
+            </div>
+            <p class="text-gray-700 text-base leading-relaxed mb-6">
+                Fersk bakst ved fjorden, enkel lunsj eller uteservering mot kveldssola – utvalget dekker hverdagsbehovene. Promenaden på Grilstad og Lade gir flere hyggelige stopp.
+            </p>
+        </header>
+        <div class="section-content">
+            <div>
+                <!-- Map Placeholder -->
+                <div class="bg-gray-200 rounded-lg h-48 flex items-center justify-center mb-6 clickable" onclick="openMapModal('kafe')">
+                    <div class="text-center">
+                        <div class="text-gray-600 text-lg font-medium">Kafé Kart</div>
+                        <div class="text-gray-500 text-sm mt-1">Klikk for fullskjerm</div>
+                    </div>
+                </div>
+                
+                <!-- Cards Section with Horizontal Scroll -->
+                <div class="overflow-x-auto horizontal-scroll clickable mb-16" onclick="openMapModal('kafe')">
+                    <div class="flex gap-4 pb-6" style="width: max-content;">
+                        <!-- Card 1 -->
+                        <div class="bg-white rounded-lg shadow-md overflow-hidden" style="width: 33vw; min-width: 200px;">
+                            <div class="h-24 bg-gray-200"></div>
+                            <div class="p-4">
+                                <h3 class="font-semibold text-gray-900 mb-2">Rosenborg Bakeri</h3>
+                                <p class="text-gray-600 text-sm">
+                                    Fersk bakst ved Ranheimsfjæra med fantastisk utsikt over fjorden.
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <!-- Card 2 -->
+                        <div class="bg-white rounded-lg shadow-md overflow-hidden" style="width: 33vw; min-width: 200px;">
+                            <div class="h-24 bg-gray-200"></div>
+                            <div class="p-4">
+                                <h3 class="font-semibold text-gray-900 mb-2">Ladekaia</h3>
+                                <p class="text-gray-600 text-sm">
+                                    Sjømat og casual dining ved havnekanten.
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <!-- Card 3 -->
+                        <div class="bg-white rounded-lg shadow-md overflow-hidden" style="width: 33vw; min-width: 200px;">
+                            <div class="h-24 bg-gray-200"></div>
+                            <div class="p-4">
+                                <h3 class="font-semibold text-gray-900 mb-2">Sponhuset</h3>
+                                <p class="text-gray-600 text-sm">
+                                    Lokalt spisested med hjemmekoselig atmosfære.
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <!-- Card 4 -->
+                        <div class="bg-white rounded-lg shadow-md overflow-hidden" style="width: 33vw; min-width: 200px;">
+                            <div class="h-24 bg-gray-200"></div>
+                            <div class="p-4">
+                                <h3 class="font-semibold text-gray-900 mb-2">Flipper Kafé</h3>
+                                <p class="text-gray-600 text-sm">
+                                    Kafé ved Grilstad Marina med maritim stemning.
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <!-- Card 5 -->
+                        <div class="bg-white rounded-lg shadow-md overflow-hidden" style="width: 33vw; min-width: 200px;">
+                            <div class="h-24 bg-gray-200"></div>
+                            <div class="p-4">
+                                <h3 class="font-semibold text-gray-900 mb-2">Romantica</h3>
+                                <p class="text-gray-600 text-sm">
+                                    Restaurant i Ranheim med italiensk preg.
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <!-- Card 6 -->
+                        <div class="bg-white rounded-lg shadow-md overflow-hidden" style="width: 33vw; min-width: 200px;">
+                            <div class="h-24 bg-gray-200"></div>
+                            <div class="p-4">
+                                <h3 class="font-semibold text-gray-900 mb-2">Pizzabakeren Ranheim</h3>
+                                <p class="text-gray-600 text-sm">
+                                    Rask og god pizza for hele familien.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 4: De rike friluftsområdene -->
+    <section id="friluftsomrader" class="section px-6 py-6 mb-16">
+        <!-- Section Image -->
+        <div class="relative bg-gray-200 rounded-lg mb-6" style="height: calc(var(--viewport-height, 100vh) * 0.33);">
+            <div class="absolute top-4 left-4 w-8 h-8 text-overvik-green bg-white rounded-full p-2 shadow-md">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M2 6s1.5-2 5-2 5 2 5 2v14s-1.5-1-5-1-5 1-5 1V6z"/>
+                    <path d="M12 6s1.5-2 5-2 5 2 5 2v14s-1.5-1-5-1-5 1-5 1V6z"/>
+                    <path d="M2 10h20"/>
+                    <path d="M2 14h20"/>
+                    <circle cx="7" cy="8" r="1"/>
+                    <circle cx="17" cy="8" r="1"/>
+                </svg>
+            </div>
+        </div>
+        
+        <header class="section-header">
+            <div class="mb-4">
+                <h1 class="text-2xl font-bold text-gray-900 w-full text-left">De rike friluftsområdene</h1>
+            </div>
+            <p class="text-gray-700 text-base leading-relaxed mb-6">
+                Velkommen over til Hansbekkfjæra, et attraktivt friluftsområde ved fjorden. Her setter kommunen ut store vannsklier og hoppeputter midt ut i sjøen. Badeplasser og sammenhengende turveier gjør det lett å bruke fjorden hele året.
+            </p>
+        </header>
+        
+        <!-- Image from article -->
+        <div class="mb-6">
+            <img src="https://res.cloudinary.com/plyo/image/upload/c_scale,w_1920/f_auto,q_auto/v1688392001/overvik-bolig/rexydj5izgpr0z7wxhsf.jpg" 
+                 alt="Friluftsområder ved Overvik" 
+                 class="w-full rounded-lg shadow-lg">
+        </div>
+        
+        <div class="section content pb-24">
+            <div>
+                <!-- Map Placeholder -->
+                <div class="bg-gray-200 rounded-lg h-48 flex items-center justify-center mb-6 clickable" onclick="openMapModal('natur')">
+                    <div class="text-center">
+                        <div class="text-gray-600 text-lg font-medium">Natur Kart</div>
+                        <div class="text-gray-500 text-sm mt-1">Klikk for fullskjerm</div>
+                    </div>
+                </div>
+                
+                <!-- Cards Section with Horizontal Scroll -->
+                <div class="overflow-x-auto horizontal-scroll clickable mb-16" onclick="openMapModal('natur')">
+                    <div class="flex gap-4 pb-6" style="width: max-content;">
+                        <!-- Card 1 -->
+                        <div class="bg-white rounded-lg shadow-md overflow-hidden" style="width: 33vw; min-width: 200px;">
+                            <div class="h-24 bg-gray-200"></div>
+                            <div class="p-4">
+                                <h3 class="font-semibold text-gray-900 mb-2">Hansbakkfjæra</h3>
+                                <p class="text-gray-600 text-sm">
+                                    Vannsklier og hoppeputter midt ut i sjøen, badebrygge og små bukter med sandstrender.
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <!-- Card 2 -->
+                        <div class="bg-white rounded-lg shadow-md overflow-hidden" style="width: 33vw; min-width: 200px;">
+                            <div class="h-24 bg-gray-200"></div>
+                            <div class="p-4">
+                                <h3 class="font-semibold text-gray-900 mb-2">Tømmerstranda</h3>
+                                <p class="text-gray-600 text-sm">
+                                    Gapahuk med bålplass - populært for grilling på kveldene.
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <!-- Card 3 -->
+                        <div class="bg-white rounded-lg shadow-md overflow-hidden" style="width: 33vw; min-width: 200px;">
+                            <div class="h-24 bg-gray-200"></div>
+                            <div class="p-4">
+                                <h3 class="font-semibold text-gray-900 mb-2">Grilstad Marina</h3>
+                                <p class="text-gray-600 text-sm">
+                                    Parkliv, restaurant, båthavn og fargerike hengekøyer for avslapping.
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <!-- Card 4 -->
+                        <div class="bg-white rounded-lg shadow-md overflow-hidden" style="width: 33vw; min-width: 200px;">
+                            <div class="h-24 bg-gray-200"></div>
+                            <div class="p-4">
+                                <h3 class="font-semibold text-gray-900 mb-2">Ladestien</h3>
+                                <p class="text-gray-600 text-sm">
+                                    Langsgående sti som forbinder kystlinjen vestover mot Lade.
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <!-- Card 5 -->
+                        <div class="bg-white rounded-lg shadow-md overflow-hidden" style="width: 33vw; min-width: 200px;">
+                            <div class="h-24 bg-gray-200"></div>
+                            <div class="p-4">
+                                <h3 class="font-semibold text-gray-900 mb-2">Rotvollfjæra</h3>
+                                <p class="text-gray-600 text-sm">
+                                    Naturskjønn fjære med gode muligheter for aktiviteter.
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <!-- Card 6 -->
+                        <div class="bg-white rounded-lg shadow-md overflow-hidden" style="width: 33vw; min-width: 200px;">
+                            <div class="h-24 bg-gray-200"></div>
+                            <div class="p-4">
+                                <h3 class="font-semibold text-gray-900 mb-2">Ranheim IL / Extra Arena</h3>
+                                <p class="text-gray-600 text-sm">
+                                    Idrettsanlegg med fotball og andre aktiviteter.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Full height section with image at bottom -->
+        <div class="half-height mb-12" style="background-color: #AFC8E6;">
+            <div></div> <!-- Empty div to push image to bottom -->
+            <div class="">
+                <img src="overvik-1.jpg" alt="Overvik" class="w-full">
+            </div>
+        </div>
+    </section>
+
+    <!-- Section: Nærhet til marka -->
+    <section id="narhet-marka" class="section px-6 py-6 mb-16">
+        <!-- Section Image -->
+        <div class="relative bg-gray-200 rounded-lg mb-6" style="height: calc(var(--viewport-height, 100vh) * 0.33);">
+            <div class="absolute top-4 left-4 w-8 h-8 text-overvik-green bg-white rounded-full p-2 shadow-md">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
+                    <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
+                    <path d="M12 2v20"/>
+                    <path d="M8 6l4-4 4 4"/>
+                    <path d="M16 18l-4 4-4-4"/>
+                </svg>
+            </div>
+        </div>
+        
+        <header class="section-header">
+            <div class="mb-4">
+                <h1 class="text-2xl font-bold text-gray-900 w-full text-left">Nærhet til marka</h1>
+            </div>
+            <p class="text-gray-700 text-base leading-relaxed mb-6">
+                Estenstadmarka ønsker deg velkommen. Bor du på Overvik, har du enkel tilgang til både Estenstadmarka, Malvikmarka og Jonsvatnet. Søndagsturen kan gå i så mange retninger.
+            </p>
+        </header>
+        
+        <!-- Image from article -->
+        <div class="mb-6">
+            <img src="https://res.cloudinary.com/plyo/image/upload/c_scale,w_1920/f_auto,q_auto/v1688392464/overvik-bolig/teycajccuoeaox1bdoan.jpg" 
+                 alt="Marka og turområder ved Overvik" 
+                 class="w-full rounded-lg shadow-lg">
+        </div>
+        
+        <div class="section-content">
+            <div class="bg-gray-200 rounded-lg p-6 mb-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-3">Estenstadhytta</h3>
+                <p class="text-gray-700 text-sm mb-4">
+                    Allerede i 1958 ble den kjente Estenstadhytta reist på dugnad – som et lite Soria Moria-slott, langt inne i Estenstadmarka. Dette har vært et populært mål for turfolk i årtier med hyggelig kafé.
+                </p>
+            </div>
+            
+            <!-- Cards Section with Horizontal Scroll -->
+            <div class="overflow-x-auto horizontal-scroll">
+                <div class="flex gap-4 pb-6" style="width: max-content;">
+                    <!-- Card 1 -->
+                    <div class="bg-white rounded-lg shadow-md overflow-hidden" style="width: 33vw; min-width: 200px;">
+                        <div class="h-24 bg-gray-200"></div>
+                        <div class="p-4">
+                            <h3 class="font-semibold text-gray-900 mb-2">Estenstadmarka</h3>
+                            <p class="text-gray-600 text-sm">
+                                Populært turområde med Estenstadhytta som mål.
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- Card 2 -->
+                    <div class="bg-white rounded-lg shadow-md overflow-hidden" style="width: 33vw; min-width: 200px;">
+                        <div class="h-24 bg-gray-200"></div>
+                        <div class="p-4">
+                            <h3 class="font-semibold text-gray-900 mb-2">Malvikmarka</h3>
+                            <p class="text-gray-600 text-sm">
+                                Utstrakte skogsområder med mange turmuligheter.
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- Card 3 -->
+                    <div class="bg-white rounded-lg shadow-md overflow-hidden" style="width: 33vw; min-width: 200px;">
+                        <div class="h-24 bg-gray-200"></div>
+                        <div class="p-4">
+                            <h3 class="font-semibold text-gray-900 mb-2">Jonsvatnet</h3>
+                            <p class="text-gray-600 text-sm">
+                                Trondheimsmarkans perle med mange fine turmål.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section: Idrettsbydelen -->
+    <section id="idrettsbydelen" class="section px-6 py-6 mb-16">
+        <!-- Section Image -->
+        <div class="relative bg-gray-200 rounded-lg mb-6" style="height: calc(var(--viewport-height, 100vh) * 0.33);">
+            <img src="ril-seksjon.jpg" alt="Ranheim IL" class="w-full h-full object-cover rounded-lg">
+            <div class="absolute top-4 left-4 w-8 h-8 text-overvik-green bg-white rounded-full p-2 shadow-md">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="L8 12l2 2 4-4"/>
+                    <path d="M16 8l-8 8"/>
+                    <path d="M8 8l8 8"/>
+                </svg>
+            </div>
+        </div>
+        
+        <header class="section-header">
+            <div class="mb-4">
+                <h1 class="text-2xl font-bold text-gray-900 w-full text-left">Idrett & trening 2</h1>
+            </div>
+            <p class="text-gray-700 text-base leading-relaxed mb-6">
+                Et rikt utvalg av trenings- og aktivitetstilbud venter på Overvik og i nærområdet. Fra moderne treningssentre og utendørstreningsparker til svømmehaller og kampsportklubber – her finner du motivasjon til å holde deg aktiv året rundt.
+            </p>
+        </header>
+        
+        <div class="section-content">
+            
+            <div>
+                <!-- Map Placeholder -->
+                <div class="bg-gray-200 rounded-lg clickable relative mb-12 transition-all hover:bg-gray-300 cursor-pointer bg-cover bg-center border border-gray-300" style="height: calc(var(--viewport-height, 100vh) * 0.4); background-image: url('map-background.jpg');" onclick="openMapModal('idrett')">
+                    <!-- Top gradient overlay -->
+                    <div class="absolute top-0 left-0 right-0 h-20 bg-gradient-to-b from-white to-transparent rounded-t-lg pointer-events-none"></div>
+                    
+                    <!-- Bottom gradient overlay -->
+                    <div class="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-white to-transparent rounded-b-lg pointer-events-none"></div>
+                    
+                    <!-- Text at top left -->
+                    <div class="absolute top-4 left-4 z-10">
+                        <div class="text-gray-600 text-lg font-medium">Idrett & Trening</div>
+                        <div class="text-gray-500 text-sm mt-1">Klikk for å aktivere kart</div>
+                    </div>
+                    
+                    <!-- Modal indicator -->
+                    <div class="absolute top-4 right-4 z-10">
+                        <div class="bg-white rounded-full p-2 shadow-sm">
+                            <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path d="M8 3v3a2 2 0 01-2 2H3m18 0h-3a2 2 0 01-2-2V3m0 18v-3a2 2 0 012-2h3M3 16h3a2 2 0 012 2v3"/>
+                            </svg>
+                        </div>
+                    </div>
+                    
+                    <!-- Click to expand hint - moved up to make room for tags -->
+                    <div class="absolute bottom-16 left-4 z-10">
+                        <div class="text-gray-500 text-xs flex items-center gap-1">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path d="M15 3h6v6m-6 0l6-6M9 21H3v-6m6 0l-6 6"/>
+                            </svg>
+                            Fullskjerm
+                        </div>
+                    </div>
+                    
+                    <!-- POI Tags - Horizontal scroll inside map block -->
+                    <div class="absolute bottom-4 left-4 right-4 z-10">
+                        <div class="poi-tags-container">
+                            <button class="poi-tag" onclick="openMapModalWithPOI('idrett', 'ranheim-il')" data-poi="ranheim-il">
+                                <span class="poi-tag-icon">⚽</span>
+                                <span class="poi-tag-text">Ranheim IL</span>
+                            </button>
+                            <button class="poi-tag" onclick="openMapModalWithPOI('idrett', 'atletklubb')" data-poi="atletklubb">
+                                <span class="poi-tag-icon">🏃</span>
+                                <span class="poi-tag-text">Atletklubb</span>
+                            </button>
+                            <button class="poi-tag coming-soon" onclick="openMapModalWithPOI('idrett', 'svommeklubb')" data-poi="svommeklubb">
+                                <span class="poi-tag-icon">🏊</span>
+                                <span class="poi-tag-text">Svømming</span>
+                            </button>
+                            <button class="poi-tag coming-soon" onclick="openMapModalWithPOI('idrett', 'ntnui')" data-poi="ntnui">
+                                <span class="poi-tag-icon">🎯</span>
+                                <span class="poi-tag-text">NTNUI</span>
+                            </button>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+                
+                <!-- Remove the external POI tags -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 5: Kollektiv & mobilitet -->
+    <section id="kollektiv-mobilitet" class="section px-6 py-6 mb-16">
+        <!-- Section Image -->
+        <div class="relative bg-gray-200 rounded-lg mb-6" style="height: calc(var(--viewport-height, 100vh) * 0.33);">
+            <div class="absolute top-4 left-4 w-8 h-8 text-overvik-green bg-white rounded-full p-2 shadow-md">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="6" width="18" height="11" rx="2" ry="2"/>
+                    <circle cx="8.5" cy="14.5" r="2.5"/>
+                    <circle cx="15.5" cy="14.5" r="2.5"/>
+                    <path d="M3 6v5h18V6"/>
+                    <rect x="5" y="8" width="14" height="3"/>
+                </svg>
+            </div>
+        </div>        <header class="section-header">
+            <div class="mb-4">
+                <h1 class="text-2xl font-bold text-gray-900 w-full text-left">Kollektiv & mobilitet</h1>
+            </div>
+            <p class="text-gray-700 text-base leading-relaxed mb-6">
+                Hyppige busslinjer via Ranheim og flate sykkelstrekninger langs fjorden gir forutsigbare reiser. Interne gang- og sykkelruter forkorter hverdagsveiene ytterligere.
+            </p>
+        </header>
+        <div class="section-content">
+            <div>
+                <!-- Map Placeholder -->
+                <div class="bg-gray-200 rounded-lg h-48 flex items-center justify-center mb-6 clickable" onclick="openMapModal('transport')">
+                    <div class="text-center">
+                        <div class="text-gray-600 text-lg font-medium">Transport Kart</div>
+                        <div class="text-gray-500 text-sm mt-1">Klikk for fullskjerm</div>
+                    </div>
+                </div>
+                
+                <!-- Cards Section with Horizontal Scroll -->
+                <div class="overflow-x-auto horizontal-scroll clickable mb-16" onclick="openMapModal('transport')">
+                    <div class="flex gap-4 pb-6" style="width: max-content;">
+                        <!-- Card 1 -->
+                        <div class="bg-white rounded-lg shadow-md overflow-hidden" style="width: 33vw; min-width: 200px;">
+                            <div class="h-24 bg-gray-200"></div>
+                            <div class="p-4">
+                                <h3 class="font-semibold text-gray-900 mb-2">Bussknutepunkt Ranheim</h3>
+                                <p class="text-gray-600 text-sm">
+                                    Hovedknutepunkt for busslinjer med hyppige avganger til sentrum.
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <!-- Card 2 -->
+                        <div class="bg-white rounded-lg shadow-md overflow-hidden" style="width: 33vw; min-width: 200px;">
+                            <div class="h-24 bg-gray-200"></div>
+                            <div class="p-4">
+                                <h3 class="font-semibold text-gray-900 mb-2">Sykkeltrasé Ladestien</h3>
+                                <p class="text-gray-600 text-sm">
+                                    Flat og trygg sykkeltrasé som går til Lade og videre mot sentrum.
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <!-- Card 3 -->
+                        <div class="bg-white rounded-lg shadow-md overflow-hidden" style="width: 33vw; min-width: 200px;">
+                            <div class="h-24 bg-gray-200"></div>
+                            <div class="p-4">
+                                <h3 class="font-semibold text-gray-900 mb-2">Ranheimsveien</h3>
+                                <p class="text-gray-600 text-sm">
+                                    Hovedvei som gir god tilkobling til resten av regionen.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 6: Oppvekst -->
+    <section id="oppvekst" class="section px-6 py-6 mb-16">
+        <!-- Section Image -->
+        <div class="relative bg-gray-200 rounded-lg mb-6" style="height: calc(var(--viewport-height, 100vh) * 0.33);">
+            <div class="absolute top-4 left-4 w-8 h-8 text-overvik-green bg-white rounded-full p-2 shadow-md">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 11H5a2 2 0 00-2 2v7h18v-7a2 2 0 00-2-2h-4"/>
+                    <path d="M3 21v-5a2 2 0 012-2h14a2 2 0 012 2v5"/>
+                    <circle cx="9" cy="9" r="4"/>
+                    <path d="M15 9a4 4 0 11-8 0 4 4 0 018 0z"/>
+                    <path d="M12 1v6"/>
+                    <path d="M3 7l5.5 5.5"/>
+                    <path d="M21 7l-5.5 5.5"/>
+                </svg>
+            </div>
+        </div>
+        
+        <header class="section-header">
+            <div class="mb-4">
+                <h1 class="text-2xl font-bold text-gray-900 w-full text-left">Oppvekst</h1>
+            </div>
+            <p class="text-gray-700 text-base leading-relaxed mb-6">
+                Etablert oppvekstmiljø med barnehager, skoler og aktive idrettsanlegg i kort radius. Trygge uteområder gjør logistikken enkel for familier.
+            </p>
+        </header>
+        <div class="section-content">
+            <div>
+                <!-- Map Placeholder -->
+                <div class="bg-gray-200 rounded-lg h-48 flex items-center justify-center mb-6 clickable" onclick="openMapModal('oppvekst')">
+                    <div class="text-center">
+                        <div class="text-gray-600 text-lg font-medium">Oppvekst Kart</div>
+                        <div class="text-gray-500 text-sm mt-1">Klikk for fullskjerm</div>
+                    </div>
+                </div>
+                
+                <div class="mb-6">
+                    <a href="#" class="text-overvik-green hover:text-opacity-80 text-sm font-medium underline decoration-2 underline-offset-2">
+                        Les mer om oppvekstmuligheter på Overvik →
+                    </a>
+                </div>
+                
+                <!-- Cards Section with Horizontal Scroll -->
+                <div class="overflow-x-auto horizontal-scroll clickable mb-16" onclick="openMapModal('oppvekst')">
+                    <div class="flex gap-4 pb-6" style="width: max-content;">
+                        <!-- Card 1 -->
+                        <div class="bg-white rounded-lg shadow-md overflow-hidden" style="width: 33vw; min-width: 200px;">
+                            <div class="h-24 bg-gray-200"></div>
+                            <div class="p-4">
+                                <h3 class="font-semibold text-gray-900 mb-2">Barnehager Ranheim/Vikåsen</h3>
+                                <p class="text-gray-600 text-sm">
+                                    Flere barnehager i nærområdet med god tilgang.
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <!-- Card 2 -->
+                        <div class="bg-white rounded-lg shadow-md overflow-hidden" style="width: 33vw; min-width: 200px;">
+                            <div class="h-24 bg-gray-200"></div>
+                            <div class="p-4">
+                                <h3 class="font-semibold text-gray-900 mb-2">Ranheim skole</h3>
+                                <p class="text-gray-600 text-sm">
+                                    Lokal barneskole med godt omdømme og nært tilhold.
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <!-- Card 3 -->
+                        <div class="bg-white rounded-lg shadow-md overflow-hidden" style="width: 33vw; min-width: 200px;">
+                            <div class="h-24 bg-gray-200"></div>
+                            <div class="p-4">
+                                <h3 class="font-semibold text-gray-900 mb-2">Vikåsen skole</h3>
+                                <p class="text-gray-600 text-sm">
+                                    Alternativ skole i nærområdet med god standard.
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <!-- Card 4 -->
+                        <div class="bg-white rounded-lg shadow-md overflow-hidden" style="width: 33vw; min-width: 200px;">
+                            <div class="h-24 bg-gray-200"></div>
+                            <div class="p-4">
+                                <h3 class="font-semibold text-gray-900 mb-2">Charlottenlund vgs</h3>
+                                <p class="text-gray-600 text-sm">
+                                    Videregående skole med gode transportforbindelser.
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <!-- Link Card -->
+                        <div class="bg-overvik-light rounded-lg shadow-md overflow-hidden cursor-pointer hover:bg-opacity-90 transition-all" style="width: 33vw; min-width: 200px;">
+                            <div class="p-6 h-full flex flex-col justify-center items-center text-center">
+                                <div class="w-8 h-8 mb-3 text-overvik-green">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M9 18l6-6-6-6"/>
+                                    </svg>
+                                </div>
+                                <h3 class="font-semibold text-overvik-green mb-2">Les mer om oppvekst</h3>
+                                <p class="text-gray-700 text-sm">
+                                    Utforsk alle muligheter for barn og unge på Overvik
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 7: Velkommen over til fellesskapet -->
+    <section id="fellesskap" class="section px-6 py-6 mb-16">
+        <!-- Section Image -->
+        <div class="relative bg-gray-200 rounded-lg mb-6" style="height: calc(var(--viewport-height, 100vh) * 0.33);">
+            <div class="absolute top-4 left-4 w-8 h-8 text-overvik-green bg-white rounded-full p-2 shadow-md">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <path d="M23 21v-2a4 4 0 00-3-3.87"/>
+                    <path d="M16 3.13a4 4 0 010 7.75"/>
+                </svg>
+            </div>
+        </div>
+        
+        <header class="section-header">
+            <div class="mb-4">
+                <h1 class="text-2xl font-bold text-gray-900 w-full text-left">Velkommen over til fellesskapet</h1>
+            </div>
+            <p class="text-gray-700 text-lg leading-relaxed mb-6">
+                På Overvik bor unge og eldre, single og store familier, barn og ungdommer – med alle slags interesser. Her treffer du glade naboer som lever aktive liv i nærområdet.
+            </p>
+        </header>
+        <div class="section-content">
+            <div class="bg-gray-200 rounded-lg p-6 mb-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Et nytt fellesskap</h2>
+                <p class="text-gray-700 mb-4">
+                    I Overvik treffer du folk som gjerne har en kjærlighet til nærfriluftslivet. Her er det lett å få nye venner. Her er det lett å føle at man tar del i noe større.
+                </p>
+                
+                <h3 class="text-lg font-semibold text-gray-900 mb-3">Overvik på et øyeblikk:</h3>
+                <ul class="space-y-3 text-gray-700">
+                    <li class="flex items-start">
+                        <span class="text-blue-500 font-bold mr-2">•</span>
+                        <span>Sjønær beliggenhet mellom fjorden og marka</span>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-green-500 font-bold mr-2">•</span>
+                        <span>Rike friluftsområder med Hansbekkfjæra og Grilstad Marina</span>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-yellow-500 font-bold mr-2">•</span>
+                        <span>Enkel tilgang til Estenstadmarka, Malvikmarka og Jonsvatnet</span>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-orange-500 font-bold mr-2">•</span>
+                        <span>Aktiv idrettsbydel med Ranheim IL som sentrum</span>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-indigo-500 font-bold mr-2">•</span>
+                        <span>Gode kollektivforbindelser og sykkelveier</span>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-purple-500 font-bold mr-2">•</span>
+                        <span>Etablert oppvekstmiljø for familier</span>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-pink-500 font-bold mr-2">•</span>
+                        <span>Et fellesskap for alle – unge og eldre</span>
+                    </li>
+                </ul>
+            </div>
+            
+            <div class="text-center">
+                <p class="text-gray-600 text-lg italic">
+                    "Ekte fjordkontakt i hverdagen – uten å gi slipp på bekvemmelighetene."
+                </p>
+            </div>
+        </div>
+    </section>
+    <!-- Map Modal -->
+    <div id="mapModal" class="modal">
+        <div class="modal-header">
+            <button class="modal-close" onclick="closeMapModal()">&times;</button>
+        </div>
+        
+        <!-- Map Canvas (for idrett modal) -->
+        <div id="mapCanvas" class="map-canvas">
+            <!-- POI Markers will be inserted here -->
+        </div>
+        
+        <!-- Fallback for other sections -->
+        <div id="fallbackModalContent" class="modal-map">
+            <div class="text-center">
+                <div class="text-gray-600 text-2xl font-medium">Fullskjerm Kart</div>
+                <div class="text-gray-500 text-lg mt-2">Mapbox vil være her</div>
+            </div>
+        </div>
+        <div id="fallbackModalCards" class="modal-cards">
+            <div class="overflow-x-auto horizontal-scroll">
+                <div id="modalCardsContainer" class="flex gap-4 pb-6" style="width: max-content;">
+                    <!-- Cards will be dynamically inserted here -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- POI Bottom Drawer -->
+        <div id="poiSheet" class="poi-sheet closed" role="dialog" aria-labelledby="poiSheetTitle">
+            <div class="poi-sheet-header">
+                <h3 id="poiSheetTitle" class="poi-sheet-title">POI Title</h3>
+                <button class="poi-sheet-close" onclick="hideSheet()">&times;</button>
+            </div>
+            <div class="poi-sheet-content">
+                <div id="poiSheetBody">
+                    <!-- POI content will be inserted here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Fix for iOS Chrome dvh jumping issues
+        function setStableViewportHeight() {
+            const vh = window.innerHeight;
+            document.documentElement.style.setProperty('--viewport-height', `${vh}px`);
+            console.log('Stable viewport height set to:', vh + 'px');
+        }
+        
+        // Set initial viewport height
+        setStableViewportHeight();
+        
+        // Update on orientation change (but not on scroll-triggered resize)
+        let resizeTimeout;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                setStableViewportHeight();
+            }, 150);
+        });
+        
+        // Vanilla JavaScript ready for development
+        console.log('Placy prototype loaded (without Swiper)');
+        
+        // Mobile-specific interactions
+        const cards = document.querySelectorAll('.bg-white');
+        cards.forEach(card => {
+            card.addEventListener('touchstart', function(e) {
+                console.log('Card touched');
+                // Add touch feedback here if needed
+            });
+        });
+
+        // Modal functionality
+        let scrollPosition = 0;
+
+        // POI data for idrett map
+        const idrettPOIs = [
+            {
+                id: 'ranheim-il',
+                name: 'Ranheim IL',
+                position: { top: '25%', left: '35%' },
+                title: 'Ranheim IL',
+                description: 'Mest kjent for sin sterke satsning på breddefotball og toppfotball. Her kan du prøve å spille selv eller nyte spennende kamper fra tribunen.',
+                metadata: ['Fotball', 'Basketball', 'Håndball'],
+                clickable: true
+            },
+            {
+                id: 'atletklubb',
+                name: 'Atletklubb',
+                position: { top: '60%', left: '70%' },
+                title: 'Trondheim Atletklubb',
+                description: 'Friidrett og løp for alle aldre og nivåer. Profesjonelle treningsanlegg og erfarne trenere.',
+                metadata: ['Friidrett', 'Løp', 'Kast'],
+                clickable: true
+            },
+            {
+                id: 'svommeklubb',
+                name: 'Svømming',
+                position: { top: '40%', left: '15%' },
+                title: 'Heimdal Svømmeklubb',
+                description: 'Svømming og vannsport i nærområdet. Moderne anlegg med oppvarmet basseng.',
+                metadata: ['Svømming', 'Vannsport', 'Basseng'],
+                clickable: false
+            },
+            {
+                id: 'ntnui',
+                name: 'NTNUI',
+                position: { top: '70%', left: '45%' },
+                title: 'NTNUI',
+                description: 'Studentidrett med stort utvalg av aktiviteter. Over 50 forskjellige idretter å velge mellom.',
+                metadata: ['Studentidrett', '50+ idretter', 'Sosialt'],
+                clickable: false
+            }
+        ];
+
+        function openMapModal(slideType) {
+            const modal = document.getElementById('mapModal');
+            const mapCanvas = document.getElementById('mapCanvas');
+            const fallbackContent = document.getElementById('fallbackModalContent');
+            const fallbackCards = document.getElementById('fallbackModalCards');
+            const modalCardsContainer = document.getElementById('modalCardsContainer');
+            
+            // Store current scroll position
+            scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+            console.log('Storing scroll position:', scrollPosition);
+            
+            if (slideType === 'idrett') {
+                // Show map canvas, hide fallback
+                mapCanvas.classList.add('active');
+                fallbackContent.style.display = 'none';
+                fallbackCards.style.display = 'none';
+                
+                // Clear and populate POI markers
+                mapCanvas.innerHTML = '';
+                idrettPOIs.forEach(poi => {
+                    const marker = createPOIMarker(poi);
+                    mapCanvas.appendChild(marker);
+                });
+                
+            } else {
+                // Hide map canvas, show fallback
+                mapCanvas.classList.remove('active');
+                fallbackContent.style.display = 'flex';
+                fallbackCards.style.display = 'block';
+                
+                // Clear previous cards
+                modalCardsContainer.innerHTML = '';
+                
+                // For other sections, find cards in the clicked section (existing behavior)
+                const clickedSection = event.target.closest('section');
+                const cards = clickedSection.querySelectorAll('.bg-white, .bg-overvik-light');
+                
+                // Clone cards to modal
+                cards.forEach(card => {
+                    const clonedCard = card.cloneNode(true);
+                    modalCardsContainer.appendChild(clonedCard);
+                });
+                
+                // Reset horizontal scroll position in modal
+                setTimeout(() => {
+                    const horizontalScrolls = modalCardsContainer.querySelectorAll('.horizontal-scroll');
+                    horizontalScrolls.forEach(scroll => {
+                        scroll.scrollLeft = 0;
+                    });
+                }, 0);
+            }
+            
+            // Disable body scroll
+            document.body.classList.add('modal-open');
+            
+            // Show modal
+            modal.classList.add('active');
+            
+            console.log('Map modal opened for:', slideType);
+        }
+
+        function createPOIMarker(poi) {
+            const marker = document.createElement('button');
+            marker.className = `poi-marker ${poi.clickable ? '' : 'coming-soon'}`;
+            marker.style.top = poi.position.top;
+            marker.style.left = poi.position.left;
+            marker.setAttribute('aria-label', poi.name);
+            
+            // Add icon
+            marker.innerHTML = `
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                </svg>
+            `;
+            
+            // Add label
+            const label = document.createElement('div');
+            label.className = 'poi-label';
+            label.textContent = poi.name;
+            marker.appendChild(label);
+            
+            // Add click handler
+            if (poi.clickable) {
+                marker.addEventListener('click', () => showPOI(poi.id));
+                marker.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        showPOI(poi.id);
+                    }
+                });
+            } else {
+                marker.addEventListener('click', () => {
+                    alert('Coming soon!');
+                });
+            }
+            
+            return marker;
+        }
+
+        function showPOI(poiId) {
+            const poi = idrettPOIs.find(p => p.id === poiId);
+            if (!poi) return;
+            
+            const sheet = document.getElementById('poiSheet');
+            const title = document.getElementById('poiSheetTitle');
+            const body = document.getElementById('poiSheetBody');
+            
+            // Update content
+            title.textContent = poi.title;
+            body.innerHTML = `
+                <div class="poi-image-placeholder">
+                    📍 ${poi.title}
+                </div>
+                <div class="poi-metadata">
+                    ${poi.metadata.map(item => `<span>• ${item}</span>`).join('')}
+                </div>
+                <p style="color: #374151; line-height: 1.5;">${poi.description}</p>
+                <div class="poi-buttons">
+                    <button class="poi-button primary" disabled>Besøk</button>
+                    <button class="poi-button" disabled>Del</button>
+                    <button class="poi-button" disabled>Favoritt</button>
+                </div>
+            `;
+            
+            // Open sheet
+            sheet.className = 'poi-sheet open';
+            
+            console.log('POI opened:', poiId);
+        }
+
+        function hideSheet() {
+            const sheet = document.getElementById('poiSheet');
+            sheet.className = 'poi-sheet closed';
+            console.log('POI sheet closed');
+        }
+
+        function openMapModalWithPOI(slideType, poiId) {
+            // Simply call the normal openMapModal function first
+            openMapModal(slideType);
+            
+            // Then after a short delay, open the specific POI
+            setTimeout(() => {
+                const poi = idrettPOIs.find(p => p.id === poiId);
+                if (poi && poi.clickable) {
+                    showPOI(poiId);
+                } else if (poi && !poi.clickable) {
+                    alert('Coming soon!');
+                }
+            }, 300);
+            
+            console.log('Map modal opened with POI:', poiId);
+        }
+
+        function closeMapModal() {
+            console.log('Closing map modal...');
+            
+            const modal = document.getElementById('mapModal');
+            const sheet = document.getElementById('poiSheet');
+            
+            // Hide sheet first if it's open
+            if (sheet && (sheet.classList.contains('open') || sheet.classList.contains('peek'))) {
+                sheet.className = 'poi-sheet closed';
+            }
+            
+            // Remove modal
+            modal.classList.remove('active');
+            
+            // Re-enable body scroll and restore position
+            document.body.classList.remove('modal-open');
+            
+            // Restore scroll position immediately
+            if (scrollPosition > 0) {
+                window.scrollTo({
+                    top: scrollPosition,
+                    behavior: 'instant'
+                });
+                console.log('Restored scroll position:', scrollPosition);
+            }
+        }
+
+        // Enhanced keyboard handling
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const poiSheet = document.getElementById('poiSheet');
+                const modal = document.getElementById('mapModal');
+                
+                // If POI sheet is open, close it first
+                if (poiSheet.classList.contains('open')) {
+                    hideSheet();
+                } else if (modal.classList.contains('active')) {
+                    // Otherwise close the modal
+                    closeMapModal();
+                }
+            }
+        });
+
+        // Close modal when clicking outside (backdrop)
+        document.getElementById('mapModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeMapModal();
+            }
+        });
+
+        // Prevent closing modal when clicking on map canvas or POI sheet
+        document.getElementById('mapCanvas').addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+        
+        document.getElementById('poiSheet').addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+
+        // Sticky Navigation with scroll detection
+        let stickyNavVisible = false;
+
+        function checkStickyNavVisibility() {
+            const tocSection = document.querySelector('.table-of-contents');
+            if (!tocSection) return;
+
+            const tocTop = tocSection.offsetTop;
+            const tocHeight = tocSection.offsetHeight;
+            const tocTriggerPoint = tocTop + (tocHeight * 0.10); // 10% scrolled = 90% still visible
+            const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+            const stickyContainer = document.querySelector('.sticky-nav-container');
+
+            // Show sticky nav when user has scrolled past 10% of the table of contents (90% still visible)
+            // This creates a very early trigger while almost all of the list is still visible
+            if (scrollPosition > tocTriggerPoint && !stickyNavVisible) {
+                stickyContainer.classList.add('visible');
+                stickyNavVisible = true;
+            } else if (scrollPosition <= tocTriggerPoint && stickyNavVisible) {
+                stickyContainer.classList.remove('visible');
+                stickyNavVisible = false;
+                // Also close popup if it's open
+                closeStickyNav();
+            }
+        }
+
+        // Listen for scroll events with throttling for performance
+        let scrollTimeout;
+        window.addEventListener('scroll', function() {
+            if (scrollTimeout) {
+                clearTimeout(scrollTimeout);
+            }
+            scrollTimeout = setTimeout(checkStickyNavVisibility, 10);
+        });
+
+        // Check on load
+        window.addEventListener('load', checkStickyNavVisibility);
+
+        function toggleStickyNav() {
+            const popup = document.getElementById('stickyNavPopup');
+            const overlay = document.getElementById('stickyNavOverlay');
+            
+            if (popup.classList.contains('active')) {
+                popup.classList.remove('active');
+                overlay.classList.remove('active');
+            } else {
+                popup.classList.add('active');
+                overlay.classList.add('active');
+            }
+        }
+
+        function closeStickyNav() {
+            const popup = document.getElementById('stickyNavPopup');
+            const overlay = document.getElementById('stickyNavOverlay');
+            popup.classList.remove('active');
+            overlay.classList.remove('active');
+        }
+
+        function navigateToSection(sectionId) {
+            // Close nav if it's open
+            if (typeof closeStickyNav === 'function') {
+                closeStickyNav();
+            }
+            setTimeout(() => {
+                const element = document.getElementById(sectionId);
+                if (element) {
+                    smoothScrollTo(element);
+                }
+            }, 100);
+        }
+
+        // Custom smooth scroll function with better control
+        function smoothScrollTo(element, duration = 1200) {
+            try {
+                const targetPosition = element.getBoundingClientRect().top + window.pageYOffset - 80; // 80px offset for header
+                const startPosition = window.pageYOffset;
+                const distance = targetPosition - startPosition;
+                
+                // If distance is very small, just jump
+                if (Math.abs(distance) < 10) {
+                    window.scrollTo(0, targetPosition);
+                    return;
+                }
+                
+                let startTime = null;
+
+                function animation(currentTime) {
+                    if (startTime === null) startTime = currentTime;
+                    const timeElapsed = currentTime - startTime;
+                    const progress = Math.min(timeElapsed / duration, 1);
+                    
+                    // Easing function for smooth animation (ease-out cubic)
+                    const ease = 1 - Math.pow(1 - progress, 3);
+                    
+                    window.scrollTo(0, startPosition + distance * ease);
+
+                    if (timeElapsed < duration) {
+                        requestAnimationFrame(animation);
+                    }
+                }
+
+                requestAnimationFrame(animation);
+            } catch (error) {
+                console.error('Smooth scroll error, falling back to native:', error);
+                // Fallback to native smooth scroll
+                element.scrollIntoView({ 
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        }
+
+        // Custom smooth scroll to specific position
+        function smoothScrollToPosition(targetPosition, duration = 800) {
+            const startPosition = window.pageYOffset;
+            const distance = targetPosition - startPosition;
+            let startTime = null;
+
+            function animation(currentTime) {
+                if (startTime === null) startTime = currentTime;
+                const timeElapsed = currentTime - startTime;
+                const progress = Math.min(timeElapsed / duration, 1);
+                
+                // Easing function for smooth animation (ease-out cubic)
+                const ease = 1 - Math.pow(1 - progress, 3);
+                
+                window.scrollTo(0, startPosition + distance * ease);
+
+                if (timeElapsed < duration) {
+                    requestAnimationFrame(animation);
+                }
+            }
+
+            requestAnimationFrame(animation);
+        }
+
+        function scrollToTop() {
+            smoothScrollToPosition(0, 800); // Scroll to top position
+        }
+
+        function openContact() {
+            // Placeholder for contact functionality
+            // Could open a modal, navigate to contact page, or scroll to contact section
+            alert('Kontakt-funksjonalitet kommer snart!');
+        }
+    </script>
+
+    <!-- Sticky Navigation -->
+    <div class="nav-overlay" id="stickyNavOverlay" onclick="closeStickyNav()"></div>
+    
+    <div class="sticky-nav-container" id="stickyNavContainer">
+        <div class="sticky-nav-button sticky-button-base" onclick="toggleStickyNav()">
+            <div class="sticky-nav-hamburger">
+                <div class="hamburger-icon">
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+            <span class="sticky-nav-label">Finn ditt tema</span>
+            <span class="sticky-nav-counter">9</span>
+        </div>
+        
+        <div class="sticky-contact sticky-button-base" onclick="openContact()">
+            <span class="contact-label">Kontakt</span>
+        </div>
+        
+        <div class="sticky-scroll-top sticky-button-base" onclick="scrollToTop()">
+            <div class="scroll-top-icon">↑</div>
+        </div>
+    </div>
+
+    <div class="nav-popup" id="stickyNavPopup">
+        <div class="nav-popup-header">
+            <h3>Utforsk Overvik</h3>
+        </div>
+        <div class="nav-popup-content">
+            <a href="#mikrolokasjon" class="nav-popup-item" onclick="navigateToSection('mikrolokasjon')">
+                <div class="nav-popup-icon">📍</div>
+                <div class="nav-popup-text">
+                    <h4>Mikrolokasjon & stemning</h4>
+                    <p>Midt mellom fjorden og marka</p>
+                </div>
+            </a>
+            
+            <a href="#hverdagsliv" class="nav-popup-item" onclick="navigateToSection('hverdagsliv')">
+                <div class="nav-popup-icon">🛒</div>
+                <div class="nav-popup-text">
+                    <h4>Hverdagsliv</h4>
+                    <p>Alt du trenger i nærheten</p>
+                </div>
+            </a>
+            
+            <a href="#kafe-spisesteder" class="nav-popup-item" onclick="navigateToSection('kafe-spisesteder')">
+                <div class="nav-popup-icon">☕</div>
+                <div class="nav-popup-text">
+                    <h4>Kafé & spisesteder</h4>
+                    <p>Hyggelige møteplasser</p>
+                </div>
+            </a>
+            
+            <a href="#friluftsomrader" class="nav-popup-item" onclick="navigateToSection('friluftsomrader')">
+                <div class="nav-popup-icon">🌲</div>
+                <div class="nav-popup-text">
+                    <h4>De rike friluftsområdene</h4>
+                    <p>Naturen på dørstokken</p>
+                </div>
+            </a>
+            
+            <a href="#narhet-marka" class="nav-popup-item" onclick="navigateToSection('narhet-marka')">
+                <div class="nav-popup-icon">🥾</div>
+                <div class="nav-popup-text">
+                    <h4>Nærhet til marka</h4>
+                    <p>Turmuligheter året rundt</p>
+                </div>
+            </a>
+            
+            <a href="#idrettsbydelen" class="nav-popup-item" onclick="navigateToSection('idrettsbydelen')">
+                <div class="nav-popup-icon">⚽</div>
+                <div class="nav-popup-text">
+                    <h4>Idrettsbydelen</h4>
+                    <p>Aktiv livsstil og fellesskap</p>
+                </div>
+            </a>
+            
+            <a href="#kollektiv-mobilitet" class="nav-popup-item" onclick="navigateToSection('kollektiv-mobilitet')">
+                <div class="nav-popup-icon">🚌</div>
+                <div class="nav-popup-text">
+                    <h4>Kollektiv & mobilitet</h4>
+                    <p>Enkel transport til byen</p>
+                </div>
+            </a>
+            
+            <a href="#oppvekst" class="nav-popup-item" onclick="navigateToSection('oppvekst')">
+                <div class="nav-popup-icon">🎓</div>
+                <div class="nav-popup-text">
+                    <h4>Oppvekst</h4>
+                    <p>Trygg og god oppvekst for barna</p>
+                </div>
+            </a>
+            
+            <a href="#fellesskap" class="nav-popup-item" onclick="navigateToSection('fellesskap')">
+                <div class="nav-popup-icon">🏘️</div>
+                <div class="nav-popup-text">
+                    <h4>Velkommen over til fellesskapet</h4>
+                    <p>Bli en del av det levende nabolaget</p>
+                </div>
+            </a>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <title>Cards Stack Slider</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1" />
+  <!-- Link Swiper's CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+
+  <!-- Demo styles -->
+  <style>
+    html,
+    body {
+      position: relative;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: #000;
+      font-family: Helvetica Neue, Helvetica, Arial, sans-serif;
+      font-size: 14px;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      transition: background 0.5s ease;
+    }
+
+    /* Background layers for each slide */
+    .background-layer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+      z-index: -1;
+    }
+
+    .background-layer.active {
+      opacity: 1;
+    }
+
+    .bg-1 { 
+      background: url('https://cdn.sanity.io/images/4aans0in/production/783d22ee2eb60daf6ed76c209ec74766ee5002b6-2000x1333.jpg?w=1200&h=800&fm=webp&q=100&fit=max&auto=format') center center;
+      background-size: cover;
+    }
+    .bg-2 { 
+      background: url('https://visittrondheim.no/wp-content/uploads/2023/09/1920x1280_Host_Nidelva_Kajakk-1024x683.jpg') center center;
+      background-size: cover;
+    }
+    .bg-3 { 
+      background: url('https://visittrondheim.no/wp-content/uploads/2021/05/fagn.jpg') center center;
+      background-size: cover;
+    }
+    .bg-4 { 
+      background: url('https://visittrondheim.no/wp-content/uploads/2023/10/1920x1280_Roros_Berre-800x533.jpg') center center;
+      background-size: cover;
+    }
+    .bg-5 { 
+      background: url('https://visittrondheim.no/wp-content/uploads/2023/06/1920x1280_Nidarosdomen_Host_-800x533.jpg') center center;
+      background-size: cover;
+    }
+
+    .demo-slider-container {
+      position: fixed;
+      bottom: 64px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: calc(100% - 96px);
+      max-width: none;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    .demo-slider-container::before {
+      content: '';
+      position: absolute;
+      bottom: -64px;
+      left: -48px;
+      right: -48px;
+      height: 300px;
+      background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 50%, transparent 100%);
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .demo-slider-wrap {
+      position: relative;
+      height: 200px;
+    }
+
+    .demo-slider {
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+    }
+
+    /* Cards Stack Effect */
+    .swiper {
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+
+    .swiper-slide {
+      text-align: center;
+      font-size: 18px;
+      background: #444;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-radius: 16px;
+      backface-visibility: visible;
+      overflow: visible;
+      transform-style: preserve-3d;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    }
+
+    .swiper-slide img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      border-radius: inherit;
+    }
+
+    /* Demo card styles - Content Layout */
+    .card-content {
+      width: 100%;
+      height: 100%;
+      border-radius: inherit;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 20px;
+      color: white;
+      position: relative;
+      box-sizing: border-box;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      text-align: left;
+    }
+
+    .card-title {
+      font-size: 1.5rem;
+      font-weight: bold;
+      margin-bottom: 8px;
+      color: #1a1a1a;
+      line-height: 1.2;
+    }
+
+    .card-description {
+      font-size: 0.9rem;
+      color: #666;
+      margin-bottom: 16px;
+      line-height: 1.4;
+    }
+
+    .card-cta {
+      display: inline-flex;
+      align-items: center;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #007AFF;
+      text-decoration: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .card-cta:hover {
+      opacity: 0.7;
+    }
+
+    .card-cta::after {
+      content: '→';
+      margin-left: 6px;
+      font-size: 1rem;
+    }
+
+    /* Card color themes */
+    .card-1 { background: linear-gradient(135deg, #8e8e93 0%, #8e8e93 100%); }
+    .card-2 { background: linear-gradient(135deg, #aeaeb2 0%, #aeaeb2 100%); }
+    .card-3 { background: linear-gradient(135deg, #c7c7cc 0%, #c7c7cc 100%); }
+    .card-4 { background: linear-gradient(135deg, #d1d1d6 0%, #d1d1d6 100%); }
+    .card-5 { background: linear-gradient(135deg, #e5e5ea 0%, #e5e5ea 100%); }
+
+    .card-back {
+      background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Background layers -->
+  <div class="background-layer bg-1 active" data-slide="0"></div>
+  <div class="background-layer bg-2" data-slide="1"></div>
+  <div class="background-layer bg-3" data-slide="2"></div>
+  <div class="background-layer bg-4" data-slide="3"></div>
+  <div class="background-layer bg-5" data-slide="4"></div>
+
+  <div id="app">
+    <div class="demo-slider-container">
+      <div class="demo-slider-wrap">
+        <div class="demo-slider swiper">
+          <div class="swiper-wrapper">
+            
+            <div class="swiper-slide">
+              <div class="card-content">
+                <h3 class="card-title">Nordic Flavours</h3>
+                <p class="card-description">Discover world-class ingredients from sea, fjord and mountains in Trondheim's award-winning restaurant scene.</p>
+                <a href="#" class="card-cta">View restaurants</a>
+              </div>
+            </div>
+
+            <div class="swiper-slide">
+              <div class="card-content">
+                <h3 class="card-title">Outdoor Adventures</h3>
+                <p class="card-description">Explore autumn colours through hiking trails, kayaking on Nidelva river and cozy forest huts in Bymarka.</p>
+                <a href="#" class="card-cta">Find activities</a>
+              </div>
+            </div>
+
+            <div class="swiper-slide">
+              <div class="card-content">
+                <h3 class="card-title">Museums & Culture</h3>
+                <p class="card-description">Step into history, art and discovery at Rockheim, Sverresborg, Ringve Music Museum and more fascinating venues.</p>
+                <a href="#" class="card-cta">Explore museums</a>
+              </div>
+            </div>
+
+            <div class="swiper-slide">
+              <div class="card-content">
+                <h3 class="card-title">Neighbourhoods</h3>
+                <p class="card-description">Wander through Bakklandet's wooden houses, Solsiden's waterfront and discover each area's unique character.</p>
+                <a href="#" class="card-cta">Discover areas</a>
+              </div>
+            </div>
+
+            <div class="swiper-slide">
+              <div class="card-content">
+                <h3 class="card-title">Historic Highlights</h3>
+                <p class="card-description">Visit the majestic Nidaros Cathedral, medieval streets and learn about Trondheim's 1000-year history.</p>
+                <a href="#" class="card-cta">Learn more</a>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Swiper JS -->
+  <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+
+  <!-- Initialize Swiper -->
+  <script>
+    let swiper;
+
+    function initSwiper(direction = 'vertical') {
+      if (swiper) {
+        swiper.destroy(true, true);
+      }
+
+      swiper = new Swiper('.demo-slider', {
+        effect: 'cards',
+        grabCursor: true,
+        direction: direction,
+        cardsEffect: {
+          perSlideOffset: 8,
+          perSlideRotate: 2,
+          rotate: true,
+          slideShadows: true,
+        },
+        keyboard: {
+          enabled: true,
+        },
+        mousewheel: {
+          thresholdDelta: 50,
+        },
+        touchRatio: 1,
+        touchAngle: 45,
+        simulateTouch: true,
+        pagination: {
+          el: '.swiper-pagination',
+          clickable: true,
+        },
+        on: {
+          slideChange: function () {
+            updateBackground(this.activeIndex);
+          }
+        }
+      });
+    }
+
+    function updateBackground(activeIndex) {
+      // Remove active class from all backgrounds
+      document.querySelectorAll('.background-layer').forEach(bg => {
+        bg.classList.remove('active');
+      });
+      
+      // Add active class to current background
+      const currentBg = document.querySelector(`[data-slide="${activeIndex}"]`);
+      if (currentBg) {
+        currentBg.classList.add('active');
+      }
+    }
+
+    // Initialize with horizontal direction
+    initSwiper('horizontal');
+  </script>
+</body>
+
+</html>
