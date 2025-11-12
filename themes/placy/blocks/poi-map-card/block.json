@@ -1,0 +1,23 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 2,
+  "name": "placy/poi-map-card",
+  "title": "POI Kart",
+  "description": "Interaktivt kartblokk som viser valgte POIs (Point of Interest) på et kart",
+  "category": "media",
+  "icon": "location-alt",
+  "keywords": ["poi", "map", "kart", "location"],
+  "acf": {
+    "mode": "preview",
+    "renderTemplate": "template.php"
+  },
+  "supports": {
+    "align": ["wide", "full"],
+    "anchor": true
+  },
+  "example": {
+    "attributes": {
+      "mode": "preview"
+    }
+  }
+}

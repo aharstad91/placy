@@ -67,11 +67,19 @@ function placy_enqueue_scripts() {
     // Enqueue Google Fonts (Raleway)
     wp_enqueue_style( 'google-fonts-raleway', 'https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;600;700&display=swap', array(), null );
     
+    // Enqueue Mapbox GL JS
+    wp_enqueue_style( 'mapbox-gl-css', 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css', array(), '2.15.0' );
+    wp_enqueue_script( 'mapbox-gl-js', 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js', array(), '2.15.0', true );
+    
     // Enqueue theme JavaScript files
-    wp_enqueue_script( 'placy-app', get_template_directory_uri() . '/js/app.js', array(), '1.0.0', true );
-    wp_enqueue_script( 'placy-components', get_template_directory_uri() . '/js/components.js', array(), '1.0.0', true );
-    wp_enqueue_script( 'placy-config', get_template_directory_uri() . '/js/config.js', array(), '1.0.0', true );
-    wp_enqueue_script( 'placy-performance', get_template_directory_uri() . '/js/performance.js', array(), '1.0.0', true );
+    // Prototype scripts disabled - using production POI map scripts
+    // wp_enqueue_script( 'placy-app', get_template_directory_uri() . '/js/app.js', array(), '1.0.0', true );
+    // wp_enqueue_script( 'placy-components', get_template_directory_uri() . '/js/components.js', array(), '1.0.0', true );
+    // wp_enqueue_script( 'placy-config', get_template_directory_uri() . '/js/config.js', array(), '1.0.0', true );
+    // wp_enqueue_script( 'placy-performance', get_template_directory_uri() . '/js/performance.js', array(), '1.0.0', true );
+    
+    // POI Map Modal script
+    wp_enqueue_script( 'placy-poi-map-modal', get_template_directory_uri() . '/js/poi-map-modal.js', array(), '1.0.0', true );
     
     // Add Tailwind configuration inline
     $tailwind_config = "
@@ -132,3 +140,32 @@ require_once get_template_directory() . '/inc/acf-fields.php';
  * Include custom rewrites
  */
 require_once get_template_directory() . '/inc/rewrites.php';
+
+/**
+ * Include Mapbox configuration
+ */
+require_once get_template_directory() . '/inc/mapbox-config.php';
+
+/**
+ * Register ACF Blocks
+ */
+function placy_register_acf_blocks() {
+    if ( function_exists( 'acf_register_block_type' ) ) {
+        // Register POI Map Card block
+        acf_register_block_type( array(
+            'name'              => 'poi-map-card',
+            'title'             => __( 'POI Kart', 'placy' ),
+            'description'       => __( 'Interaktivt kartblokk som viser valgte POIs', 'placy' ),
+            'render_template'   => get_template_directory() . '/blocks/poi-map-card/template.php',
+            'category'          => 'media',
+            'icon'              => 'location-alt',
+            'keywords'          => array( 'poi', 'map', 'kart', 'location' ),
+            'mode'              => 'preview',
+            'supports'          => array(
+                'align' => array( 'wide', 'full' ),
+                'anchor' => true,
+            ),
+        ) );
+    }
+}
+add_action( 'acf/init', 'placy_register_acf_blocks' );

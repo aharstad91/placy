@@ -148,67 +148,54 @@ h1, h2, h3, h4, h5, h6 {
     display: block;
 }
 
-/* POI Styles - Consolidated */
-.poi-marker {
-    position: absolute;
-    width: 32px;
-    height: 32px;
-    background: #059669;
-    border: 3px solid white;
-    border-radius: 50%;
+/* Mapbox POI Marker Styles */
+.mapbox-poi-marker {
     cursor: pointer;
+    color: var(--overvik-green);
+    transition: all 0.3s ease;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    box-shadow: var(--shadow-sm);
-    transition: all var(--animation-fast) ease;
-    z-index: 10;
+    gap: 4px;
 }
 
-.poi-marker:hover,
-.poi-marker:focus {
-    transform: scale(1.1);
-    box-shadow: var(--shadow-md);
-    outline: none;
+.mapbox-poi-marker:hover {
+    color: var(--overvik-dark);
+    transform: scale(1.15);
 }
 
-.poi-marker.coming-soon {
-    background: #6b7280;
+.mapbox-poi-marker.coming-soon {
+    opacity: 0.5;
     cursor: not-allowed;
 }
 
-.poi-marker svg {
-    width: 16px;
-    height: 16px;
-    fill: white;
-}
-
-.poi-label {
-    position: absolute;
-    top: 36px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(0, 0, 0, 0.8);
-    color: white;
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 10px;
+.mapbox-poi-label {
+    background: white;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 13px;
     font-weight: 500;
     white-space: nowrap;
-    pointer-events: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Override default Mapbox marker anchor */
+.mapboxgl-marker {
+    transform-origin: center bottom;
 }
 
 /* POI Sheet (Bottom Drawer) */
 .poi-sheet {
-    position: absolute;
+    position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
     background: white;
-    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
-    transition: height 0.3s ease;
-    z-index: 100;
+    border-top-left-radius: var(--radius-lg);
+    border-top-right-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    transition: height 0.3s ease-in-out;
+    z-index: 10001;
     overflow: hidden;
 }
 
@@ -217,18 +204,229 @@ h1, h2, h3, h4, h5, h6 {
 .poi-sheet.open { height: 60vh; }
 
 .poi-sheet-header {
-    padding: var(--spacing-md) var(--spacing-lg);
-    border-bottom: 1px solid #e5e7eb;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    padding: var(--spacing-lg);
+    border-bottom: 1px solid #e5e7eb;
     background: white;
+    position: sticky;
+    top: 0;
+    z-index: 1;
 }
 
 .poi-sheet-title {
-    font-size: 18px;
+    font-size: 1.25rem;
     font-weight: 600;
-    color: #111827;
+    color: #1f2937;
+    margin: 0;
+}
+
+/* POI Map Modal Styles */
+.poi-map-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    z-index: 10000;
+    backdrop-filter: blur(4px);
+}
+
+.poi-map-modal.active {
+    display: block;
+}
+
+.poi-modal-header {
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 10002;
+    padding: var(--spacing-md);
+}
+
+.poi-modal-close {
+    background: white;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-size: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-md);
+    transition: background-color 0.2s;
+}
+
+.poi-modal-close:hover {
+    background: #f3f4f6;
+}
+
+.poi-map-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #e5e7eb;
+}
+
+.poi-map-canvas.active {
+    display: block;
+}
+
+/* POI Sheet Content */
+.poi-sheet-content {
+    padding: var(--spacing-lg);
+    overflow-y: auto;
+    height: calc(100% - 72px);
+}
+
+.poi-sheet-location {
+    display: flex;
+    align-items: center;
+    color: #6b7280;
+    font-size: 0.875rem;
+    margin-bottom: var(--spacing-md);
+}
+
+.poi-sheet-image {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-radius: var(--radius-md);
+    margin-bottom: var(--spacing-md);
+}
+
+.poi-sheet-description {
+    color: #4b5563;
+    line-height: 1.6;
+    margin-bottom: var(--spacing-lg);
+}
+
+.poi-sheet-actions {
+    display: flex;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-lg);
+}
+
+.poi-sheet-button {
+    flex: 1;
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-radius: var(--radius-md);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+}
+
+.poi-sheet-button.primary {
+    background: var(--overvik-green);
+    color: white;
+}
+
+.poi-sheet-button.primary:hover {
+    background: #6a7d7b;
+}
+
+.poi-sheet-button.secondary {
+    background: #f3f4f6;
+    color: #4b5563;
+}
+
+.poi-sheet-button.secondary:hover {
+    background: #e5e7eb;
+}
+
+.poi-sheet-close {
+    background: none;
+    border: none;
+    font-size: 28px;
+    cursor: pointer;
+    color: #9ca3af;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+}
+
+.poi-sheet-close:hover {
+    background: #f3f4f6;
+}
+
+/* POI Tags Container */
+.poi-tags-container {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.poi-tags-container::-webkit-scrollbar {
+    display: none;
+}
+
+.poi-tag {
+    flex-shrink: 0;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(8px);
+    border-radius: 9999px;
+    padding: 0.5rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.poi-tag:hover {
+    background: rgba(255, 255, 255, 1);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.poi-tag-icon {
+    font-size: 1rem;
+}
+
+.poi-tag-text {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #1f2937;
+}
+
+.poi-tag.coming-soon {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.poi-tag.coming-soon:hover {
+    transform: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* POI Map Preview Card */
+.poi-map-preview {
+    position: relative;
+    background-color: #f3f4f6;
+    border-radius: 0.75rem;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.poi-map-preview:hover {
+    background-color: #e5e7eb;
 }
 
 /* Table of Contents */

@@ -1,0 +1,335 @@
+/**
+ * POI Map Modal Functionality
+ * 
+ * @package Placy
+ * @since 1.0.0
+ */
+
+// Global storage for POI map data and Mapbox instances
+window.placyPOIMaps = window.placyPOIMaps || {};
+window.placyMapboxInstance = null;
+
+/**
+ * Initialize all POI map blocks on page load
+ */
+document.addEventListener('DOMContentLoaded', function() {
+    // Find all POI map data blocks
+    const mapDataElements = document.querySelectorAll('.poi-map-data');
+    
+    mapDataElements.forEach(function(element) {
+        const data = JSON.parse(element.textContent);
+        window.placyPOIMaps[data.blockId] = data;
+    });
+    
+    // Set Mapbox access token
+    if (typeof mapboxgl !== 'undefined' && typeof placyMapbox !== 'undefined') {
+        mapboxgl.accessToken = placyMapbox.accessToken;
+    }
+});
+
+/**
+ * Open POI Map Modal
+ * 
+ * @param {string} blockId - Unique block ID
+ * @param {string} poiSlug - Optional POI slug to highlight
+ */
+function openPOIMapModal(blockId, poiSlug) {
+    const mapData = window.placyPOIMaps[blockId];
+    
+    if (!mapData || !mapData.pois || mapData.pois.length === 0) {
+        console.error('No POI data found for block:', blockId);
+        return;
+    }
+    
+    // Get or create modal
+    let modal = document.getElementById('poi-map-modal');
+    if (!modal) {
+        modal = createPOIMapModal();
+        document.body.appendChild(modal);
+    }
+    
+    // Store current scroll position
+    const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+    
+    // Clear previous content
+    const mapCanvas = modal.querySelector('.poi-map-canvas');
+    mapCanvas.innerHTML = '<div id="mapbox-container" style="width: 100%; height: 100%;"></div>';
+    
+    // Disable body scroll
+    document.body.classList.add('modal-open');
+    document.body.style.top = `-${scrollPosition}px`;
+    
+    // Show modal
+    modal.classList.add('active');
+    
+    // Initialize Mapbox map after modal is visible
+    setTimeout(function() {
+        initializeMapboxMap(mapData, poiSlug);
+    }, 100);
+    
+    console.log('POI Map opened:', blockId);
+}
+
+/**
+ * Initialize Mapbox Map
+ * 
+ * @param {Object} mapData - Map data with POIs
+ * @param {string} poiSlug - Optional POI slug to highlight
+ */
+function initializeMapboxMap(mapData, poiSlug) {
+    if (typeof mapboxgl === 'undefined') {
+        console.error('Mapbox GL JS is not loaded');
+        return;
+    }
+    
+    // Destroy previous map instance if exists
+    if (window.placyMapboxInstance) {
+        window.placyMapboxInstance.remove();
+        window.placyMapboxInstance = null;
+    }
+    
+    // Calculate bounds to fit all POIs
+    const bounds = new mapboxgl.LngLatBounds();
+    mapData.pois.forEach(function(poi) {
+        bounds.extend([poi.longitude, poi.latitude]);
+    });
+    
+    // Create map
+    const map = new mapboxgl.Map({
+        container: 'mapbox-container',
+        style: placyMapbox.style || 'mapbox://styles/mapbox/streets-v12',
+        bounds: bounds,
+        padding: { top: 80, bottom: 200, left: 50, right: 50 },
+        fitBoundsOptions: {
+            maxZoom: 14
+        }
+    });
+    
+    window.placyMapboxInstance = map;
+    
+    // Add navigation controls
+    map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+    
+    // Add POI markers after map loads
+    map.on('load', function() {
+        mapData.pois.forEach(function(poi) {
+            addMapboxMarker(map, poi);
+        });
+        
+        // If specific POI is requested, show it
+        if (poiSlug) {
+            const poi = mapData.pois.find(p => p.slug === poiSlug);
+            if (poi) {
+                setTimeout(function() {
+                    showPOISheet(poi);
+                }, 300);
+            }
+        }
+    });
+}
+
+/**
+ * Add Mapbox Marker for POI
+ * 
+ * @param {Object} map - Mapbox map instance
+ * @param {Object} poi - POI data
+ */
+function addMapboxMarker(map, poi) {
+    // Create custom marker element
+    const el = document.createElement('div');
+    el.className = 'mapbox-poi-marker';
+    el.innerHTML = `
+        <svg class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 0C7.31 0 3.5 3.81 3.5 8.5c0 6.13 7.33 14.46 8.02 15.2a1 1 0 001.46 0c.69-.74 8.02-9.07 8.02-15.2C20.5 3.81 16.69 0 12 0zm0 12a3.5 3.5 0 110-7 3.5 3.5 0 010 7z"/>
+        </svg>
+        <div class="mapbox-poi-label">${poi.title}</div>
+    `;
+    
+    if (!poi.clickable) {
+        el.classList.add('coming-soon');
+    }
+    
+    // Create marker
+    const marker = new mapboxgl.Marker(el)
+        .setLngLat([poi.longitude, poi.latitude])
+        .addTo(map);
+    
+    // Add click handler
+    if (poi.clickable) {
+        el.addEventListener('click', function(e) {
+            e.stopPropagation();
+            showPOISheet(poi);
+        });
+    } else {
+        el.addEventListener('click', function(e) {
+            e.stopPropagation();
+            alert('Denne POI-en er ikke tilgjengelig ennå.');
+        });
+    }
+}
+
+/**
+ * Create POI Map Modal Structure
+ */
+function createPOIMapModal() {
+    const modal = document.createElement('div');
+    modal.id = 'poi-map-modal';
+    modal.className = 'poi-map-modal';
+    
+    modal.innerHTML = `
+        <div class="poi-modal-header">
+            <button class="poi-modal-close" onclick="closePOIMapModal()">&times;</button>
+        </div>
+        
+        <div class="poi-map-canvas">
+            <!-- POI Markers will be inserted here -->
+        </div>
+        
+        <div id="poi-sheet" class="poi-sheet closed" role="dialog" aria-labelledby="poiSheetTitle">
+            <div class="poi-sheet-header">
+                <h3 id="poiSheetTitle" class="poi-sheet-title">POI Title</h3>
+                <button class="poi-sheet-close" onclick="hidePOISheet()">&times;</button>
+            </div>
+            <div class="poi-sheet-content">
+                <div id="poiSheetBody">
+                    <!-- POI content will be inserted here -->
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Close modal when clicking outside
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            closePOIMapModal();
+        }
+    });
+    
+    // Prevent clicks on map canvas from closing
+    modal.querySelector('.poi-map-canvas').addEventListener('click', function(e) {
+        e.stopPropagation();
+    });
+    
+    // Prevent clicks on POI sheet from closing
+    modal.querySelector('#poi-sheet').addEventListener('click', function(e) {
+        e.stopPropagation();
+    });
+    
+    return modal;
+}
+
+/**
+ * Create POI Marker Element
+ * 
+ * @param {Object} poi - POI data object
+ * @returns {HTMLElement}
+ */
+
+
+/**
+ * Show POI Bottom Sheet
+ * 
+ * @param {Object} poi - POI data object
+ */
+function showPOISheet(poi) {
+    const sheet = document.getElementById('poi-sheet');
+    const title = document.getElementById('poiSheetTitle');
+    const body = document.getElementById('poiSheetBody');
+    
+    if (!sheet || !title || !body) return;
+    
+    // Update content
+    title.textContent = poi.title;
+    
+    body.innerHTML = `
+        <div class="poi-sheet-location">
+            <svg class="w-4 h-4 inline mr-1" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 0C7.31 0 3.5 3.81 3.5 8.5c0 6.13 7.33 14.46 8.02 15.2a1 1 0 001.46 0c.69-.74 8.02-9.07 8.02-15.2C20.5 3.81 16.69 0 12 0zm0 12a3.5 3.5 0 110-7 3.5 3.5 0 010 7z"/>
+            </svg>
+            ${poi.title}
+        </div>
+        ${poi.thumbnail ? `<img src="${poi.thumbnail}" alt="${poi.title}" class="poi-sheet-image">` : ''}
+        <p class="poi-sheet-description">${poi.description}</p>
+        <div class="poi-sheet-actions">
+            <button class="poi-sheet-button primary" onclick="window.location.href='/poi/${poi.slug}'">
+                Besøk
+            </button>
+            <button class="poi-sheet-button secondary" onclick="alert('Del funksjonalitet kommer')">
+                Del
+            </button>
+            <button class="poi-sheet-button secondary" onclick="alert('Favoritt funksjonalitet kommer')">
+                Favoritt
+            </button>
+        </div>
+    `;
+    
+    // Show sheet
+    sheet.classList.remove('closed');
+    sheet.classList.add('peek');
+    
+    // Expand to full after a moment
+    setTimeout(function() {
+        sheet.classList.remove('peek');
+        sheet.classList.add('open');
+    }, 100);
+}
+
+/**
+ * Hide POI Bottom Sheet
+ */
+function hidePOISheet() {
+    const sheet = document.getElementById('poi-sheet');
+    if (sheet) {
+        sheet.classList.remove('open', 'peek');
+        sheet.classList.add('closed');
+    }
+}
+
+/**
+ * Close POI Map Modal
+ */
+function closePOIMapModal() {
+    const modal = document.getElementById('poi-map-modal');
+    if (!modal) return;
+    
+    // Hide sheet first
+    hidePOISheet();
+    
+    // Get stored scroll position
+    const scrollPosition = Math.abs(parseInt(document.body.style.top || '0'));
+    
+    // Enable body scroll
+    document.body.classList.remove('modal-open');
+    document.body.style.top = '';
+    
+    // Restore scroll position
+    window.scrollTo(0, scrollPosition);
+    
+    // Hide modal
+    modal.classList.remove('active');
+    
+    // Destroy Mapbox instance
+    if (window.placyMapboxInstance) {
+        window.placyMapboxInstance.remove();
+        window.placyMapboxInstance = null;
+    }
+    
+    console.log('POI Map closed');
+}
+
+/**
+ * Keyboard handling
+ */
+document.addEventListener('keydown', function(e) {
+    const modal = document.getElementById('poi-map-modal');
+    if (modal && modal.classList.contains('active')) {
+        if (e.key === 'Escape') {
+            const sheet = document.getElementById('poi-sheet');
+            if (sheet && !sheet.classList.contains('closed')) {
+                hidePOISheet();
+            } else {
+                closePOIMapModal();
+            }
+        }
+    }
+});
