@@ -151,19 +151,12 @@ add_action( 'acf/init', 'placy_register_acf_blocks' );
  * Enqueue block editor styles
  */
 function placy_block_editor_styles() {
-    // Enqueue Tailwind CSS in the editor
-    wp_enqueue_style(
-        'placy-tailwind-editor',
-        get_template_directory_uri() . '/css/tailwind-output.css',
-        array(),
-        '1.0.0'
-    );
-    
     // Enqueue POI Map Card styles in the editor
+    // This includes Tailwind classes but scoped to the block
     wp_enqueue_style(
         'placy-poi-map-card-editor',
         get_template_directory_uri() . '/blocks/poi-map-card/style.css',
-        array( 'placy-tailwind-editor' ),
+        array(),
         '1.0.0'
     );
 }

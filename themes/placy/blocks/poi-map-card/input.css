@@ -1,0 +1,55 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom block styles that aren't Tailwind utilities */
+.poi-map-card-block {
+    margin: 2rem 0;
+}
+
+.poi-map-preview {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+/* POI Tags Container */
+.poi-tags-container {
+    scrollbar-width: thin;
+}
+
+.poi-tags-container::-webkit-scrollbar {
+    height: 4px;
+}
+
+.poi-tags-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.poi-tags-container::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 2px;
+}
+
+.poi-tag {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+/* Editor specific styles */
+.block-editor-block-list__block .poi-map-card-block {
+    margin: 1rem 0;
+}
+
+.block-editor-block-list__block .poi-map-preview {
+    min-height: 300px;
+}
+
+/* Admin preview mode */
+.acf-block-preview .poi-map-preview {
+    pointer-events: none;
+}
+
+.acf-block-preview .poi-tag {
+    pointer-events: none;
+}
