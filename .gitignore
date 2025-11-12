@@ -12,3 +12,10 @@ plugins/*
 *.log
 *.cache
 .DS_Store
+
+# Node modules and build files
+node_modules/
+package-lock.json
+
+# Tailwind build output (generated from source)
+themes/placy/css/tailwind-output.css

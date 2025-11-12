@@ -1,12 +1,18 @@
 {
   "name": "placy",
   "version": "1.0.0",
-  "description": "## 📊 Audit Rapport & Optimaliseringer",
+  "description": "Placy WordPress Theme",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build:css": "tailwindcss -i ./css/tailwind-input.css -o ./css/tailwind-output.css --minify",
+    "watch:css": "tailwindcss -i ./css/tailwind-input.css -o ./css/tailwind-output.css --watch"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "autoprefixer": "^10.4.22",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.18"
+  }
 }

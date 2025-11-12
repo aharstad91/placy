@@ -52,14 +52,10 @@ add_action( 'after_setup_theme', 'placy_theme_setup' );
  * Enqueue scripts and styles
  */
 function placy_enqueue_scripts() {
-    // Enqueue main stylesheet
+        // Enqueue theme styles
     wp_enqueue_style( 'placy-style', get_stylesheet_uri(), array(), '1.0.0' );
-    
-    // Enqueue custom styles
-    wp_enqueue_style( 'placy-custom-styles', get_template_directory_uri() . '/css/styles.css', array(), '1.0.0' );
-    
-    // Enqueue Tailwind CSS from CDN
-    wp_enqueue_script( 'tailwind-cdn', 'https://cdn.tailwindcss.com', array(), null, false );
+    wp_enqueue_style( 'placy-tailwind', get_template_directory_uri() . '/css/tailwind-output.css', array(), '1.0.0' );
+    wp_enqueue_style( 'placy-custom', get_template_directory_uri() . '/css/styles.css', array(), '1.0.0' );
     
     // Enqueue Adobe Typekit fonts
     wp_enqueue_style( 'adobe-typekit', 'https://use.typekit.net/jlp3dzl.css', array(), null );
@@ -80,26 +76,6 @@ function placy_enqueue_scripts() {
     
     // POI Map Modal script
     wp_enqueue_script( 'placy-poi-map-modal', get_template_directory_uri() . '/js/poi-map-modal.js', array(), '1.0.0', true );
-    
-    // Add Tailwind configuration inline
-    $tailwind_config = "
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'overvik-green': '#78908E',
-                        'overvik-light': '#D1E5E6',
-                    },
-                    fontFamily: {
-                        'campaign': ['campaign', 'Raleway', 'sans-serif'],
-                        'campaign-serif': ['campaign-serif', 'Raleway', 'serif'],
-                        'raleway': ['Raleway', 'sans-serif'],
-                    }
-                }
-            }
-        }
-    ";
-    wp_add_inline_script( 'tailwind-cdn', $tailwind_config );
 }
 add_action( 'wp_enqueue_scripts', 'placy_enqueue_scripts' );
 
