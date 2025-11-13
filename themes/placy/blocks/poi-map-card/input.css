@@ -53,3 +53,89 @@
 .acf-block-preview .poi-tag {
     pointer-events: none;
 }
+
+/* Desktop Active State (≥1024px) */
+@media (min-width: 1024px) {
+    .poi-map-card-block {
+        position: relative;
+    }
+    
+    .poi-map-card-block .inline-map-container {
+        width: 140%;
+        height: calc(var(--viewport-height, 100vh) * 0.4);
+        border-radius: 0.5rem;
+        overflow: hidden;
+        position: absolute;
+        top: 0;
+        left: -20%;
+        opacity: 0;
+        transform: scale(0.9) translateY(10px);
+        transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1), 
+                    transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        pointer-events: none;
+    }
+    
+    .poi-map-card-block.map-active .inline-map-container {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+        pointer-events: auto;
+    }
+    
+    .poi-map-card-block .poi-map-preview {
+        transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1), 
+                    transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .poi-map-card-block.map-active .poi-map-preview {
+        opacity: 0;
+        transform: scale(1.05);
+        pointer-events: none;
+    }
+    
+    /* Loading overlay to hide tile loading */
+    .map-loading-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: #f3f4f6;
+        z-index: 10;
+        opacity: 1;
+        transition: opacity 0.3s ease-out;
+        pointer-events: none;
+    }
+    
+    /* Close button for inline map */
+    .map-close-button {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        z-index: 20;
+        background: white;
+        border: none;
+        border-radius: 0.5rem;
+        padding: 0.5rem;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        transition: all 0.2s ease;
+        color: #4b5563;
+    }
+    
+    .map-close-button:hover {
+        background: #f9fafb;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        color: #1f2937;
+    }
+    
+    .map-close-button:active {
+        transform: scale(0.95);
+    }
+}
+
+/* Mobile: Keep modal behavior */
+@media (max-width: 1023px) {
+    .poi-map-card-block .inline-map-container {
+        display: none !important;
+    }
+}

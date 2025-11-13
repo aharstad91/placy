@@ -111,15 +111,15 @@ if ( function_exists( 'acf_add_local_field_group' ) ) {
 }
 
 /**
- * Register POI Fields
+ * Register Point Fields
  */
 if ( function_exists( 'acf_add_local_field_group' ) ) {
     acf_add_local_field_group( array(
-        'key' => 'group_poi_fields',
-        'title' => 'POI Fields',
+        'key' => 'group_point_fields',
+        'title' => 'Point Fields',
         'fields' => array(
             array(
-                'key' => 'field_poi_latitude',
+                'key' => 'field_point_latitude',
                 'label' => 'Latitude',
                 'name' => 'latitude',
                 'type' => 'text',
@@ -128,7 +128,7 @@ if ( function_exists( 'acf_add_local_field_group' ) ) {
                 'placeholder' => '62.3113',
             ),
             array(
-                'key' => 'field_poi_longitude',
+                'key' => 'field_point_longitude',
                 'label' => 'Longitude',
                 'name' => 'longitude',
                 'type' => 'text',
@@ -142,7 +142,95 @@ if ( function_exists( 'acf_add_local_field_group' ) ) {
                 array(
                     'param' => 'post_type',
                     'operator' => '==',
-                    'value' => 'poi',
+                    'value' => 'point',
+                ),
+            ),
+        ),
+        'menu_order' => 0,
+        'position' => 'normal',
+        'style' => 'default',
+        'label_placement' => 'top',
+        'instruction_placement' => 'label',
+    ) );
+}
+
+/**
+ * Register Detail Fields
+ */
+if ( function_exists( 'acf_add_local_field_group' ) ) {
+    acf_add_local_field_group( array(
+        'key' => 'group_detail_fields',
+        'title' => 'Detail Fields',
+        'fields' => array(
+            array(
+                'key' => 'field_detail_latitude',
+                'label' => 'Latitude',
+                'name' => 'latitude',
+                'type' => 'text',
+                'instructions' => 'Latitude-koordinat (f.eks. 62.3113)',
+                'required' => 1,
+                'placeholder' => '62.3113',
+            ),
+            array(
+                'key' => 'field_detail_longitude',
+                'label' => 'Longitude',
+                'name' => 'longitude',
+                'type' => 'text',
+                'instructions' => 'Longitude-koordinat (f.eks. 6.1326)',
+                'required' => 1,
+                'placeholder' => '6.1326',
+            ),
+        ),
+        'location' => array(
+            array(
+                array(
+                    'param' => 'post_type',
+                    'operator' => '==',
+                    'value' => 'detail',
+                ),
+            ),
+        ),
+        'menu_order' => 0,
+        'position' => 'normal',
+        'style' => 'default',
+        'label_placement' => 'top',
+        'instruction_placement' => 'label',
+    ) );
+}
+
+/**
+ * Register Area Fields
+ */
+if ( function_exists( 'acf_add_local_field_group' ) ) {
+    acf_add_local_field_group( array(
+        'key' => 'group_area_fields',
+        'title' => 'Area Fields',
+        'fields' => array(
+            array(
+                'key' => 'field_area_latitude',
+                'label' => 'Latitude',
+                'name' => 'latitude',
+                'type' => 'text',
+                'instructions' => 'Latitude-koordinat (f.eks. 62.3113)',
+                'required' => 1,
+                'placeholder' => '62.3113',
+            ),
+            array(
+                'key' => 'field_area_longitude',
+                'label' => 'Longitude',
+                'name' => 'longitude',
+                'type' => 'text',
+                'instructions' => 'Longitude-koordinat (f.eks. 6.1326)',
+                'required' => 1,
+                'placeholder' => '6.1326',
+            ),
+        ),
+        'location' => array(
+            array(
+                array(
+                    'param' => 'post_type',
+                    'operator' => '==',
+                    'value' => 'area',
                 ),
             ),
         ),
@@ -174,20 +262,25 @@ if ( function_exists( 'acf_add_local_field_group' ) ) {
             ),
             array(
                 'key' => 'field_selected_pois',
-                'label' => 'Velg POIs',
+                'label' => 'Velg Points',
                 'name' => 'selected_pois',
                 'type' => 'relationship',
-                'instructions' => 'Velg hvilke POIs som skal vises på kartet',
+                'instructions' => 'Velg hvilke Points som skal vises på kartet',
                 'required' => 1,
                 'post_type' => array(
-                    0 => 'poi',
+                    0 => 'point',
                 ),
                 'filters' => array(
                     0 => 'search',
+                    1 => 'post_type',
                 ),
                 'return_format' => 'object',
                 'min' => 1,
                 'max' => '',
+                'elements' => array(
+                    0 => 'featured_image',
+                ),
+                'bidirectional_target' => array(),
             ),
         ),
         'location' => array(

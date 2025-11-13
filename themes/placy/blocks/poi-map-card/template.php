@@ -1,6 +1,6 @@
 <?php
 /**
- * POI Map Card Block Template
+ * Point Map Card Block Template
  *
  * @package Placy
  * @since 1.0.0
@@ -12,28 +12,28 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Get block fields
-$block_title = get_field('map_title') ?: 'POI Kart';
-$selected_pois = get_field('selected_pois');
+$block_title = get_field('map_title') ?: 'Point Kart';
+$selected_points = get_field('selected_pois');
 $block_id = 'poi-map-' . $block['id'];
 
 // Generate unique ID for this block instance
 $unique_id = uniqid('poi-map-');
 
-// Prepare POI data
-$poi_data = array();
-if ( $selected_pois ) {
-    foreach ( $selected_pois as $poi_post ) {
-        $poi_id = $poi_post->ID;
-        $lat = get_field('latitude', $poi_id);
-        $lng = get_field('longitude', $poi_id);
-        $thumbnail = get_the_post_thumbnail_url($poi_id, 'medium');
+// Prepare Point data
+$point_data = array();
+if ( $selected_points ) {
+    foreach ( $selected_points as $point_post ) {
+        $point_id = $point_post->ID;
+        $lat = get_field('latitude', $point_id);
+        $lng = get_field('longitude', $point_id);
+        $thumbnail = get_the_post_thumbnail_url($point_id, 'medium');
         
         if ( $lat && $lng ) {
-            $poi_data[] = array(
-                'id' => $poi_id,
-                'slug' => $poi_post->post_name,
-                'title' => get_the_title($poi_id),
-                'description' => get_the_excerpt($poi_id) ?: get_the_content(null, false, $poi_id),
+            $point_data[] = array(
+                'id' => $point_id,
+                'slug' => $point_post->post_name,
+                'title' => get_the_title($point_id),
+                'description' => get_the_excerpt($point_id) ?: get_the_content(null, false, $point_id),
                 'latitude' => floatval($lat),
                 'longitude' => floatval($lng),
                 'thumbnail' => $thumbnail,
@@ -43,8 +43,8 @@ if ( $selected_pois ) {
     }
 }
 
-// Get first 3 POIs for preview
-$preview_pois = array_slice($poi_data, 0, 3);
+// Get first 3 Points for preview
+$preview_points = array_slice($point_data, 0, 3);
 
 // Classes for the block
 $className = 'poi-map-card-block';
@@ -94,22 +94,22 @@ if ( ! empty( $block['align'] ) ) {
             </div>
         </div>
         
-        <!-- POI Tags - Show first 3 POIs -->
-        <?php if ( ! empty( $preview_pois ) ) : ?>
+        <!-- Point Tags - Show first 3 Points -->
+        <?php if ( ! empty( $preview_points ) ) : ?>
         <div class="absolute bottom-4 left-4 right-4 z-10">
             <div class="poi-tags-container flex gap-2 overflow-x-auto pb-2">
-                <?php foreach ( $preview_pois as $poi ) : ?>
+                <?php foreach ( $preview_points as $point ) : ?>
                 <button class="poi-tag flex-shrink-0 bg-white/90 backdrop-blur-sm rounded-full px-4 py-2 flex items-center gap-2 shadow-sm hover:bg-white transition-colors" 
-                        onclick="event.stopPropagation(); openPOIMapModal('<?php echo esc_js($unique_id); ?>', '<?php echo esc_js($poi['slug']); ?>')">
+                        onclick="event.stopPropagation(); openPOIMapModal('<?php echo esc_js($unique_id); ?>', '<?php echo esc_js($point['slug']); ?>')">
                     <span class="poi-tag-icon text-base">📍</span>
-                    <span class="poi-tag-text text-sm font-medium text-gray-800"><?php echo esc_html($poi['title']); ?></span>
+                    <span class="poi-tag-text text-sm font-medium text-gray-800"><?php echo esc_html($point['title']); ?></span>
                 </button>
                 <?php endforeach; ?>
                 
-                <?php if ( count($poi_data) > 3 ) : ?>
+                <?php if ( count($point_data) > 3 ) : ?>
                 <button class="poi-tag flex-shrink-0 bg-gray-600/90 backdrop-blur-sm rounded-full px-4 py-2 flex items-center gap-2 shadow-sm hover:bg-gray-700 transition-colors" 
                         onclick="event.stopPropagation(); openPOIMapModal('<?php echo esc_js($unique_id); ?>')">
-                    <span class="poi-tag-text text-sm font-medium text-white">+<?php echo count($poi_data) - 3; ?> mer</span>
+                    <span class="poi-tag-text text-sm font-medium text-white">+<?php echo count($point_data) - 3; ?> mer</span>
                 </button>
                 <?php endif; ?>
             </div>
@@ -122,7 +122,7 @@ if ( ! empty( $block['align'] ) ) {
         <?php echo wp_json_encode(array(
             'blockId' => $unique_id,
             'title' => $block_title,
-            'pois' => $poi_data
+            'points' => $point_data
         )); ?>
     </script>
     

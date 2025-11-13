@@ -28,19 +28,125 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 /**
- * Open POI Map Modal
+ * Open POI Map Modal or Expand Inline (Desktop vs Mobile)
  * 
  * @param {string} blockId - Unique block ID
- * @param {string} poiSlug - Optional POI slug to highlight
+ * @param {string} poiSlug - Optional Point slug to highlight
  */
 function openPOIMapModal(blockId, poiSlug) {
     const mapData = window.placyPOIMaps[blockId];
     
-    if (!mapData || !mapData.pois || mapData.pois.length === 0) {
-        console.error('No POI data found for block:', blockId);
+    if (!mapData || !mapData.points || mapData.points.length === 0) {
+        console.error('No Point data found for block:', blockId);
         return;
     }
     
+    // Check if desktop (≥1024px)
+    const isDesktop = window.innerWidth >= 1024;
+    
+    if (isDesktop) {
+        // Desktop: Expand inline
+        openMapInline(blockId, mapData, poiSlug);
+    } else {
+        // Mobile: Open fullscreen modal
+        openMapModal(mapData, poiSlug);
+    }
+    
+    console.log('Point Map opened:', blockId, isDesktop ? '(inline)' : '(modal)');
+}
+
+/**
+ * Open Map Inline (Desktop)
+ * 
+ * @param {string} blockId - Unique block ID
+ * @param {Object} mapData - Map data with Points
+ * @param {string} poiSlug - Optional Point slug to highlight
+ */
+function openMapInline(blockId, mapData, poiSlug) {
+    // Find the block element
+    const blockElement = document.querySelector(`[data-block-id="${blockId}"]`);
+    if (!blockElement) {
+        console.error('Block element not found:', blockId);
+        return;
+    }
+    
+    // Check if already active
+    if (blockElement.classList.contains('map-active')) {
+        return;
+    }
+    
+    // Add active class (activates the map without changing height)
+    blockElement.classList.add('map-active');
+    
+    // Get the preview element
+    const previewElement = blockElement.querySelector('.poi-map-preview');
+    if (!previewElement) {
+        console.error('Preview element not found');
+        return;
+    }
+    
+    // Get or create inline map container
+    let mapContainer = blockElement.querySelector('.inline-map-container');
+    if (!mapContainer) {
+        mapContainer = document.createElement('div');
+        mapContainer.className = 'inline-map-container';
+        mapContainer.innerHTML = `
+            <div id="mapbox-container-inline" style="width: 100%; height: 100%;"></div>
+            <div class="map-loading-overlay"></div>
+            <button class="map-close-button" onclick="closeInlineMap('${blockId}')" aria-label="Lukk kart">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        `;
+        previewElement.parentNode.insertBefore(mapContainer, previewElement.nextSibling);
+    }
+    
+    // Initialize map immediately (no transition delay)
+    setTimeout(function() {
+        initializeMapboxMapInline(mapData, poiSlug);
+        
+        // Remove loading overlay after 500ms
+        setTimeout(function() {
+            const loadingOverlay = mapContainer.querySelector('.map-loading-overlay');
+            if (loadingOverlay) {
+                loadingOverlay.style.opacity = '0';
+                setTimeout(function() {
+                    loadingOverlay.remove();
+                }, 300);
+            }
+        }, 500);
+    }, 50);
+}
+
+/**
+ * Close Inline Map (Desktop)
+ * 
+ * @param {string} blockId - Unique block ID
+ */
+function closeInlineMap(blockId) {
+    const blockElement = document.querySelector(`[data-block-id="${blockId}"]`);
+    if (!blockElement) return;
+    
+    // Remove active class
+    blockElement.classList.remove('map-active');
+    
+    // Destroy Mapbox instance
+    if (window.placyMapboxInstance) {
+        window.placyMapboxInstance.remove();
+        window.placyMapboxInstance = null;
+    }
+    
+    console.log('Inline map closed:', blockId);
+}
+
+/**
+ * Open Map Modal (Mobile)
+ * 
+ * @param {Object} mapData - Map data with Points
+ * @param {string} poiSlug - Optional Point slug to highlight
+ */
+function openMapModal(mapData, poiSlug) {
     // Get or create modal
     let modal = document.getElementById('poi-map-modal');
     if (!modal) {
@@ -64,19 +170,18 @@ function openPOIMapModal(blockId, poiSlug) {
     
     // Initialize Mapbox map after modal is visible
     setTimeout(function() {
-        initializeMapboxMap(mapData, poiSlug);
+        initializeMapboxMap(mapData, poiSlug, 'mapbox-container');
     }, 100);
-    
-    console.log('POI Map opened:', blockId);
 }
 
 /**
- * Initialize Mapbox Map
+ * Initialize Mapbox Map (Generic)
  * 
- * @param {Object} mapData - Map data with POIs
- * @param {string} poiSlug - Optional POI slug to highlight
+ * @param {Object} mapData - Map data with Points
+ * @param {string} poiSlug - Optional Point slug to highlight
+ * @param {string} containerId - Container element ID
  */
-function initializeMapboxMap(mapData, poiSlug) {
+function initializeMapboxMap(mapData, poiSlug, containerId) {
     if (typeof mapboxgl === 'undefined') {
         console.error('Mapbox GL JS is not loaded');
         return;
@@ -88,15 +193,15 @@ function initializeMapboxMap(mapData, poiSlug) {
         window.placyMapboxInstance = null;
     }
     
-    // Calculate bounds to fit all POIs
+    // Calculate bounds to fit all Points
     const bounds = new mapboxgl.LngLatBounds();
-    mapData.pois.forEach(function(poi) {
+    mapData.points.forEach(function(poi) {
         bounds.extend([poi.longitude, poi.latitude]);
     });
     
     // Create map
     const map = new mapboxgl.Map({
-        container: 'mapbox-container',
+        container: containerId || 'mapbox-container',
         style: placyMapbox.style || 'mapbox://styles/mapbox/streets-v12',
         bounds: bounds,
         padding: { top: 80, bottom: 200, left: 50, right: 50 },
@@ -110,15 +215,73 @@ function initializeMapboxMap(mapData, poiSlug) {
     // Add navigation controls
     map.addControl(new mapboxgl.NavigationControl(), 'top-right');
     
-    // Add POI markers after map loads
+    // Add Point markers after map loads
     map.on('load', function() {
-        mapData.pois.forEach(function(poi) {
+        mapData.points.forEach(function(poi) {
             addMapboxMarker(map, poi);
         });
         
-        // If specific POI is requested, show it
+        // If specific Point is requested, show it
         if (poiSlug) {
-            const poi = mapData.pois.find(p => p.slug === poiSlug);
+            const poi = mapData.points.find(p => p.slug === poiSlug);
+            if (poi) {
+                setTimeout(function() {
+                    showPOISheet(poi);
+                }, 300);
+            }
+        }
+    });
+}
+
+/**
+ * Initialize Mapbox Map Inline (Desktop)
+ * 
+ * @param {Object} mapData - Map data with Points
+ * @param {string} poiSlug - Optional Point slug to highlight
+ */
+function initializeMapboxMapInline(mapData, poiSlug) {
+    if (typeof mapboxgl === 'undefined') {
+        console.error('Mapbox GL JS is not loaded');
+        return;
+    }
+    
+    // Destroy previous map instance if exists
+    if (window.placyMapboxInstance) {
+        window.placyMapboxInstance.remove();
+        window.placyMapboxInstance = null;
+    }
+    
+    // Calculate bounds to fit all Points
+    const bounds = new mapboxgl.LngLatBounds();
+    mapData.points.forEach(function(poi) {
+        bounds.extend([poi.longitude, poi.latitude]);
+    });
+    
+    // Create map
+    const map = new mapboxgl.Map({
+        container: 'mapbox-container-inline',
+        style: placyMapbox.style || 'mapbox://styles/mapbox/streets-v12',
+        bounds: bounds,
+        padding: { top: 80, bottom: 80, left: 80, right: 80 },
+        fitBoundsOptions: {
+            maxZoom: 15
+        }
+    });
+    
+    window.placyMapboxInstance = map;
+    
+    // Add navigation controls
+    map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+    
+    // Add Point markers after map loads
+    map.on('load', function() {
+        mapData.points.forEach(function(poi) {
+            addMapboxMarker(map, poi);
+        });
+        
+        // If specific Point is requested, show it
+        if (poiSlug) {
+            const poi = mapData.points.find(p => p.slug === poiSlug);
             if (poi) {
                 setTimeout(function() {
                     showPOISheet(poi);
