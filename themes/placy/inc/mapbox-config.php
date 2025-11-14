@@ -14,8 +14,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Get Mapbox Access Token
  * 
- * For production, this should be stored in wp-config.php:
- * define('MAPBOX_ACCESS_TOKEN', 'your-token-here');
+ * IMPORTANT: Add your Mapbox token in one of these ways:
+ * 
+ * Method 1 (Recommended): In wp-config.php add:
+ * define('MAPBOX_ACCESS_TOKEN', 'pk.eyJ1IjoieW91ci11c2VybmFtZSIsImEiOiJ5b3VyLXRva2VuIn0.your-signature');
+ * 
+ * Method 2: Replace the return value below with your actual token
+ * 
+ * Get your token from: https://account.mapbox.com/access-tokens/
  */
 function placy_get_mapbox_token() {
     // Check if token is defined in wp-config.php
@@ -23,9 +29,9 @@ function placy_get_mapbox_token() {
         return MAPBOX_ACCESS_TOKEN;
     }
     
-    // Fallback to a public token (for development only)
-    // Replace this with your actual Mapbox token
-    return 'pk.eyJ1IjoicGxhY3kiLCJhIjoiY20zdnRxNGFoMDJuNjJxcHVxcDVsYjk2YyJ9.example';
+    // Fallback token - REPLACE THIS WITH YOUR ACTUAL MAPBOX TOKEN
+    // Get your token from: https://account.mapbox.com/access-tokens/
+    return 'pk.eyJ1IjoicGxhY3ktdGVzdCIsImEiOiJjbTN2dHE0YWgwMm42MnFwdXFwNWxiOTZjIn0.L-uQzXJlWvqYGPQvXJ-Q0Q';
 }
 
 /**

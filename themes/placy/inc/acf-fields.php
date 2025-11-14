@@ -299,3 +299,50 @@ if ( function_exists( 'acf_add_local_field_group' ) ) {
         'instruction_placement' => 'label',
     ) );
 }
+
+/**
+ * Register POI List Block Fields
+ */
+if ( function_exists( 'acf_add_local_field_group' ) ) {
+    acf_add_local_field_group( array(
+        'key' => 'group_poi_list',
+        'title' => 'POI Liste Innstillinger',
+        'fields' => array(
+            array(
+                'key' => 'field_poi_items',
+                'label' => 'Velg POIs',
+                'name' => 'poi_items',
+                'type' => 'relationship',
+                'instructions' => 'Velg hvilke POIs (Points) som skal vises i listen',
+                'required' => 1,
+                'post_type' => array(
+                    0 => 'point',
+                ),
+                'filters' => array(
+                    0 => 'search',
+                    1 => 'post_type',
+                ),
+                'return_format' => 'object',
+                'min' => 1,
+                'max' => '',
+                'elements' => array(
+                    0 => 'featured_image',
+                ),
+            ),
+        ),
+        'location' => array(
+            array(
+                array(
+                    'param' => 'block',
+                    'operator' => '==',
+                    'value' => 'acf/poi-list',
+                ),
+            ),
+        ),
+        'menu_order' => 0,
+        'position' => 'normal',
+        'style' => 'default',
+        'label_placement' => 'top',
+        'instruction_placement' => 'label',
+    ) );
+}

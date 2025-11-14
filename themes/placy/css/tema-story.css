@@ -1,0 +1,192 @@
+/* Tema Story Layout Styles */
+
+/* Two-column grid layout */
+.tema-story-container {
+    display: grid;
+    grid-template-columns: 768px 1fr;
+    height: 100vh;
+}
+
+/* Content Column - Scrollable */
+.content-column {
+    overflow-y: auto;
+    overflow-x: hidden;
+    height: 100vh;
+    background: #ffffff;
+}
+
+/* Map Column - Sticky */
+.map-column {
+    position: sticky;
+    top: 72px;
+    height: 100vh;
+    background: #f5f5f5;
+}
+
+.tema-story-map {
+    width: 100%;
+    height: 100%;
+}
+
+/* Hero Section */
+.tema-story-hero {
+    padding-top: 3rem;
+    padding-bottom: 2rem;
+}
+
+.hero-image {
+    width: 100%;
+    margin-bottom: 2rem;
+}
+
+.hero-image img {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.hero-content {
+    padding: 0 2rem;
+}
+
+.hero-title {
+    font-size: 3rem;
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 1.5rem;
+    color: #1a202c;
+}
+
+.hero-intro {
+    font-size: 1.25rem;
+    line-height: 1.6;
+    color: #4a5568;
+    margin-bottom: 2rem;
+}
+
+/* Story Content */
+.tema-story-content {
+    padding: 2rem;
+}
+
+/* Chapter Sections */
+.chapter {
+    padding: 3rem 0;
+    scroll-margin-top: 72px; /* Offset for fixed header */
+}
+
+.chapter h2 {
+    font-size: 2rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: #2d3748;
+}
+
+.chapter p {
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: #4a5568;
+    margin-bottom: 1.5rem;
+}
+
+/* POI List within chapters */
+.chapter .poi-list-block {
+    margin: 2rem 0 3rem;
+}
+
+/* Mobile Layout */
+@media (max-width: 1024px) {
+    .tema-story-container {
+        grid-template-columns: 1fr;
+        height: auto;
+    }
+    
+    .content-column {
+        height: auto;
+        overflow-y: visible;
+    }
+    
+    .map-column {
+        position: relative;
+        top: 0;
+        height: 60vh;
+        min-height: 400px;
+        order: -1; /* Show map above content on mobile */
+    }
+    
+    .hero-title {
+        font-size: 2rem;
+    }
+    
+    .hero-intro {
+        font-size: 1.1rem;
+    }
+    
+    .hero-content {
+        padding: 0 1rem;
+    }
+    
+    .tema-story-content {
+        padding: 1rem;
+    }
+    
+    .chapter {
+        padding: 2rem 0;
+    }
+}
+
+/* Tablet Layout */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .tema-story-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .content-column {
+        max-width: 768px;
+        margin: 0 auto;
+    }
+}
+
+/* Custom scrollbar for content column */
+.content-column::-webkit-scrollbar {
+    width: 8px;
+}
+
+.content-column::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.content-column::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.content-column::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Smooth scroll behavior */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Loading state for map */
+.tema-story-map.loading::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 50px;
+    height: 50px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #76908D;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: translate(-50%, -50%) rotate(0deg); }
+    100% { transform: translate(-50%, -50%) rotate(360deg); }
+}

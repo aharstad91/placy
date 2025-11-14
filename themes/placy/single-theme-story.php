@@ -1,33 +1,66 @@
 <?php
 /**
  * The template for displaying single Theme Story posts
+ * Full-screen immersive experience without header/footer
  *
  * @package Placy
  * @since 1.0.0
  */
 
-get_header(); ?>
+// Exit if accessed directly
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+?>
+<!DOCTYPE html>
+<html <?php language_attributes(); ?>>
+<head>
+    <meta charset="<?php bloginfo( 'charset' ); ?>">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <?php wp_head(); ?>
+</head>
 
-<main id="main-content" class="site-main single-theme-story">
-    <?php
-    while ( have_posts() ) :
-        the_post();
-        ?>
-        <article id="post-<?php the_ID(); ?>" <?php post_class(); ?>>
-            <header class="entry-header" style="padding: 120px 0 40px; text-align: center;">
-                <div class="max-w-4xl mx-auto px-6">
-                    <?php the_title( '<h1 class="entry-title text-4xl font-bold mb-4">', '</h1>' ); ?>
+<body <?php body_class(); ?>>
+<?php wp_body_open(); ?>
+
+<div class="tema-story-container">
+    <?php while ( have_posts() ) : the_post(); ?>
+        <!-- Content Column -->
+        <div class="content-column">
+            <article id="post-<?php the_ID(); ?>" <?php post_class(); ?>>
+                <!-- Hero Section -->
+                <header class="tema-story-hero">
+                    <?php if ( has_post_thumbnail() ) : ?>
+                        <div class="hero-image">
+                            <?php the_post_thumbnail( 'full' ); ?>
+                        </div>
+                    <?php endif; ?>
+                    
+                    <div class="hero-content">
+                        <?php the_title( '<h1 class="hero-title">', '</h1>' ); ?>
+                        
+                        <?php if ( has_excerpt() ) : ?>
+                            <div class="hero-intro">
+                                <?php the_excerpt(); ?>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </header>
+
+                <!-- Story Content with Chapters -->
+                <div class="tema-story-content">
+                    <?php the_content(); ?>
                 </div>
-            </header>
+            </article>
+        </div>
+        
+        <!-- Map Column -->
+        <div class="map-column">
+            <div id="tema-story-map" class="tema-story-map"></div>
+        </div>
+    <?php endwhile; ?>
+</div>
 
-            <div class="entry-content max-w-4xl mx-auto px-6 py-8">
-                <?php the_content(); ?>
-            </div>
-        </article>
-        <?php
-    endwhile;
-    ?>
-</main>
-
-<?php
-get_footer();
+<?php wp_footer(); ?>
+</body>
+</html>

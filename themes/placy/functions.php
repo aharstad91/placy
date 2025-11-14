@@ -76,6 +76,18 @@ function placy_enqueue_scripts() {
     
     // POI Map Modal script
     wp_enqueue_script( 'placy-poi-map-modal', get_template_directory_uri() . '/js/poi-map-modal.js', array(), '1.0.0', true );
+    
+    // Tema Story styles and scripts (only on theme-story post type)
+    if ( is_singular( 'theme-story' ) ) {
+        wp_enqueue_style( 'placy-tema-story', get_template_directory_uri() . '/css/tema-story.css', array(), '1.0.0' );
+        wp_enqueue_style( 'placy-chapter-wrapper', get_template_directory_uri() . '/blocks/chapter-wrapper/style.css', array(), '1.0.0' );
+        wp_enqueue_script( 'placy-tema-story-map', get_template_directory_uri() . '/js/tema-story-map.js', array( 'mapbox-gl-js' ), '1.0.0', true );
+        
+        // Pass Mapbox token to the script
+        wp_localize_script( 'placy-tema-story-map', 'placyMapConfig', array(
+            'mapboxToken' => placy_get_mapbox_token(),
+        ) );
+    }
 }
 add_action( 'wp_enqueue_scripts', 'placy_enqueue_scripts' );
 
@@ -123,6 +135,11 @@ require_once get_template_directory() . '/inc/rewrites.php';
 require_once get_template_directory() . '/inc/mapbox-config.php';
 
 /**
+ * Include Tema Story block patterns
+ */
+require_once get_template_directory() . '/inc/tema-story-patterns.php';
+
+/**
  * Register ACF Blocks
  */
 function placy_register_acf_blocks() {
@@ -143,9 +160,55 @@ function placy_register_acf_blocks() {
             ),
             'enqueue_style'     => get_template_directory_uri() . '/blocks/poi-map-card/style.css',
         ) );
+        
+        // Register POI List block
+        acf_register_block_type( array(
+            'name'              => 'poi-list',
+            'title'             => __( 'POI Liste', 'placy' ),
+            'description'       => __( 'Viser en liste med POIs for tema story kapitler', 'placy' ),
+            'render_template'   => get_template_directory() . '/blocks/poi-list/template.php',
+            'category'          => 'media',
+            'icon'              => 'list-view',
+            'keywords'          => array( 'poi', 'list', 'tema', 'story', 'kapittel' ),
+            'mode'              => 'preview',
+            'supports'          => array(
+                'align' => array( 'wide', 'full' ),
+                'anchor' => true,
+            ),
+            'enqueue_style'     => get_template_directory_uri() . '/blocks/poi-list/style.css',
+        ) );
     }
 }
 add_action( 'acf/init', 'placy_register_acf_blocks' );
+
+/**
+ * Register Chapter Wrapper Block (native Gutenberg block with InnerBlocks)
+ */
+function placy_register_chapter_wrapper_block() {
+    // Register the block
+    register_block_type( get_template_directory() . '/blocks/chapter-wrapper', array(
+        'render_callback' => 'placy_render_chapter_wrapper_block',
+    ) );
+}
+add_action( 'init', 'placy_register_chapter_wrapper_block' );
+
+/**
+ * Render callback for Chapter Wrapper block
+ */
+function placy_render_chapter_wrapper_block( $attributes, $content ) {
+    $chapter_id = ! empty( $attributes['chapterId'] ) ? $attributes['chapterId'] : 'chapter-' . uniqid();
+    
+    $wrapper_attributes = sprintf(
+        'class="wp-block-placy-chapter-wrapper chapter" data-chapter-id="%s"',
+        esc_attr( $chapter_id )
+    );
+    
+    return sprintf(
+        '<section %s>%s</section>',
+        $wrapper_attributes,
+        $content
+    );
+}
 
 /**
  * Enqueue block editor styles
@@ -156,6 +219,23 @@ function placy_block_editor_styles() {
     wp_enqueue_style(
         'placy-poi-map-card-editor',
         get_template_directory_uri() . '/blocks/poi-map-card/style.css',
+        array(),
+        '1.0.0'
+    );
+    
+    // Enqueue Chapter Wrapper block editor script
+    wp_enqueue_script(
+        'placy-chapter-wrapper-editor',
+        get_template_directory_uri() . '/blocks/chapter-wrapper/block.js',
+        array( 'wp-blocks', 'wp-element', 'wp-block-editor', 'wp-components' ),
+        '1.0.0',
+        true
+    );
+    
+    // Enqueue Chapter Wrapper block editor styles
+    wp_enqueue_style(
+        'placy-chapter-wrapper-editor',
+        get_template_directory_uri() . '/blocks/chapter-wrapper/style.css',
         array(),
         '1.0.0'
     );

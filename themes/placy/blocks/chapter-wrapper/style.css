@@ -1,0 +1,30 @@
+/* Chapter Wrapper Block Styles */
+
+.wp-block-placy-chapter-wrapper.chapter {
+    padding: 3rem 0;
+    scroll-margin-top: 72px;
+}
+
+.wp-block-placy-chapter-wrapper.chapter h2,
+.wp-block-placy-chapter-wrapper.chapter h3 {
+    font-size: 2rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: #2d3748;
+}
+
+.wp-block-placy-chapter-wrapper.chapter p {
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: #4a5568;
+    margin-bottom: 1.5rem;
+}
+
+/* Editor styles */
+.editor-styles-wrapper .wp-block-placy-chapter-wrapper.chapter {
+    border: 2px dashed #76908D;
+    border-radius: 8px;
+    padding: 2rem;
+    margin: 1rem auto;
+    max-width: 768px;
+}
