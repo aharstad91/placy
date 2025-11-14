@@ -19,6 +19,14 @@ document.addEventListener('DOMContentLoaded', function() {
     mapDataElements.forEach(function(element) {
         const data = JSON.parse(element.textContent);
         window.placyPOIMaps[data.blockId] = data;
+        
+        // Only initialize if there are points
+        if (data.points && data.points.length > 0) {
+            // Auto-initialize inline maps on desktop
+            if (window.innerWidth >= 1024) {
+                initializeMapInline(data.blockId, data, null);
+            }
+        }
     });
     
     // Set Mapbox access token
@@ -28,7 +36,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 /**
- * Open POI Map Modal or Expand Inline (Desktop vs Mobile)
+ * Open POI Map Modal or Initialize Inline (Desktop vs Mobile)
  * 
  * @param {string} blockId - Unique block ID
  * @param {string} poiSlug - Optional Point slug to highlight
@@ -45,24 +53,24 @@ function openPOIMapModal(blockId, poiSlug) {
     const isDesktop = window.innerWidth >= 1024;
     
     if (isDesktop) {
-        // Desktop: Expand inline
-        openMapInline(blockId, mapData, poiSlug);
+        // Desktop: Initialize inline map (but keep it blurred/inactive)
+        initializeMapInline(blockId, mapData, poiSlug);
     } else {
         // Mobile: Open fullscreen modal
         openMapModal(mapData, poiSlug);
     }
     
-    console.log('Point Map opened:', blockId, isDesktop ? '(inline)' : '(modal)');
+    console.log('Point Map initialized:', blockId, isDesktop ? '(inline)' : '(modal)');
 }
 
 /**
- * Open Map Inline (Desktop)
+ * Initialize Map Inline (Desktop) - Show blurred map with CTA
  * 
  * @param {string} blockId - Unique block ID
  * @param {Object} mapData - Map data with Points
  * @param {string} poiSlug - Optional Point slug to highlight
  */
-function openMapInline(blockId, mapData, poiSlug) {
+function initializeMapInline(blockId, mapData, poiSlug) {
     // Find the block element
     const blockElement = document.querySelector(`[data-block-id="${blockId}"]`);
     if (!blockElement) {
@@ -70,12 +78,13 @@ function openMapInline(blockId, mapData, poiSlug) {
         return;
     }
     
-    // Check if already active
-    if (blockElement.classList.contains('map-active')) {
-        return;
+    // Check if already initialized
+    const existingContainer = blockElement.querySelector('.inline-map-container');
+    if (existingContainer) {
+        return; // Already initialized
     }
     
-    // Add active class (activates the map without changing height)
+    // Add active class (shows the map container)
     blockElement.classList.add('map-active');
     
     // Get the preview element
@@ -85,38 +94,84 @@ function openMapInline(blockId, mapData, poiSlug) {
         return;
     }
     
-    // Get or create inline map container
-    let mapContainer = blockElement.querySelector('.inline-map-container');
-    if (!mapContainer) {
-        mapContainer = document.createElement('div');
-        mapContainer.className = 'inline-map-container';
-        mapContainer.innerHTML = `
-            <div id="mapbox-container-inline" style="width: 100%; height: 100%;"></div>
-            <div class="map-loading-overlay"></div>
-            <button class="map-close-button" onclick="closeInlineMap('${blockId}')" aria-label="Lukk kart">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path d="M6 18L18 6M6 6l12 12"/>
-                </svg>
-            </button>
-        `;
-        previewElement.parentNode.insertBefore(mapContainer, previewElement.nextSibling);
+    // Create inline map container
+    const mapContainer = document.createElement('div');
+    mapContainer.className = 'inline-map-container';
+    mapContainer.innerHTML = `
+        <div id="mapbox-container-inline" style="width: 100%; height: 100%;"></div>
+        <div class="map-blur-overlay"></div>
+        <div class="expansion-overlay"></div>
+        <button class="map-cta-button" onclick="activateInlineMap('${blockId}')">
+            <span class="map-cta-text">Klikk for å se ${mapData.points.length} punkt${mapData.points.length !== 1 ? 'er' : ''}</span>
+        </button>
+        <button class="map-close-button" onclick="closeInlineMap('${blockId}')" aria-label="Lukk kart">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+        </button>
+    `;
+    previewElement.parentNode.insertBefore(mapContainer, previewElement.nextSibling);
+    
+    // Initialize map immediately but keep it blurred/disabled
+    setTimeout(function() {
+        initializeMapboxMapInline(mapData, poiSlug, true); // true = keep markers hidden initially
+    }, 50);
+}
+
+/**
+ * Activate Inline Map (Remove blur, show markers, enable interaction)
+ * 
+ * @param {string} blockId - Unique block ID
+ */
+function activateInlineMap(blockId) {
+    const blockElement = document.querySelector(`[data-block-id="${blockId}"]`);
+    if (!blockElement) return;
+    
+    const mapContainer = blockElement.querySelector('.inline-map-container');
+    if (!mapContainer) return;
+    
+    // Show expansion overlay immediately to hide scaling artifacts
+    const expansionOverlay = mapContainer.querySelector('.expansion-overlay');
+    if (expansionOverlay) {
+        expansionOverlay.classList.add('active');
     }
     
-    // Initialize map immediately (no transition delay)
-    setTimeout(function() {
-        initializeMapboxMapInline(mapData, poiSlug);
-        
-        // Remove loading overlay after 500ms
+    // Activate the map (starts expansion animation)
+    mapContainer.classList.add('map-activated');
+    
+    // Enable map interaction and resize after expansion completes
+    if (window.placyMapboxInstance) {
         setTimeout(function() {
-            const loadingOverlay = mapContainer.querySelector('.map-loading-overlay');
-            if (loadingOverlay) {
-                loadingOverlay.style.opacity = '0';
+            // Resize map to fill expanded container
+            window.placyMapboxInstance.resize();
+            
+            // Enable all map interactions
+            window.placyMapboxInstance.scrollZoom.enable();
+            window.placyMapboxInstance.boxZoom.enable();
+            window.placyMapboxInstance.dragPan.enable();
+            window.placyMapboxInstance.dragRotate.enable();
+            window.placyMapboxInstance.keyboard.enable();
+            window.placyMapboxInstance.doubleClickZoom.enable();
+            window.placyMapboxInstance.touchZoomRotate.enable();
+            
+            // Hide expansion overlay after resize
+            if (expansionOverlay) {
                 setTimeout(function() {
-                    loadingOverlay.remove();
-                }, 300);
+                    expansionOverlay.classList.remove('active');
+                }, 50);
             }
-        }, 500);
-    }, 50);
+        }, 400); // Match the CSS transition duration
+    }
+    
+    // Show markers after blur transition and expansion
+    setTimeout(function() {
+        const markers = mapContainer.querySelectorAll('.mapbox-poi-marker');
+        markers.forEach(function(marker) {
+            marker.style.opacity = '1';
+        });
+    }, 300);
+    
+    console.log('Inline map activated:', blockId);
 }
 
 /**
@@ -238,10 +293,17 @@ function initializeMapboxMap(mapData, poiSlug, containerId) {
  * 
  * @param {Object} mapData - Map data with Points
  * @param {string} poiSlug - Optional Point slug to highlight
+ * @param {boolean} hideMarkers - Hide markers initially
  */
-function initializeMapboxMapInline(mapData, poiSlug) {
+function initializeMapboxMapInline(mapData, poiSlug, hideMarkers) {
     if (typeof mapboxgl === 'undefined') {
         console.error('Mapbox GL JS is not loaded');
+        return;
+    }
+    
+    // Validate points exist
+    if (!mapData.points || mapData.points.length === 0) {
+        console.error('No points to display on map');
         return;
     }
     
@@ -251,22 +313,40 @@ function initializeMapboxMapInline(mapData, poiSlug) {
         window.placyMapboxInstance = null;
     }
     
-    // Calculate bounds to fit all Points
-    const bounds = new mapboxgl.LngLatBounds();
+    // Calculate center from points
+    let centerLat = 0, centerLng = 0;
     mapData.points.forEach(function(poi) {
-        bounds.extend([poi.longitude, poi.latitude]);
+        centerLat += poi.latitude;
+        centerLng += poi.longitude;
     });
+    centerLat /= mapData.points.length;
+    centerLng /= mapData.points.length;
     
-    // Create map
+    // Validate coordinates
+    if (isNaN(centerLat) || isNaN(centerLng)) {
+        console.error('Invalid coordinates calculated:', centerLat, centerLng);
+        return;
+    }
+    
+    // Create map centered on points
     const map = new mapboxgl.Map({
         container: 'mapbox-container-inline',
         style: placyMapbox.style || 'mapbox://styles/mapbox/streets-v12',
-        bounds: bounds,
-        padding: { top: 80, bottom: 80, left: 80, right: 80 },
-        fitBoundsOptions: {
-            maxZoom: 15
-        }
+        center: [centerLng, centerLat],
+        zoom: 13,
+        interactive: true // Always interactive, but disable handlers if hideMarkers
     });
+    
+    // Disable interaction initially if hideMarkers is true
+    if (hideMarkers) {
+        map.scrollZoom.disable();
+        map.boxZoom.disable();
+        map.dragPan.disable();
+        map.dragRotate.disable();
+        map.keyboard.disable();
+        map.doubleClickZoom.disable();
+        map.touchZoomRotate.disable();
+    }
     
     window.placyMapboxInstance = map;
     
@@ -276,11 +356,15 @@ function initializeMapboxMapInline(mapData, poiSlug) {
     // Add Point markers after map loads
     map.on('load', function() {
         mapData.points.forEach(function(poi) {
-            addMapboxMarker(map, poi);
+            const markerEl = addMapboxMarker(map, poi);
+            if (hideMarkers && markerEl) {
+                markerEl.style.opacity = '0';
+                markerEl.style.transition = 'opacity 0.3s ease';
+            }
         });
         
-        // If specific Point is requested, show it
-        if (poiSlug) {
+        // If specific Point is requested, show it (only if not hiding markers)
+        if (poiSlug && !hideMarkers) {
             const poi = mapData.points.find(p => p.slug === poiSlug);
             if (poi) {
                 setTimeout(function() {
@@ -296,6 +380,7 @@ function initializeMapboxMapInline(mapData, poiSlug) {
  * 
  * @param {Object} map - Mapbox map instance
  * @param {Object} poi - POI data
+ * @returns {HTMLElement} The marker element
  */
 function addMapboxMarker(map, poi) {
     // Create custom marker element
@@ -329,6 +414,8 @@ function addMapboxMarker(map, poi) {
             alert('Denne POI-en er ikke tilgjengelig ennå.');
         });
     }
+    
+    return el;
 }
 
 /**

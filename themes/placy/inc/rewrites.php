@@ -16,15 +16,17 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 function placy_custom_rewrites() {
     // Pattern: customer-slug/project-slug/story-slug (for stories)
+    // Exclude tema-historie URLs
     add_rewrite_rule(
-        '^([^/]+)/([^/]+)/([^/]+)/?$',
+        '^(?!tema-historie)([^/]+)/([^/]+)/([^/]+)/?$',
         'index.php?post_type=story&name=$matches[3]&customer_slug=$matches[1]&project_slug=$matches[2]',
         'top'
     );
     
     // Pattern: customer-slug/project-slug (for projects)
+    // Exclude tema-historie URLs
     add_rewrite_rule(
-        '^([^/]+)/([^/]+)/?$',
+        '^(?!tema-historie)([^/]+)/([^/]+)/?$',
         'index.php?post_type=project&name=$matches[2]&customer_slug=$matches[1]',
         'top'
     );
@@ -86,9 +88,9 @@ register_activation_hook( __FILE__, 'placy_flush_rewrites' );
  */
 function placy_maybe_flush_rewrites() {
     $flush = get_option( 'placy_flush_rewrite_rules' );
-    if ( $flush !== 'done' ) {
+    if ( $flush !== 'done_v4' ) {
         flush_rewrite_rules();
-        update_option( 'placy_flush_rewrite_rules', 'done' );
+        update_option( 'placy_flush_rewrite_rules', 'done_v4' );
     }
 }
 add_action( 'init', 'placy_maybe_flush_rewrites', 999 );

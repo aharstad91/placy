@@ -60,50 +60,115 @@
         position: relative;
     }
     
+    /* Hide preview on desktop, show inline map */
+    .poi-map-card-block .poi-map-preview {
+        display: none;
+    }
+    
     .poi-map-card-block .inline-map-container {
-        width: 140%;
+        width: 100%;
         height: calc(var(--viewport-height, 100vh) * 0.4);
         border-radius: 0.5rem;
         overflow: hidden;
-        position: absolute;
-        top: 0;
-        left: -20%;
-        opacity: 0;
-        transform: scale(0.9) translateY(10px);
-        transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1), 
-                    transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-        pointer-events: none;
-    }
-    
-    .poi-map-card-block.map-active .inline-map-container {
+        position: relative;
+        left: 0;
         opacity: 1;
-        transform: scale(1) translateY(0);
         pointer-events: auto;
+        transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+                    height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+                    left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
     
-    .poi-map-card-block .poi-map-preview {
-        transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1), 
-                    transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    /* Expand when activated */
+    .poi-map-card-block .inline-map-container.map-activated {
+        width: 140%;
+        height: calc(var(--viewport-height, 100vh) * 0.576);
+        left: -20%;
     }
     
-    .poi-map-card-block.map-active .poi-map-preview {
-        opacity: 0;
-        transform: scale(1.05);
-        pointer-events: none;
-    }
-    
-    /* Loading overlay to hide tile loading */
-    .map-loading-overlay {
+    /* Blur overlay for inactive map */
+    .map-blur-overlay {
         position: absolute;
         top: 0;
         left: 0;
         right: 0;
         bottom: 0;
-        background: #f3f4f6;
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(3px);
+        -webkit-backdrop-filter: blur(3px);
         z-index: 10;
-        opacity: 1;
-        transition: opacity 0.3s ease-out;
+        transition: opacity 0.3s ease, backdrop-filter 0.3s ease;
         pointer-events: none;
+    }
+    
+    /* Blur the map container itself */
+    .inline-map-container #mapbox-container-inline {
+        filter: blur(2px);
+        transition: filter 0.3s ease;
+    }
+    
+    /* Remove blur when activated */
+    .inline-map-container.map-activated #mapbox-container-inline {
+        filter: blur(0);
+    }
+    
+    .inline-map-container.map-activated .map-blur-overlay {
+        opacity: 0;
+        pointer-events: none;
+    }
+    
+    /* CTA button (centered) */
+    .map-cta-button {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 15;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        border-radius: 3rem;
+        padding: 1.25rem 2.5rem;
+        cursor: pointer;
+        box-shadow: 0 8px 24px rgba(102, 126, 234, 0.35);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: white;
+        letter-spacing: 0.02em;
+    }
+    
+    .map-cta-button:hover {
+        background: linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%);
+        box-shadow: 0 12px 32px rgba(102, 126, 234, 0.45);
+        transform: translate(-50%, -50%) scale(1.05) translateY(-2px);
+    }
+    
+    .map-cta-button:active {
+        transform: translate(-50%, -50%) scale(0.98);
+        box-shadow: 0 6px 16px rgba(102, 126, 234, 0.3);
+    }
+    
+    .map-cta-text {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .map-cta-text::after {
+        content: '→';
+        font-size: 1.25rem;
+        transition: transform 0.3s ease;
+    }
+    
+    .map-cta-button:hover .map-cta-text::after {
+        transform: translateX(4px);
+    }
+    
+    /* Hide CTA when activated */
+    .inline-map-container.map-activated .map-cta-button {
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
     }
     
     /* Close button for inline map */
@@ -120,6 +185,14 @@
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
         transition: all 0.2s ease;
         color: #4b5563;
+        opacity: 0;
+        pointer-events: none;
+    }
+    
+    /* Show close button when activated */
+    .inline-map-container.map-activated .map-close-button {
+        opacity: 1;
+        pointer-events: auto;
     }
     
     .map-close-button:hover {
@@ -130,6 +203,24 @@
     
     .map-close-button:active {
         transform: scale(0.95);
+    }
+    
+    /* Disable map interaction until activated */
+    .inline-map-container:not(.map-activated) .mapboxgl-canvas-container {
+        pointer-events: none;
+    }
+    
+    .inline-map-container.map-activated .mapboxgl-canvas-container {
+        pointer-events: auto;
+    }
+
+    /* Expansion overlay - hides map during animation */
+    .expansion-overlay {
+        @apply absolute inset-0 bg-white pointer-events-none opacity-0 transition-opacity duration-200 z-50;
+    }
+
+    .expansion-overlay.active {
+        @apply opacity-100;
     }
 }
 

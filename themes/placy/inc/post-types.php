@@ -246,6 +246,45 @@ function placy_register_area_post_type() {
 add_action( 'init', 'placy_register_area_post_type' );
 
 /**
+ * Register Theme Story Post Type
+ */
+function placy_register_theme_story_post_type() {
+    $labels = array(
+        'name'                  => 'Tema Historier',
+        'singular_name'         => 'Tema Historie',
+        'menu_name'             => 'Tema Historier',
+        'add_new'               => 'Legg til ny',
+        'add_new_item'          => 'Legg til ny tema historie',
+        'edit_item'             => 'Rediger tema historie',
+        'new_item'              => 'Ny tema historie',
+        'view_item'             => 'Vis tema historie',
+        'search_items'          => 'Søk tema historier',
+        'not_found'             => 'Ingen tema historier funnet',
+        'not_found_in_trash'    => 'Ingen tema historier funnet i papirkurv',
+    );
+
+    $args = array(
+        'labels'                => $labels,
+        'public'                => true,
+        'has_archive'           => true,
+        'publicly_queryable'    => true,
+        'show_ui'               => true,
+        'show_in_menu'          => true,
+        'query_var'             => true,
+        'rewrite'               => array( 'slug' => 'tema-historie' ),
+        'capability_type'       => 'post',
+        'hierarchical'          => false,
+        'menu_position'         => 26,
+        'menu_icon'             => 'dashicons-book-alt',
+        'supports'              => array( 'title', 'editor', 'thumbnail', 'excerpt' ),
+        'show_in_rest'          => true,
+    );
+
+    register_post_type( 'theme-story', $args );
+}
+add_action( 'init', 'placy_register_theme_story_post_type' );
+
+/**
  * Register Point Type Taxonomy
  */
 function placy_register_point_type_taxonomy() {
