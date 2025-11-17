@@ -34,14 +34,14 @@
         }
         
         const navContainer = document.getElementById('chapter-nav');
-        const contentColumn = document.querySelector('.content-column');
+        const introNavContainer = document.getElementById('intro-chapter-nav');
         
-        if (!navContainer || !contentColumn) {
+        if (!navContainer && !introNavContainer) {
             return;
         }
 
         // Find all chapter sections
-        const chapters = contentColumn.querySelectorAll('.chapter');
+        const chapters = document.querySelectorAll('.chapter');
         
         if (chapters.length === 0) {
             return;
@@ -49,11 +49,18 @@
         
         isInitialized = true;
 
-        // Build navigation menu
-        buildNavMenu(chapters, navContainer);
+        // Build navigation menu for both locations
+        if (navContainer) {
+            buildNavMenu(chapters, navContainer);
+            // Initialize scroll tracking
+            initScrollTracking(chapters, navContainer);
+        }
         
-        // Initialize scroll tracking
-        initScrollTracking(chapters, navContainer);
+        if (introNavContainer) {
+            buildNavMenu(chapters, introNavContainer);
+            // Initialize scroll tracking for intro nav too
+            initScrollTracking(chapters, introNavContainer);
+        }
         
         console.log('Chapter Navigation: Initialized with', chapters.length, 'chapters');
     }
@@ -65,6 +72,7 @@
      */
     function buildNavMenu(chapters, navContainer) {
         navContainer.innerHTML = '';
+        const isIntroNav = navContainer.id === 'intro-chapter-nav';
         
         chapters.forEach(function(chapter, index) {
             // Try to get anchor from multiple sources
@@ -91,12 +99,32 @@
             const titleAttr = chapter.getAttribute('data-chapter-title');
             const title = (titleAttr && titleAttr.trim() !== '') ? titleAttr : 'Kapittel ' + (index + 1);
 
+            // Count POI items in this chapter
+            const poiItems = chapter.querySelectorAll('.poi-list-item');
+            const poiCount = poiItems.length;
+
             // Create navigation item
             const navItem = document.createElement('a');
             navItem.href = '#' + anchor;
             navItem.className = 'chapter-nav-item';
-            navItem.textContent = title;
             navItem.setAttribute('data-chapter-anchor', anchor);
+            
+            // For intro nav, add title and count as separate elements
+            if (isIntroNav) {
+                const titleSpan = document.createElement('span');
+                titleSpan.textContent = title;
+                navItem.appendChild(titleSpan);
+                
+                if (poiCount > 0) {
+                    const countSpan = document.createElement('span');
+                    countSpan.className = 'poi-count';
+                    countSpan.textContent = poiCount + ' steder';
+                    navItem.appendChild(countSpan);
+                }
+            } else {
+                // For sidebar nav, keep simple text
+                navItem.textContent = title;
+            }
             
             // Smooth scroll on click
             navItem.addEventListener('click', function(e) {
@@ -114,17 +142,16 @@
      */
     function scrollToChapter(anchor) {
         const chapter = document.getElementById(anchor);
-        const contentColumn = document.querySelector('.content-column');
         
-        if (!chapter || !contentColumn) {
+        if (!chapter) {
             return;
         }
 
-        // Get chapter position relative to scrollable container
-        const chapterTop = chapter.offsetTop;
+        // Get chapter position relative to page top
+        const chapterTop = chapter.getBoundingClientRect().top + window.pageYOffset;
         
-        // Scroll content column to chapter with offset
-        contentColumn.scrollTo({
+        // Scroll window to chapter with offset
+        window.scrollTo({
             top: chapterTop - CONFIG.SCROLL_OFFSET,
             behavior: 'smooth'
         });
@@ -136,14 +163,8 @@
      * @param {HTMLElement} navContainer - Navigation container
      */
     function initScrollTracking(chapters, navContainer) {
-        const contentColumn = document.querySelector('.content-column');
-        
-        if (!contentColumn) {
-            return;
-        }
-
         const observerOptions = {
-            root: contentColumn,
+            root: null, // null means viewport
             rootMargin: '-10% 0px -70% 0px',  // Trigger when chapter enters top 20% of viewport
             threshold: [0, 0.1, 0.2, 0.3]     // Multiple thresholds for better tracking
         };

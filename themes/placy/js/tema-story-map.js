@@ -595,9 +595,9 @@
             return;
         }
 
-        // Chapter observer for map updates
+        // Chapter observer for map updates - using viewport as root (null)
         const chapterObserverOptions = {
-            root: document.querySelector('.content-column'),
+            root: null, // null means viewport
             rootMargin: '-40% 0px -40% 0px', // Trigger when chapter crosses center of viewport
             threshold: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0] // Multiple thresholds for better tracking
         };
@@ -885,12 +885,12 @@
         allChapters.forEach(function(chapter) {
             // Get the chapter's position in viewport
             const rect = chapter.getBoundingClientRect();
-            const contentColumn = document.querySelector('.content-column');
-            const containerRect = contentColumn ? contentColumn.getBoundingClientRect() : { top: 0, bottom: window.innerHeight };
+            // Use viewport dimensions
+            const viewportHeight = window.innerHeight;
             
             // Calculate how much of the chapter is visible in the center zone (-40% to +40%)
-            const centerTop = containerRect.top + containerRect.height * 0.4;
-            const centerBottom = containerRect.bottom - containerRect.height * 0.4;
+            const centerTop = viewportHeight * 0.4;
+            const centerBottom = viewportHeight * 0.6;
             
             // Calculate intersection with center zone
             const visibleTop = Math.max(rect.top, centerTop);

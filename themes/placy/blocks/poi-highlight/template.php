@@ -33,7 +33,7 @@ if ( $lat && $lng ) {
 $walking_time = get_post_meta( $poi_id, 'walking_time', true );
 ?>
 
-<article class="poi-list-item poi-highlight mb-8" 
+<article class="poi-list-item poi-highlight p-6 mb-8 border border-gray-200 rounded-lg" 
          data-poi-id="<?php echo esc_attr( $poi_id ); ?>"
          data-poi-title="<?php echo esc_attr( $title ); ?>"
          <?php if ( $coords ) : ?>
@@ -66,7 +66,7 @@ $walking_time = get_post_meta( $poi_id, 'walking_time', true );
         </div>
     <?php endif; ?>
     
-    <div class="poi-highlight-content rounded-lg shadow-sm">
+    <div class="poi-highlight-content  rounded-lg shadow-sm">
         <h2 class="text-3xl font-bold mb-4 text-gray-900">
             <?php echo esc_html( $title ); ?>
         </h2>

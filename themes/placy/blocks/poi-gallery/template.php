@@ -34,7 +34,7 @@ if ( ! $pois || empty( $pois ) ) {
         $walking_time = get_post_meta( $poi_id, 'walking_time', true );
     ?>
     
-    <article class="poi-list-item poi-gallery-item bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow" 
+    <article class="poi-list-item poi-gallery-item overflow-hidden border-gray-200 border rounded-lg" 
              data-poi-id="<?php echo esc_attr( $poi_id ); ?>"
              data-poi-title="<?php echo esc_attr( $title ); ?>"
              <?php if ( $coords ) : ?>
