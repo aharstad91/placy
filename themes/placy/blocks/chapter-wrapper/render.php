@@ -11,10 +11,11 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-// Get attributes from block (available via $attributes variable in template.php)
-$chapter_id = ! empty( $attributes['chapterId'] ) ? $attributes['chapterId'] : '';
-$chapter_anchor = ! empty( $attributes['chapterAnchor'] ) ? $attributes['chapterAnchor'] : '';
-$chapter_title = ! empty( $attributes['chapterTitle'] ) ? $attributes['chapterTitle'] : '';
+// Get attributes from block
+// In render.php, attributes are available as $attributes array
+$chapter_id = isset( $attributes['chapterId'] ) && ! empty( $attributes['chapterId'] ) ? $attributes['chapterId'] : '';
+$chapter_anchor = isset( $attributes['chapterAnchor'] ) && ! empty( $attributes['chapterAnchor'] ) ? $attributes['chapterAnchor'] : '';
+$chapter_title = isset( $attributes['chapterTitle'] ) && ! empty( $attributes['chapterTitle'] ) ? $attributes['chapterTitle'] : '';
 
 // If no chapter ID is set, generate one based on block ID
 if ( empty( $chapter_id ) ) {

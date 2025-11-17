@@ -136,6 +136,17 @@ if ( function_exists( 'acf_add_local_field_group' ) ) {
                 'required' => 1,
                 'placeholder' => '6.1326',
             ),
+            array(
+                'key' => 'field_point_secondary_image',
+                'label' => 'Secondary Image',
+                'name' => 'secondary_image',
+                'type' => 'image',
+                'instructions' => 'Sekundært bilde for bruk i POI Highlight (vises side-om-side med featured image)',
+                'required' => 0,
+                'return_format' => 'url',
+                'preview_size' => 'medium',
+                'library' => 'all',
+            ),
         ),
         'location' => array(
             array(
@@ -336,6 +347,199 @@ if ( function_exists( 'acf_add_local_field_group' ) ) {
                     'param' => 'block',
                     'operator' => '==',
                     'value' => 'acf/poi-list',
+                ),
+            ),
+        ),
+        'menu_order' => 0,
+        'position' => 'normal',
+        'style' => 'default',
+        'label_placement' => 'top',
+        'instruction_placement' => 'label',
+    ) );
+}
+
+/**
+ * Register Theme Story Fields
+ */
+if ( function_exists( 'acf_add_local_field_group' ) ) {
+    acf_add_local_field_group( array(
+        'key' => 'group_theme_story_fields',
+        'title' => 'Theme Story Fields',
+        'fields' => array(
+            array(
+                'key' => 'field_theme_story_parent_story',
+                'label' => 'Parent Story',
+                'name' => 'parent_story',
+                'type' => 'post_object',
+                'instructions' => 'Velg overordnet story som denne tema-story tilhører (for tilbake-knapp)',
+                'required' => 0,
+                'post_type' => array(
+                    0 => 'story',
+                ),
+                'allow_null' => 1,
+                'multiple' => 0,
+                'return_format' => 'object',
+            ),
+            array(
+                'key' => 'field_theme_story_start_latitude',
+                'label' => 'Eiendommens Latitude',
+                'name' => 'start_latitude',
+                'type' => 'text',
+                'instructions' => 'Latitude-koordinat for eiendommen/startpunkt (f.eks. 63.4305)',
+                'required' => 0,
+                'placeholder' => '63.4305',
+            ),
+            array(
+                'key' => 'field_theme_story_start_longitude',
+                'label' => 'Eiendommens Longitude',
+                'name' => 'start_longitude',
+                'type' => 'text',
+                'instructions' => 'Longitude-koordinat for eiendommen/startpunkt (f.eks. 10.3951)',
+                'required' => 0,
+                'placeholder' => '10.3951',
+            ),
+        ),
+        'location' => array(
+            array(
+                array(
+                    'param' => 'post_type',
+                    'operator' => '==',
+                    'value' => 'theme-story',
+                ),
+            ),
+        ),
+        'menu_order' => 0,
+        'position' => 'side',
+        'style' => 'default',
+        'label_placement' => 'top',
+        'instruction_placement' => 'label',
+    ) );
+}
+
+/**
+ * Register Image Column Block Fields
+ */
+if ( function_exists( 'acf_add_local_field_group' ) ) {
+    acf_add_local_field_group( array(
+        'key' => 'group_image_column_block',
+        'title' => 'Image Column Block Fields',
+        'fields' => array(
+            array(
+                'key' => 'field_image_column_image_1',
+                'label' => 'Image 1 (60%)',
+                'name' => 'image_1',
+                'type' => 'image',
+                'instructions' => 'Første bilde (tar 60% av bredden)',
+                'required' => 0,
+                'return_format' => 'array',
+                'preview_size' => 'medium',
+                'library' => 'all',
+            ),
+            array(
+                'key' => 'field_image_column_image_2',
+                'label' => 'Image 2 (40%)',
+                'name' => 'image_2',
+                'type' => 'image',
+                'instructions' => 'Andre bilde (tar 40% av bredden)',
+                'required' => 0,
+                'return_format' => 'array',
+                'preview_size' => 'medium',
+                'library' => 'all',
+            ),
+        ),
+        'location' => array(
+            array(
+                array(
+                    'param' => 'block',
+                    'operator' => '==',
+                    'value' => 'acf/image-column',
+                ),
+            ),
+        ),
+        'menu_order' => 0,
+        'position' => 'normal',
+        'style' => 'default',
+        'label_placement' => 'top',
+        'instruction_placement' => 'label',
+    ) );
+}
+
+/**
+ * Register POI Highlight Block Fields
+ */
+if ( function_exists( 'acf_add_local_field_group' ) ) {
+    acf_add_local_field_group( array(
+        'key' => 'group_poi_highlight_block',
+        'title' => 'POI Highlight Block Fields',
+        'fields' => array(
+            array(
+                'key' => 'field_poi_highlight_poi',
+                'label' => 'POI Item',
+                'name' => 'poi_item',
+                'type' => 'post_object',
+                'instructions' => 'Velg ett POI som skal fremheves med stor layout',
+                'required' => 1,
+                'post_type' => array(
+                    0 => 'point',
+                ),
+                'allow_null' => 0,
+                'multiple' => 0,
+                'return_format' => 'object',
+            ),
+        ),
+        'location' => array(
+            array(
+                array(
+                    'param' => 'block',
+                    'operator' => '==',
+                    'value' => 'acf/poi-highlight',
+                ),
+            ),
+        ),
+        'menu_order' => 0,
+        'position' => 'normal',
+        'style' => 'default',
+        'label_placement' => 'top',
+        'instruction_placement' => 'label',
+    ) );
+}
+
+/**
+ * Register POI Gallery Block Fields
+ */
+if ( function_exists( 'acf_add_local_field_group' ) ) {
+    acf_add_local_field_group( array(
+        'key' => 'group_poi_gallery_block',
+        'title' => 'POI Gallery Block Fields',
+        'fields' => array(
+            array(
+                'key' => 'field_poi_gallery_pois',
+                'label' => 'Velg POIs',
+                'name' => 'poi_items',
+                'type' => 'relationship',
+                'instructions' => 'Velg POIs som skal vises i galleriet',
+                'required' => 1,
+                'post_type' => array(
+                    0 => 'point',
+                ),
+                'filters' => array(
+                    0 => 'search',
+                    1 => 'post_type',
+                ),
+                'return_format' => 'object',
+                'min' => 1,
+                'max' => '',
+                'elements' => array(
+                    0 => 'featured_image',
+                ),
+            ),
+        ),
+        'location' => array(
+            array(
+                array(
+                    'param' => 'block',
+                    'operator' => '==',
+                    'value' => 'acf/poi-gallery',
                 ),
             ),
         ),

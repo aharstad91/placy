@@ -1,0 +1,16 @@
+{
+  "name": "acf/poi-highlight",
+  "title": "POI Highlight",
+  "description": "Display a single POI with prominent hero-style layout",
+  "category": "media",
+  "icon": "star-filled",
+  "keywords": ["poi", "highlight", "hero", "point"],
+  "acf": {
+    "mode": "preview",
+    "renderTemplate": "template.php"
+  },
+  "supports": {
+    "align": false,
+    "anchor": true
+  }
+}

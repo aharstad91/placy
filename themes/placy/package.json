@@ -5,12 +5,15 @@
   "main": "index.js",
   "scripts": {
     "build:css": "tailwindcss -i ./css/tailwind-input.css -o ./css/tailwind-output.css --minify",
-    "watch:css": "tailwindcss -i ./css/tailwind-input.css -o ./css/tailwind-output.css --watch"
+    "watch:css": "tailwindcss -i ./css/tailwind-input.css -o ./css/tailwind-output.css --watch",
+    "build:blocks": "./build-blocks.sh",
+    "build": "npm run build:css && npm run build:blocks"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@tailwindcss/typography": "^0.5.19",
     "autoprefixer": "^10.4.22",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.18"

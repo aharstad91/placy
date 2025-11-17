@@ -60,8 +60,8 @@ function placy_enqueue_scripts() {
     // Enqueue Adobe Typekit fonts
     wp_enqueue_style( 'adobe-typekit', 'https://use.typekit.net/jlp3dzl.css', array(), null );
     
-    // Enqueue Google Fonts (Raleway)
-    wp_enqueue_style( 'google-fonts-raleway', 'https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;600;700&display=swap', array(), null );
+    // Enqueue Google Fonts (Figtree)
+    wp_enqueue_style( 'google-fonts-figtree', 'https://fonts.googleapis.com/css2?family=Figtree:wght@300;400;500;600;700;800&display=swap', array(), null );
     
     // Enqueue Mapbox GL JS
     wp_enqueue_style( 'mapbox-gl-css', 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css', array(), '2.15.0' );
@@ -82,10 +82,24 @@ function placy_enqueue_scripts() {
         wp_enqueue_style( 'placy-tema-story', get_template_directory_uri() . '/css/tema-story.css', array(), '1.0.0' );
         wp_enqueue_style( 'placy-chapter-wrapper', get_template_directory_uri() . '/blocks/chapter-wrapper/style.css', array(), '1.0.0' );
         wp_enqueue_script( 'placy-tema-story-map', get_template_directory_uri() . '/js/tema-story-map.js', array( 'mapbox-gl-js' ), '1.0.0', true );
+        wp_enqueue_script( 'placy-chapter-nav', get_template_directory_uri() . '/js/chapter-nav.js', array(), '1.0.0', true );
         
-        // Pass Mapbox token to the script
+        // Get start location from ACF fields
+        $start_lat = get_field( 'start_latitude' );
+        $start_lng = get_field( 'start_longitude' );
+        $start_location = null;
+        
+        if ( $start_lat && $start_lng ) {
+            $start_location = array(
+                floatval( $start_lng ),
+                floatval( $start_lat )
+            );
+        }
+        
+        // Pass Mapbox token and start location to the script
         wp_localize_script( 'placy-tema-story-map', 'placyMapConfig', array(
             'mapboxToken' => placy_get_mapbox_token(),
+            'startLocation' => $start_location,
         ) );
     }
 }
@@ -140,6 +154,55 @@ require_once get_template_directory() . '/inc/mapbox-config.php';
 require_once get_template_directory() . '/inc/tema-story-patterns.php';
 
 /**
+ * Register custom block category for Placy blocks
+ */
+function placy_register_block_category( $categories ) {
+    return array_merge(
+        array(
+            array(
+                'slug'  => 'placy-content',
+                'title' => __( 'Placy Content', 'placy' ),
+                'icon'  => 'location-alt',
+            ),
+        ),
+        $categories
+    );
+}
+add_filter( 'block_categories_all', 'placy_register_block_category', 10, 1 );
+
+/**
+ * Enqueue block styles for both frontend and editor
+ */
+function placy_enqueue_block_assets( $block_name ) {
+    // Map block names to their style files
+    $block_styles = array(
+        'acf/poi-map-card'  => '/blocks/poi-map-card/style.css',
+        'acf/poi-list'      => '/blocks/poi-list/style.css',
+        'acf/poi-highlight' => '/blocks/poi-highlight/style.css',
+        'acf/poi-gallery'   => '/blocks/poi-gallery/style.css',
+        'acf/image-column'  => '/blocks/image-column/style.css',
+    );
+    
+    // Check if this block has styles
+    if ( isset( $block_styles[ $block_name ] ) ) {
+        $style_path = $block_styles[ $block_name ];
+        $style_file = get_template_directory() . $style_path;
+        
+        // Only enqueue if file exists
+        if ( file_exists( $style_file ) ) {
+            $handle = 'placy-' . str_replace( '/', '-', $block_name );
+            wp_enqueue_style(
+                $handle,
+                get_template_directory_uri() . $style_path,
+                array(),
+                filemtime( $style_file )
+            );
+        }
+    }
+}
+add_action( 'enqueue_block_assets', 'placy_enqueue_block_assets' );
+
+/**
  * Register ACF Blocks
  */
 function placy_register_acf_blocks() {
@@ -150,7 +213,7 @@ function placy_register_acf_blocks() {
             'title'             => __( 'POI Kart', 'placy' ),
             'description'       => __( 'Interaktivt kartblokk som viser valgte POIs', 'placy' ),
             'render_template'   => get_template_directory() . '/blocks/poi-map-card/template.php',
-            'category'          => 'media',
+            'category'          => 'placy-content',
             'icon'              => 'location-alt',
             'keywords'          => array( 'poi', 'map', 'kart', 'location' ),
             'mode'              => 'preview',
@@ -158,7 +221,6 @@ function placy_register_acf_blocks() {
                 'align' => array( 'wide', 'full' ),
                 'anchor' => true,
             ),
-            'enqueue_style'     => get_template_directory_uri() . '/blocks/poi-map-card/style.css',
         ) );
         
         // Register POI List block
@@ -167,7 +229,7 @@ function placy_register_acf_blocks() {
             'title'             => __( 'POI Liste', 'placy' ),
             'description'       => __( 'Viser en liste med POIs for tema story kapitler', 'placy' ),
             'render_template'   => get_template_directory() . '/blocks/poi-list/template.php',
-            'category'          => 'media',
+            'category'          => 'placy-content',
             'icon'              => 'list-view',
             'keywords'          => array( 'poi', 'list', 'tema', 'story', 'kapittel' ),
             'mode'              => 'preview',
@@ -175,52 +237,106 @@ function placy_register_acf_blocks() {
                 'align' => array( 'wide', 'full' ),
                 'anchor' => true,
             ),
-            'enqueue_style'     => get_template_directory_uri() . '/blocks/poi-list/style.css',
+        ) );
+        
+        // Register Image Column block
+        acf_register_block_type( array(
+            'name'              => 'image-column',
+            'title'             => __( 'Image Column (60/40)', 'placy' ),
+            'description'       => __( 'To bilder side ved side i 60/40 fordeling', 'placy' ),
+            'render_template'   => get_template_directory() . '/blocks/image-column/template.php',
+            'category'          => 'placy-content',
+            'icon'              => 'images-alt2',
+            'keywords'          => array( 'image', 'column', 'gallery', 'bilde' ),
+            'mode'              => 'preview',
+            'supports'          => array(
+                'align' => false,
+                'anchor' => true,
+            ),
+        ) );
+        
+        // Register POI Highlight block
+        acf_register_block_type( array(
+            'name'              => 'poi-highlight',
+            'title'             => __( 'POI Highlight', 'placy' ),
+            'description'       => __( 'Fremhevet POI med stor hero-layout', 'placy' ),
+            'render_template'   => get_template_directory() . '/blocks/poi-highlight/template.php',
+            'category'          => 'placy-content',
+            'icon'              => 'star-filled',
+            'keywords'          => array( 'poi', 'highlight', 'hero', 'fremhevet' ),
+            'mode'              => 'preview',
+            'supports'          => array(
+                'align' => false,
+                'anchor' => true,
+            ),
+        ) );
+        
+        // Register POI Gallery block
+        acf_register_block_type( array(
+            'name'              => 'poi-gallery',
+            'title'             => __( 'POI Gallery', 'placy' ),
+            'description'       => __( 'Vis flere POIs i et grid', 'placy' ),
+            'render_template'   => get_template_directory() . '/blocks/poi-gallery/template.php',
+            'category'          => 'placy-content',
+            'icon'              => 'grid-view',
+            'keywords'          => array( 'poi', 'gallery', 'grid', 'list' ),
+            'mode'              => 'preview',
+            'supports'          => array(
+                'align' => false,
+                'anchor' => true,
+            ),
         ) );
     }
 }
 add_action( 'acf/init', 'placy_register_acf_blocks' );
 
 /**
- * Register Chapter Wrapper Block (native Gutenberg block with InnerBlocks)
+ * Register Chapter Wrapper Block
  */
 function placy_register_chapter_wrapper_block() {
-    // Register the block
-    register_block_type( get_template_directory() . '/blocks/chapter-wrapper', array(
-        'render_callback' => 'placy_render_chapter_wrapper_block',
-    ) );
+    register_block_type( get_template_directory() . '/blocks/chapter-wrapper' );
 }
 add_action( 'init', 'placy_register_chapter_wrapper_block' );
 
 /**
- * Render callback for Chapter Wrapper block
- */
-function placy_render_chapter_wrapper_block( $attributes, $content ) {
-    $chapter_id = ! empty( $attributes['chapterId'] ) ? $attributes['chapterId'] : 'chapter-' . uniqid();
-    
-    $wrapper_attributes = sprintf(
-        'class="wp-block-placy-chapter-wrapper chapter" data-chapter-id="%s"',
-        esc_attr( $chapter_id )
-    );
-    
-    return sprintf(
-        '<section %s>%s</section>',
-        $wrapper_attributes,
-        $content
-    );
-}
-
-/**
- * Enqueue block editor styles
+ * Enqueue block editor styles and scripts (admin only)
  */
 function placy_block_editor_styles() {
-    // Enqueue POI Map Card styles in the editor
-    // This includes Tailwind classes but scoped to the block
-    wp_enqueue_style(
-        'placy-poi-map-card-editor',
-        get_template_directory_uri() . '/blocks/poi-map-card/style.css',
-        array(),
-        '1.0.0'
+    // Enqueue all block styles in editor
+    $blocks = array(
+        'poi-map-card',
+        'poi-list',
+        'poi-highlight',
+        'poi-gallery',
+        'image-column'
+    );
+    
+    foreach ( $blocks as $block ) {
+        $style_file = get_template_directory() . '/blocks/' . $block . '/style.css';
+        if ( file_exists( $style_file ) ) {
+            wp_enqueue_style(
+                'placy-block-' . $block,
+                get_template_directory_uri() . '/blocks/' . $block . '/style.css',
+                array(),
+                filemtime( $style_file )
+            );
+        }
+    }
+    
+    // Enqueue Adobe Typekit fonts in editor
+    wp_enqueue_style( 
+        'adobe-typekit-editor', 
+        'https://use.typekit.net/jlp3dzl.css', 
+        array(), 
+        null 
+    );
+    
+    // Enqueue Google Fonts (Figtree) in editor
+    wp_enqueue_style( 
+        'google-fonts-figtree-editor', 
+        'https://fonts.googleapis.com/css2?family=Figtree:wght@300;400;500;600;700;800&display=swap', 
+        array(), 
+        null 
     );
     
     // Enqueue Chapter Wrapper block editor script
@@ -230,14 +346,6 @@ function placy_block_editor_styles() {
         array( 'wp-blocks', 'wp-element', 'wp-block-editor', 'wp-components' ),
         '1.0.0',
         true
-    );
-    
-    // Enqueue Chapter Wrapper block editor styles
-    wp_enqueue_style(
-        'placy-chapter-wrapper-editor',
-        get_template_directory_uri() . '/blocks/chapter-wrapper/style.css',
-        array(),
-        '1.0.0'
     );
 }
 add_action( 'enqueue_block_editor_assets', 'placy_block_editor_styles' );

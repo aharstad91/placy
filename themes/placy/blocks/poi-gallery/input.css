@@ -1,0 +1,28 @@
+/* Only load Tailwind utilities, not base (which resets WordPress styles) */
+@tailwind components;
+@tailwind utilities;
+
+/* Custom block styles */
+.poi-gallery {
+    margin-bottom: 2rem;
+}
+
+.poi-gallery-item {
+    transition: box-shadow 0.2s;
+}
+
+.poi-gallery-content {
+    padding: 1.5rem;
+}
+
+/* Editor styles */
+.block-editor-block-list__block .poi-gallery {
+    margin: 1.5rem 0;
+    padding: 1rem;
+    background: #f9fafb;
+    border-radius: 0.5rem;
+}
+
+.acf-block-preview .poi-gallery-item button {
+    pointer-events: none;
+}

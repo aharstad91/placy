@@ -1,0 +1,16 @@
+/* Only load Tailwind utilities, not base (which resets WordPress styles) */
+@tailwind components;
+@tailwind utilities;
+
+/* Custom block styles */
+.image-column-block {
+    margin: 2rem 0;
+}
+
+/* Editor styles */
+.block-editor-block-list__block .image-column-block {
+    margin: 1.5rem 0;
+    padding: 1rem;
+    background: #f9fafb;
+    border-radius: 0.5rem;
+}

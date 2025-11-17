@@ -33,7 +33,7 @@
 
 /* Base Styles */
 body {
-    font-family: 'campaign', 'Raleway', sans-serif;
+    font-family: 'Figtree', 'campaign', sans-serif;
     margin: 0;
     padding: 0;
     height: 100%;
@@ -43,13 +43,13 @@ body {
 
 /* Typography */
 h1, h2, h3, h4, h5, h6 {
-    font-family: 'campaign-serif', 'Raleway', serif;
+    font-family: 'Figtree', 'campaign-serif', serif;
     margin: 0;
     line-height: 1.2;
 }
 
 .nav-font {
-    font-family: 'Raleway', sans-serif;
+    font-family: 'Figtree', sans-serif;
 }
 
 /* Layout Utilities */

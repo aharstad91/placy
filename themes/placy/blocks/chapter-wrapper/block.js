@@ -16,19 +16,78 @@
         'core/quote',
         'core/spacer',
         'acf/poi-list',
+        'acf/poi-highlight',
+        'acf/poi-gallery',
+        'acf/image-column',
     ];
 
     // Template for new chapters
     const TEMPLATE = [
         ['core/heading', { level: 2, placeholder: 'Kapittel tittel...' }],
         ['core/paragraph', { placeholder: 'Skriv kapittelets introduksjonstekst her...' }],
-        ['acf/poi-list', {}],
     ];
 
     blocks.registerBlockType('placy/chapter-wrapper', {
+        deprecated: [
+            {
+                // Old version that used client-side save() with section tags
+                attributes: {
+                    chapterId: {
+                        type: 'string',
+                        default: ''
+                    },
+                    chapterAnchor: {
+                        type: 'string',
+                        default: ''
+                    },
+                    chapterTitle: {
+                        type: 'string',
+                        default: ''
+                    }
+                },
+                save: function () {
+                    return el(
+                        'section',
+                        { className: 'chapter wp-block-placy-chapter-wrapper' },
+                        el(InnerBlocks.Content)
+                    );
+                },
+                migrate: function(attributes) {
+                    // Just return attributes as-is, server-side rendering will handle the rest
+                    return attributes;
+                }
+            }
+        ],
+        
         edit: function (props) {
-            const { attributes, setAttributes } = props;
-            const { chapterId } = attributes;
+            const { attributes, setAttributes, clientId } = props;
+            const { chapterId, chapterAnchor, chapterTitle } = attributes;
+            
+            // Auto-generate chapter ID on first render if not set
+            const { useEffect } = element;
+            const { select } = window.wp.data;
+            
+            useEffect(function() {
+                if (!chapterId) {
+                    // Count existing chapter-wrapper blocks
+                    const blocks = select('core/block-editor').getBlocks();
+                    let chapterCount = 0;
+                    
+                    function countChapters(blockList) {
+                        blockList.forEach(function(block) {
+                            if (block.name === 'placy/chapter-wrapper') {
+                                chapterCount++;
+                            }
+                            if (block.innerBlocks && block.innerBlocks.length > 0) {
+                                countChapters(block.innerBlocks);
+                            }
+                        });
+                    }
+                    
+                    countChapters(blocks);
+                    setAttributes({ chapterId: 'chapter-' + chapterCount });
+                }
+            }, []);
 
             const blockProps = useBlockProps({
                 className: 'chapter',
@@ -54,11 +113,40 @@
                                     setAttributes({ chapterId: value });
                                 },
                                 placeholder: 'chapter-1',
+                            }),
+                            el(TextControl, {
+                                label: 'Kapittel Anchor (URL-slug)',
+                                help: 'Semantisk ankerpunkt for navigasjon (automatisk lowercase og bindestreker)',
+                                value: chapterAnchor,
+                                onChange: function (value) {
+                                    // Auto-format: lowercase, replace spaces with hyphens, remove special chars
+                                    const formatted = value
+                                        .toLowerCase()
+                                        .replace(/\s+/g, '-')           // Replace spaces with hyphens
+                                        .replace(/[æ]/g, 'ae')          // Norwegian characters
+                                        .replace(/[ø]/g, 'o')
+                                        .replace(/[å]/g, 'a')
+                                        .replace(/[^a-z0-9-]/g, '')     // Remove non-alphanumeric except hyphens
+                                        .replace(/-+/g, '-')            // Replace multiple hyphens with single
+                                        .replace(/^-|-$/g, '');         // Trim hyphens from start/end
+                                    
+                                    setAttributes({ chapterAnchor: formatted });
+                                },
+                                placeholder: 'michelin-dining',
+                            }),
+                            el(TextControl, {
+                                label: 'Kapittel Tittel (navigasjon)',
+                                help: 'Tittel som vises i navigasjonsmenyen',
+                                value: chapterTitle,
+                                onChange: function (value) {
+                                    setAttributes({ chapterTitle: value });
+                                },
+                                placeholder: 'Michelin & Fine Dining',
                             })
                         )
                     ),
 
-                    // Chapter ID indicator in editor
+                    // Chapter info indicator in editor
                     el(
                         'div',
                         {
@@ -68,11 +156,23 @@
                                 fontWeight: '600',
                                 color: '#76908D',
                                 marginBottom: '1rem',
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.05em',
+                                padding: '0.75rem',
+                                backgroundColor: '#f8f9fa',
+                                borderRadius: '0.375rem',
+                                border: '1px solid #e5e7eb',
                             },
                         },
-                        chapterId ? 'Kapittel: ' + chapterId : 'Kapittel: (Sett ID i høyre sidebar)'
+                        [
+                            el('div', { key: 'id', style: { marginBottom: '0.25rem' } }, 
+                                'ID: ' + (chapterId || '(ikke satt)')
+                            ),
+                            el('div', { key: 'anchor', style: { marginBottom: '0.25rem' } }, 
+                                'Anchor: ' + (chapterAnchor || '(ikke satt)')
+                            ),
+                            el('div', { key: 'title' }, 
+                                'Nav Tittel: ' + (chapterTitle || '(ikke satt)')
+                            ),
+                        ]
                     ),
 
                     // Inner blocks
@@ -86,9 +186,16 @@
             );
         },
 
-        save: function () {
+        save: function (props) {
+            const { attributes } = props;
+            const { chapterId, chapterAnchor, chapterTitle } = attributes;
+            
             const blockProps = useBlockProps.save({
                 className: 'chapter',
+                id: chapterAnchor || chapterId || undefined,
+                'data-chapter-id': chapterId || '',
+                'data-chapter-anchor': chapterAnchor || '',
+                'data-chapter-title': chapterTitle || '',
             });
 
             return el(

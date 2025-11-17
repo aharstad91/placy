@@ -15,11 +15,14 @@ module.exports = {
         'overvik-dark': '#1a1a1a',
       },
       fontFamily: {
-        'campaign': ['campaign', 'Raleway', 'sans-serif'],
-        'campaign-serif': ['campaign-serif', 'Raleway', 'serif'],
-        'raleway': ['Raleway', 'sans-serif'],
+        'sans': ['Figtree', 'sans-serif'],
+        'campaign': ['campaign', 'Figtree', 'sans-serif'],
+        'campaign-serif': ['campaign-serif', 'Figtree', 'serif'],
+        'figtree': ['Figtree', 'sans-serif'],
       },
     },
   },
-  plugins: [],
+  plugins: [
+    require('@tailwindcss/typography'),
+  ],
 }

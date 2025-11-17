@@ -34,7 +34,7 @@ $is_in_chapter = strpos( $parent_classes, 'chapter' ) !== false;
 
 <div id="<?php echo esc_attr( $block_id ); ?>" class="<?php echo esc_attr( $class_name ); ?> w-full my-8">
     <?php if ( $poi_items && is_array( $poi_items ) ) : ?>
-        <div class="flex flex-col gap-4" <?php if ( $is_in_chapter ) echo 'data-chapter-poi-list="true"'; ?>>
+        <div class="flex flex-col gap-6" <?php if ( $is_in_chapter ) echo 'data-chapter-poi-list="true"'; ?>>
             <?php foreach ( $poi_items as $poi ) : 
                 // Get POI coordinates
                 $lat = get_field( 'latitude', $poi->ID );
@@ -44,28 +44,71 @@ $is_in_chapter = strpos( $parent_classes, 'chapter' ) !== false;
                 if ( $lat && $lng ) {
                     $coords = sprintf( '[%s,%s]', esc_attr( $lat ), esc_attr( $lng ) );
                 }
+                
+                // Get featured image URL - landscape format for card top
+                $featured_image = get_the_post_thumbnail_url( $poi->ID, 'large' );
+                
+                // Get POI content
+                $content = apply_filters( 'the_content', get_post_field( 'post_content', $poi->ID ) );
+                $excerpt = get_the_excerpt( $poi->ID );
             ?>
-                <div 
-                    class="poi-list-item p-6 bg-white rounded-lg shadow-sm transition-all duration-300 cursor-pointer hover:shadow-md hover:-translate-y-0.5 min-h-[80px]"
+                <article 
+                    class="poi-list-item bg-white border border-gray-200 rounded-lg overflow-hidden transition-all duration-300 hover:border-gray-300"
                     data-poi-id="<?php echo esc_attr( $poi->ID ); ?>"
+                    data-poi-title="<?php echo esc_attr( get_the_title( $poi->ID ) ); ?>"
                     <?php if ( $coords ) : ?>
                         data-poi-coords="<?php echo $coords; ?>"
                     <?php endif; ?>
-                >
-                    <h3 class="poi-list-item-title text-lg font-semibold mb-2 text-gray-900">
-                        <?php echo esc_html( get_the_title( $poi->ID ) ); ?>
-                    </h3>
-                    
-                    <?php 
-                    // Optional: Display excerpt or short description
-                    $excerpt = get_the_excerpt( $poi->ID );
-                    if ( $excerpt ) : 
-                    ?>
-                        <p class="text-base text-gray-600 leading-relaxed m-0">
-                            <?php echo esc_html( $excerpt ); ?>
-                        </p>
+                    <?php if ( $featured_image ) : ?>
+                        data-poi-image="<?php echo esc_url( $featured_image ); ?>"
                     <?php endif; ?>
-                </div>
+                >
+                    <div class="poi-card-content flex gap-4 p-4">
+                        <?php if ( $featured_image ) : ?>
+                            <div class="flex-shrink-0">
+                                <img src="<?php echo esc_url( $featured_image ); ?>" 
+                                     alt="<?php echo esc_attr( get_the_title( $poi->ID ) ); ?>"
+                                     class="w-20 h-20 object-cover rounded-lg">
+                            </div>
+                        <?php endif; ?>
+                        
+                        <div class="flex-1 min-w-0">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-2 truncate">
+                                <?php echo esc_html( get_the_title( $poi->ID ) ); ?>
+                            </h3>
+                            
+                            <?php if ( $content ) : ?>
+                                <div class="poi-description text-sm text-gray-600 line-clamp-2 mb-3">
+                                    <?php echo wp_kses_post( $content ); ?>
+                                </div>
+                            <?php elseif ( $excerpt ) : ?>
+                                <div class="poi-description text-sm text-gray-600 line-clamp-2 mb-3">
+                                    <?php echo esc_html( $excerpt ); ?>
+                                </div>
+                            <?php endif; ?>
+                            
+                            <div class="flex items-center justify-between gap-4">
+                                <div class="flex items-center gap-2">
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                    </svg>
+                                    <span class="poi-walking-time text-xs font-medium text-gray-500">
+                                        Beregner...
+                                    </span>
+                                </div>
+                                
+                                <div class="poi-button-container flex items-center gap-2 flex-shrink-0">
+                                    <button 
+                                        class="poi-show-on-map px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium text-xs rounded transition-colors duration-200 whitespace-nowrap"
+                                        onclick="showPOIOnMap(this)"
+                                    >
+                                        Se på kart
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </article>
             <?php endforeach; ?>
         </div>
     <?php else : ?>

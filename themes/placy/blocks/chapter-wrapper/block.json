@@ -15,6 +15,14 @@
     "chapterId": {
       "type": "string",
       "default": ""
+    },
+    "chapterAnchor": {
+      "type": "string",
+      "default": ""
+    },
+    "chapterTitle": {
+      "type": "string",
+      "default": ""
     }
   }
 }

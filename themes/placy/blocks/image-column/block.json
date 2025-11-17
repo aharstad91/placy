@@ -1,0 +1,18 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 2,
+  "name": "placy/image-column",
+  "title": "Image Column",
+  "description": "Two images in 60/40 column layout",
+  "category": "placy",
+  "icon": "images-alt2",
+  "keywords": ["image", "column", "gallery"],
+  "acf": {
+    "mode": "preview",
+    "renderTemplate": "template.php"
+  },
+  "supports": {
+    "align": false,
+    "anchor": true
+  }
+}

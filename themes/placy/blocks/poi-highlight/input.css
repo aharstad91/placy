@@ -1,0 +1,28 @@
+/* Only load Tailwind utilities, not base (which resets WordPress styles) */
+@tailwind components;
+@tailwind utilities;
+
+/* Custom block styles */
+.poi-highlight {
+    margin-bottom: 2rem;
+}
+
+.poi-highlight-images {
+    margin-bottom: 1.5rem;
+}
+
+.poi-highlight-content {
+    padding: 1.5rem;
+}
+
+/* Editor styles */
+.block-editor-block-list__block .poi-highlight {
+    margin: 1.5rem 0;
+    padding: 1rem;
+    background: #f9fafb;
+    border-radius: 0.5rem;
+}
+
+.acf-block-preview .poi-highlight button {
+    pointer-events: none;
+}

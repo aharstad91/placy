@@ -1,10 +1,91 @@
 /* Tema Story Layout Styles */
 
-/* Two-column grid layout */
+/* Smooth scroll behavior */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Three-column grid layout */
 .tema-story-container {
     display: grid;
-    grid-template-columns: 768px 1fr;
+    grid-template-columns: 280px 1fr 1fr;
     height: 100vh;
+    gap: 0;
+}
+
+/* Navigation Column - Sticky Left */
+.nav-column {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    background: #f8f9fa;
+    border-right: 1px solid #e5e7eb;
+    overflow-y: auto;
+}
+
+.nav-inner {
+    padding: 2rem 1.5rem;
+}
+
+/* Back Button */
+.back-button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    margin-bottom: 2rem;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    color: #374151;
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.back-button:hover {
+    background: #f9fafb;
+    border-color: #76908D;
+    color: #76908D;
+}
+
+.back-button svg {
+    width: 1.25rem;
+    height: 1.25rem;
+    flex-shrink: 0;
+}
+
+/* Chapter Navigation */
+.chapter-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.chapter-nav-item {
+    display: block;
+    padding: 0.75rem 1rem;
+    color: #6b7280;
+    text-decoration: none;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    border-radius: 0.375rem;
+    transition: all 0.2s ease;
+    border-left: 3px solid transparent;
+}
+
+.chapter-nav-item:hover {
+    background: white;
+    color: #374151;
+    border-left-color: #d1d5db;
+}
+
+.chapter-nav-item.active {
+    background: white;
+    color: #76908D;
+    border-left-color: #76908D;
+    font-weight: 600;
 }
 
 /* Content Column - Scrollable */
@@ -18,7 +99,7 @@
 /* Map Column - Sticky */
 .map-column {
     position: sticky;
-    top: 72px;
+    top: 0;
     height: 100vh;
     background: #f5f5f5;
 }
@@ -67,13 +148,13 @@
 
 /* Story Content */
 .tema-story-content {
-    padding: 2rem;
+    padding: 3rem;
 }
 
 /* Chapter Sections */
 .chapter {
     padding: 3rem 0;
-    scroll-margin-top: 72px; /* Offset for fixed header */
+    scroll-margin-top: 2rem; /* Offset for smooth scroll positioning */
 }
 
 .chapter h2 {
@@ -166,11 +247,6 @@
     background: #555;
 }
 
-/* Smooth scroll behavior */
-html {
-    scroll-behavior: smooth;
-}
-
 /* Loading state for map */
 .tema-story-map.loading::before {
     content: '';
@@ -189,4 +265,33 @@ html {
 @keyframes spin {
     0% { transform: translate(-50%, -50%) rotate(0deg); }
     100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* POI Card Interaction States */
+/* Hover state - when hovering over card or marker */
+.poi-list-item.poi-active-hover {
+    box-shadow: 0 0 0 3px rgba(118, 144, 141, 0.2), 0 4px 12px rgba(0,0,0,0.15);
+    transform: translateY(-2px);
+    transition: all 0.3s ease;
+}
+
+/* Click state - when marker is clicked */
+.poi-list-item.poi-active-click {
+    box-shadow: 0 0 0 4px rgba(118, 144, 141, 0.4), 0 8px 20px rgba(0,0,0,0.2);
+    transform: scale(1.02);
+    background: #fffae1;
+    transition: all 0.3s ease;
+    animation: pulse-highlight 0.6s ease-out;
+}
+
+@keyframes pulse-highlight {
+    0% {
+        box-shadow: 0 0 0 0 rgba(118, 144, 141, 0.6), 0 8px 20px rgba(0,0,0,0.2);
+    }
+    50% {
+        box-shadow: 0 0 0 8px rgba(118, 144, 141, 0), 0 8px 20px rgba(0,0,0,0.2);
+    }
+    100% {
+        box-shadow: 0 0 0 4px rgba(118, 144, 141, 0.4), 0 8px 20px rgba(0,0,0,0.2);
+    }
 }

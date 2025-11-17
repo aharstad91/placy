@@ -1,0 +1,16 @@
+{
+  "name": "acf/poi-gallery",
+  "title": "POI Gallery",
+  "description": "Display multiple POIs in a grid layout",
+  "category": "media",
+  "icon": "grid-view",
+  "keywords": ["poi", "gallery", "grid", "points"],
+  "acf": {
+    "mode": "preview",
+    "renderTemplate": "template.php"
+  },
+  "supports": {
+    "align": false,
+    "anchor": true
+  }
+}

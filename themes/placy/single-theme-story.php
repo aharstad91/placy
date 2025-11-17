@@ -24,8 +24,29 @@ if ( ! defined( 'ABSPATH' ) ) {
 <?php wp_body_open(); ?>
 
 <div class="tema-story-container">
-    <?php while ( have_posts() ) : the_post(); ?>
-        <!-- Content Column -->
+    <?php while ( have_posts() ) : the_post(); 
+        // Get parent story for back button
+        $parent_story = get_field( 'parent_story' );
+    ?>
+        <!-- Navigation Column (Sticky Left) -->
+        <nav class="nav-column">
+            <div class="nav-inner">
+                <?php if ( $parent_story ) : ?>
+                    <a href="<?php echo esc_url( get_permalink( $parent_story->ID ) ); ?>" class="back-button">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                        </svg>
+                        <span>Tilbake til <?php echo esc_html( get_the_title( $parent_story->ID ) ); ?></span>
+                    </a>
+                <?php endif; ?>
+                
+                <div class="chapter-nav" id="chapter-nav">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </div>
+        </nav>
+        
+        <!-- Content Column (Scrollable Middle) -->
         <div class="content-column">
             <article id="post-<?php the_ID(); ?>" <?php post_class(); ?>>
                 <!-- Hero Section -->
@@ -54,7 +75,7 @@ if ( ! defined( 'ABSPATH' ) ) {
             </article>
         </div>
         
-        <!-- Map Column -->
+        <!-- Map Column (Sticky Right) -->
         <div class="map-column">
             <div id="tema-story-map" class="tema-story-map"></div>
         </div>
