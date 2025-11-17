@@ -140,10 +140,6 @@
                     // coords from HTML: [lat, lng]
                     // Mapbox needs: [lng, lat]
                     const lngLat = [parseFloat(coords[1]), parseFloat(coords[0])];
-                    
-                        original: coords,
-                        mapbox: lngLat
-                    });
 
                     // Get walking distance if start location exists
                     let walking = null;

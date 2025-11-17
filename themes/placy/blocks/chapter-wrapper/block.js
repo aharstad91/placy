@@ -15,6 +15,7 @@
         'core/list',
         'core/quote',
         'core/spacer',
+        'core/group',
         'acf/poi-list',
         'acf/poi-highlight',
         'acf/poi-gallery',

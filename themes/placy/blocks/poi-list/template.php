@@ -68,7 +68,7 @@ $is_in_chapter = strpos( $parent_classes, 'chapter' ) !== false;
                             <div class="flex-shrink-0">
                                 <img src="<?php echo esc_url( $featured_image ); ?>" 
                                      alt="<?php echo esc_attr( get_the_title( $poi->ID ) ); ?>"
-                                     class="w-20 h-20 object-cover rounded-lg">
+                                     class="w-32 h-32 object-cover rounded-lg">
                             </div>
                         <?php endif; ?>
                         

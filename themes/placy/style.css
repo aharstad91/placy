@@ -26,3 +26,9 @@ Tags: custom-logo, custom-menu, featured-images, threaded-comments, translation-
     display: grid;
     gap: 33vh;
 }
+h3.wp-block-heading {
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+    margin-bottom: .75rem;
+    font-weight: 600;
+}
