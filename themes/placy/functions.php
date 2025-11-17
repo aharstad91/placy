@@ -91,6 +91,9 @@ function placy_enqueue_scripts() {
         // Get start location from ACF fields
         $start_lat = get_field( 'start_latitude' );
         $start_lng = get_field( 'start_longitude' );
+        $property_logo = get_field( 'property_logo' );
+        $property_background = get_field( 'property_background' );
+        $property_label = get_field( 'property_label' );
         $start_location = null;
         
         if ( $start_lat && $start_lng ) {
@@ -104,6 +107,9 @@ function placy_enqueue_scripts() {
         wp_localize_script( 'placy-tema-story-map', 'placyMapConfig', array(
             'mapboxToken' => placy_get_mapbox_token(),
             'startLocation' => $start_location,
+            'propertyLogo' => $property_logo,
+            'propertyBackground' => $property_background,
+            'propertyLabel' => $property_label ? $property_label : 'Eiendommen',
         ) );
     }
 }
@@ -151,6 +157,12 @@ require_once get_template_directory() . '/inc/rewrites.php';
  * Include Mapbox configuration
  */
 require_once get_template_directory() . '/inc/mapbox-config.php';
+
+/**
+ * Include Google Places API integration
+ */
+require_once get_template_directory() . '/inc/google-places.php';
+require_once get_template_directory() . '/inc/test-google-places.php';
 
 /**
  * Include Tema Story block patterns

@@ -465,6 +465,22 @@
                 const coordsAttr = item.getAttribute('data-poi-coords');
                 const imageUrl = item.getAttribute('data-poi-image');
                 const title = item.getAttribute('data-poi-title') || 'Untitled POI';
+                
+                // Get rating data from DOM
+                const ratingEl = item.querySelector('.poi-rating-value');
+                const ratingCountEl = item.querySelector('.poi-rating-count');
+                let rating = null;
+                
+                if (ratingEl) {
+                    const ratingText = ratingEl.textContent.replace(/\s+/g, ' ').trim();
+                    const ratingMatch = ratingText.match(/(\d+\.?\d*)/);
+                    if (ratingMatch) {
+                        rating = {
+                            value: parseFloat(ratingMatch[1]),
+                            count: ratingCountEl ? ratingCountEl.textContent.trim() : null
+                        };
+                    }
+                }
 
                 if (coordsAttr) {
                     try {
@@ -475,6 +491,7 @@
                                 coords: [parseFloat(coords[1]), parseFloat(coords[0])], // [lng, lat] for Mapbox
                                 title: title.trim(),
                                 image: imageUrl || null,
+                                rating: rating,
                                 element: item // Store reference to DOM element
                             });
                         }
@@ -1030,8 +1047,8 @@
             // Image in label (if available)
             if (poi.image) {
                 const labelImage = document.createElement('div');
-                labelImage.style.width = '40px';
-                labelImage.style.height = '40px';
+                labelImage.style.width = '48px';
+                labelImage.style.height = '48px';
                 labelImage.style.borderRadius = '6px';
                 labelImage.style.backgroundImage = `url(${poi.image})`;
                 labelImage.style.backgroundSize = 'cover';
@@ -1053,6 +1070,41 @@
             titleSpan.style.fontWeight = '600';
             titleSpan.style.whiteSpace = 'nowrap';
             textContainer.appendChild(titleSpan);
+            
+            // Rating (if available)
+            if (poi.rating) {
+                const ratingContainer = document.createElement('span');
+                ratingContainer.style.display = 'flex';
+                ratingContainer.style.alignItems = 'center';
+                ratingContainer.style.gap = '4px';
+                ratingContainer.style.fontSize = '12px';
+                ratingContainer.style.whiteSpace = 'nowrap';
+                
+                // Star
+                const starSpan = document.createElement('span');
+                starSpan.textContent = '★';
+                starSpan.style.color = '#FBBC05';
+                starSpan.style.fontSize = '12px';
+                ratingContainer.appendChild(starSpan);
+                
+                // Rating value
+                const ratingValueSpan = document.createElement('span');
+                ratingValueSpan.textContent = poi.rating.value.toFixed(1);
+                ratingValueSpan.style.fontWeight = '500';
+                ratingValueSpan.style.color = '#1a202c';
+                ratingContainer.appendChild(ratingValueSpan);
+                
+                // Review count (if available)
+                if (poi.rating.count) {
+                    const countSpan = document.createElement('span');
+                    countSpan.textContent = poi.rating.count;
+                    countSpan.style.color = '#666';
+                    countSpan.style.fontSize = '11px';
+                    ratingContainer.appendChild(countSpan);
+                }
+                
+                textContainer.appendChild(ratingContainer);
+            }
             
             // Walking time (if available)
             if (walking) {

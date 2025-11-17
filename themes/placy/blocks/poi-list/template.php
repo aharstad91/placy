@@ -32,7 +32,7 @@ $is_in_chapter = strpos( $parent_classes, 'chapter' ) !== false;
 
 ?>
 
-<div id="<?php echo esc_attr( $block_id ); ?>" class="<?php echo esc_attr( $class_name ); ?> w-full">
+<div id="<?php echo esc_attr( $block_id ); ?>" class="<?php echo esc_attr( $class_name ); ?> w-full mb-6">
     <?php if ( $poi_items && is_array( $poi_items ) ) : ?>
         <div class="flex flex-col gap-6" <?php if ( $is_in_chapter ) echo 'data-chapter-poi-list="true"'; ?>>
             <?php foreach ( $poi_items as $poi ) : 
@@ -76,6 +76,39 @@ $is_in_chapter = strpos( $parent_classes, 'chapter' ) !== false;
                             <h3 class="text-lg font-semibold text-gray-900 mb-2 truncate">
                                 <?php echo esc_html( get_the_title( $poi->ID ) ); ?>
                             </h3>
+                            
+                            <?php 
+                            // Get Google Places rating data
+                            $place_data = placy_get_poi_place_data( $poi->ID );
+                            if ( $place_data && isset( $place_data['rating'] ) ) :
+                            ?>
+                                <div class="poi-rating flex items-center gap-2 mb-2">
+                                    <span class="poi-rating-value flex items-center gap-1 text-sm font-medium text-gray-900">
+                                        <span class="text-yellow-500">★</span>
+                                        <?php echo number_format( $place_data['rating'], 1 ); ?>
+                                    </span>
+                                    <?php if ( isset( $place_data['review_count'] ) && $place_data['review_count'] > 0 ) : ?>
+                                        <span class="poi-rating-count text-xs text-gray-500">
+                                            (<?php echo number_format( $place_data['review_count'] ); ?>)
+                                        </span>
+                                    <?php endif; ?>
+                                    <?php if ( ! empty( $place_data['google_maps_url'] ) ) : ?>
+                                        <a href="<?php echo esc_url( $place_data['google_maps_url'] ); ?>" 
+                                           target="_blank" 
+                                           rel="noopener noreferrer"
+                                           class="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                                           title="Se anmeldelser på Google">
+                                            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+                                                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                                                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                                                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                                                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                                            </svg>
+                                            <span class="text-[10px]">Google</span>
+                                        </a>
+                                    <?php endif; ?>
+                                </div>
+                            <?php endif; ?>
                             
                             <?php if ( $content ) : ?>
                                 <div class="poi-description text-sm text-gray-600 line-clamp-2 mb-3">

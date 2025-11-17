@@ -34,6 +34,7 @@
     let startLocation = null; // Property/start location from ACF fields
     let walkingDistances = new Map(); // Cache for walking distances
     let currentRoute = null; // Currently displayed route
+    let currentDurationMarkers = []; // Store duration markers for cleanup
 
     /**
      * Get start location from page meta data
@@ -65,49 +66,150 @@
             return;
         }
 
-        // Create custom marker element
-        const el = document.createElement('div');
-        el.className = 'property-marker';
-        el.style.width = '32px';
-        el.style.height = '32px';
-        el.style.borderRadius = '50% 50% 50% 0';
-        el.style.backgroundColor = '#e74c3c';
-        el.style.border = '3px solid white';
-        el.style.boxShadow = '0 3px 8px rgba(0,0,0,0.3)';
-        el.style.cursor = 'pointer';
+        const propertyLogo = placyMapConfig.propertyLogo;
+        const propertyBackground = placyMapConfig.propertyBackground;
+        const propertyLabel = placyMapConfig.propertyLabel || 'Eiendommen';
 
-        // Inner dot
-        const innerDot = document.createElement('div');
-        innerDot.style.width = '12px';
-        innerDot.style.height = '12px';
-        innerDot.style.backgroundColor = 'white';
-        innerDot.style.borderRadius = '50%';
-        innerDot.style.position = 'absolute';
-        innerDot.style.top = '50%';
-        innerDot.style.left = '50%';
-        innerDot.style.transform = 'translate(-50%, -50%)';
-        el.appendChild(innerDot);
+        // Create white card marker similar to POI markers
+        const el = document.createElement('div');
+        el.className = 'property-marker-card';
+        el.style.width = '160px';
+        el.style.backgroundColor = 'white';
+        el.style.borderRadius = '12px';
+        el.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15), 0 2px 4px rgba(0,0,0,0.1)';
+        el.style.cursor = 'pointer';
+        el.style.transition = 'all 0.2s ease';
+        el.style.overflow = 'hidden';
+        el.style.border = '2px solid white';
+
+        // Background image section
+        if (propertyBackground) {
+            const bgSection = document.createElement('div');
+            bgSection.style.width = '100%';
+            bgSection.style.height = '80px';
+            bgSection.style.backgroundImage = `url('${propertyBackground}')`;
+            bgSection.style.backgroundSize = 'cover';
+            bgSection.style.backgroundPosition = 'center';
+            bgSection.style.position = 'relative';
+            bgSection.style.display = 'flex';
+            bgSection.style.alignItems = 'flex-end';
+            bgSection.style.justifyContent = 'flex-start';
+            bgSection.style.padding = '8px';
+            
+            // Logo with white background
+            if (propertyLogo) {
+                const logoContainer = document.createElement('div');
+                logoContainer.style.width = '48px';
+                logoContainer.style.height = '48px';
+                logoContainer.style.backgroundColor = 'white';
+                logoContainer.style.borderRadius = '8px';
+                logoContainer.style.padding = '8px';
+                logoContainer.style.display = 'flex';
+                logoContainer.style.alignItems = 'center';
+                logoContainer.style.justifyContent = 'center';
+                logoContainer.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
+                
+                const logoImg = document.createElement('img');
+                logoImg.src = propertyLogo;
+                logoImg.style.width = '100%';
+                logoImg.style.height = '100%';
+                logoImg.style.objectFit = 'contain';
+                
+                logoContainer.appendChild(logoImg);
+                bgSection.appendChild(logoContainer);
+            }
+            
+            el.appendChild(bgSection);
+        }
+
+        // Title section with white background
+        const titleSection = document.createElement('div');
+        titleSection.style.padding = '8px 10px';
+        titleSection.style.backgroundColor = 'white';
+        titleSection.style.textAlign = 'center';
         
-        // Wrapper for the rotated pin (so rotation doesn't affect Mapbox positioning)
+        const title = document.createElement('div');
+        title.style.fontSize = '0.875rem';
+        title.style.fontWeight = '600';
+        title.style.color = '#1a1a1a';
+        title.style.lineHeight = '1.3';
+        title.textContent = propertyLabel;
+        
+        titleSection.appendChild(title);
+        el.appendChild(titleSection);
+
+        // Add hover effect
+        el.addEventListener('mouseenter', () => {
+            el.style.transform = 'translateY(-4px)';
+            el.style.boxShadow = '0 8px 20px rgba(0,0,0,0.2), 0 4px 8px rgba(0,0,0,0.15)';
+        });
+        el.addEventListener('mouseleave', () => {
+            el.style.transform = 'translateY(0)';
+            el.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15), 0 2px 4px rgba(0,0,0,0.1)';
+        });
+        
+        // Wrapper for positioning
         const wrapper = document.createElement('div');
-        wrapper.style.width = '32px';
-        wrapper.style.height = '32px';
-        wrapper.style.position = 'relative';
-        el.style.position = 'absolute';
-        el.style.top = '0';
-        el.style.left = '0';
-        el.style.transform = 'rotate(-45deg)';
         wrapper.appendChild(el);
 
-        // Add marker to THIS map with proper anchor (center-bottom for pin shape)
+        // Enhanced popup with logo, background image and custom label
+        let popupHTML;
+        
+        // Build popup with optional background image
+        const backgroundStyle = propertyBackground 
+            ? `background: linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.6)), url('${propertyBackground}') center/cover; color: white;` 
+            : '';
+        
+        if (propertyLogo) {
+            popupHTML = `
+                <div style="min-width: 220px; max-width: 280px;">
+                    ${propertyBackground ? `<div style="height: 120px; ${backgroundStyle} border-radius: 12px 12px 0 0; margin: -15px -15px 0 -15px;"></div>` : ''}
+                    <div style="padding: ${propertyBackground ? '12px 8px 8px' : '8px'};">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="width: 40px; height: 40px; background: white; border: 2px solid #e5e7eb; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; ${propertyBackground ? 'margin-top: -30px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);' : ''}">
+                                <img src="${propertyLogo}" alt="${propertyLabel}" style="width: 100%; height: 100%; object-fit: contain;" />
+                            </div>
+                            <div style="flex: 1;">
+                                <h3 style="margin: 0; font-size: 1rem; font-weight: 600; color: #1a1a1a; line-height: 1.3;">${propertyLabel}</h3>
+                                <p style="margin: 2px 0 0 0; font-size: 0.75rem; color: #666;">Utgangspunkt (Punkt A)</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else {
+            popupHTML = `
+                <div style="min-width: 220px; max-width: 280px;">
+                    ${propertyBackground ? `<div style="height: 120px; ${backgroundStyle} border-radius: 12px 12px 0 0; margin: -15px -15px 0 -15px;"></div>` : ''}
+                    <div style="padding: ${propertyBackground ? '12px 8px 8px' : '8px'};">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; ${propertyBackground ? 'margin-top: -30px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);' : ''}">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+                                </svg>
+                            </div>
+                            <div style="flex: 1;">
+                                <h3 style="margin: 0; font-size: 1rem; font-weight: 600; color: #1a1a1a; line-height: 1.3;">${propertyLabel}</h3>
+                                <p style="margin: 2px 0 0 0; font-size: 0.75rem; color: #666;">Utgangspunkt (Punkt A)</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Add marker to THIS map with center anchor for card design
         const propertyMarker = new mapboxgl.Marker({
             element: wrapper,
-            anchor: 'bottom'
+            anchor: 'center'
         })
             .setLngLat(startLocation)
             .setPopup(
-                new mapboxgl.Popup({ offset: 25 })
-                    .setHTML('<h3 style="margin: 0; font-size: 1rem; font-weight: 600;">Eiendommen</h3><p style="margin: 4px 0 0 0; font-size: 0.875rem; color: #666;">Startpunkt</p>')
+                new mapboxgl.Popup({ 
+                    offset: 15,
+                    className: 'property-marker-popup'
+                })
+                    .setHTML(popupHTML)
             )
             .addTo(mapInstance);
     }
@@ -155,6 +257,22 @@
                         }
                     }
 
+                    // Get rating from DOM
+                    const ratingEl = item.querySelector('.poi-rating-value');
+                    const ratingCountEl = item.querySelector('.poi-rating-count');
+                    let rating = null;
+                    
+                    if (ratingEl) {
+                        const ratingText = ratingEl.textContent.replace(/\s+/g, ' ').trim();
+                        const ratingMatch = ratingText.match(/(\d+\.?\d*)/);
+                        if (ratingMatch) {
+                            rating = {
+                                value: parseFloat(ratingMatch[1]),
+                                count: ratingCountEl ? ratingCountEl.textContent.trim() : null
+                            };
+                        }
+                    }
+
                     const poi = {
                         id: poiId,
                         title: title || 'POI',
@@ -162,7 +280,8 @@
                         image: image,
                         element: item,
                         index: markerIndex,
-                        walking: walking
+                        walking: walking,
+                        rating: rating
                     };
 
                     pois.push(poi);
@@ -197,8 +316,8 @@
         const label = document.createElement('div');
         label.className = 'tema-story-marker-label';
         label.style.backgroundColor = 'white';
-        label.style.padding = '6px 10px';
-        label.style.borderRadius = '6px';
+        label.style.padding = '8px 12px';
+        label.style.borderRadius = '8px';
         label.style.fontSize = '13px';
         label.style.fontWeight = '600';
         label.style.color = '#1a202c';
@@ -206,17 +325,17 @@
         label.style.cursor = 'pointer';
         label.style.display = 'inline-flex';
         label.style.alignItems = 'center';
-        label.style.gap = '6px';
-        label.style.maxWidth = '180px';
+        label.style.gap = '8px';
+        label.style.maxWidth = '200px';
         label.style.transition = 'box-shadow 300ms ease, background-color 300ms ease';
         label.style.opacity = '0';
 
-        // Image in label (if available) - smaller size
+        // Image in label (if available) - larger size for clarity
         if (poi.image) {
             const labelImage = document.createElement('div');
-            labelImage.style.width = '32px';
-            labelImage.style.height = '32px';
-            labelImage.style.borderRadius = '4px';
+            labelImage.style.width = '48px';
+            labelImage.style.height = '48px';
+            labelImage.style.borderRadius = '6px';
             labelImage.style.backgroundImage = `url(${poi.image})`;
             labelImage.style.backgroundSize = 'cover';
             labelImage.style.backgroundPosition = 'center';
@@ -242,6 +361,41 @@
         titleSpan.style.textOverflow = 'ellipsis';
         titleSpan.style.whiteSpace = 'nowrap';
         textContainer.appendChild(titleSpan);
+
+        // Rating (if available)
+        if (poi.rating) {
+            const ratingContainer = document.createElement('span');
+            ratingContainer.style.display = 'flex';
+            ratingContainer.style.alignItems = 'center';
+            ratingContainer.style.gap = '3px';
+            ratingContainer.style.fontSize = '11px';
+            ratingContainer.style.whiteSpace = 'nowrap';
+            
+            // Star
+            const starSpan = document.createElement('span');
+            starSpan.textContent = '★';
+            starSpan.style.color = '#FBBC05';
+            starSpan.style.fontSize = '11px';
+            ratingContainer.appendChild(starSpan);
+            
+            // Rating value
+            const ratingValueSpan = document.createElement('span');
+            ratingValueSpan.textContent = poi.rating.value.toFixed(1);
+            ratingValueSpan.style.fontWeight = '500';
+            ratingValueSpan.style.color = '#1a202c';
+            ratingContainer.appendChild(ratingValueSpan);
+            
+            // Review count (if available)
+            if (poi.rating.count) {
+                const countSpan = document.createElement('span');
+                countSpan.textContent = poi.rating.count;
+                countSpan.style.color = '#666';
+                countSpan.style.fontSize = '10px';
+                ratingContainer.appendChild(countSpan);
+            }
+            
+            textContainer.appendChild(ratingContainer);
+        }
 
         // Walking time (if available)
         if (poi.walking) {
@@ -352,49 +506,71 @@
                 },
                 paint: {
                     'line-color': '#76908D',
-                    'line-width': 6,
+                    'line-width': 3,
                     'line-opacity': 0.9,
-                    'line-dasharray': [0, 1.5, 3]
+                    'line-dasharray': [0.001, 2]
                 }
             });
 
-            // Add duration label at midpoint
+            // Add duration label at midpoint (50% of route distance)
             if (duration && geometry.coordinates && geometry.coordinates.length > 0) {
                 const coords = geometry.coordinates;
-                const midPoint = coords[Math.floor(coords.length / 2)];
-
-                mapInstance.addSource(labelId, {
-                    type: 'geojson',
-                    data: {
-                        type: 'Feature',
-                        properties: {
-                            duration: formatDuration(duration)
-                        },
-                        geometry: {
-                            type: 'Point',
-                            coordinates: midPoint
-                        }
+                
+                // Calculate the actual midpoint by measuring 50% of total distance
+                let totalDistance = 0;
+                const distances = [0];
+                
+                // Calculate cumulative distances
+                for (let i = 1; i < coords.length; i++) {
+                    const dx = coords[i][0] - coords[i-1][0];
+                    const dy = coords[i][1] - coords[i-1][1];
+                    const segmentDistance = Math.sqrt(dx * dx + dy * dy);
+                    totalDistance += segmentDistance;
+                    distances.push(totalDistance);
+                }
+                
+                // Find the coordinate at 50% of total distance
+                const halfDistance = totalDistance / 2;
+                let midPoint = coords[Math.floor(coords.length / 2)]; // fallback
+                
+                for (let i = 1; i < distances.length; i++) {
+                    if (distances[i] >= halfDistance) {
+                        // Interpolate between this point and the previous
+                        const prevDist = distances[i - 1];
+                        const nextDist = distances[i];
+                        const ratio = (halfDistance - prevDist) / (nextDist - prevDist);
+                        
+                        midPoint = [
+                            coords[i - 1][0] + (coords[i][0] - coords[i - 1][0]) * ratio,
+                            coords[i - 1][1] + (coords[i][1] - coords[i - 1][1]) * ratio
+                        ];
+                        break;
                     }
-                });
+                }
 
-                mapInstance.addLayer({
-                    id: labelId,
-                    type: 'symbol',
-                    source: labelId,
-                    layout: {
-                        'text-field': ['concat', '  ', ['get', 'duration'], '  '],
-                        'text-font': ['DIN Pro Medium', 'Arial Unicode MS Regular'],
-                        'text-size': 13,
-                        'text-offset': [0, 0],
-                        'text-anchor': 'center'
-                    },
-                    paint: {
-                        'text-color': '#ffffff',
-                        'text-halo-color': '#76908D',
-                        'text-halo-width': 10,
-                        'text-halo-blur': 0
-                    }
-                });
+                // Create custom HTML marker for duration label with card design
+                const durationEl = document.createElement('div');
+                durationEl.className = 'duration-label-card';
+                durationEl.style.backgroundColor = '#ffffff';
+                durationEl.style.color = '#1a1a1a';
+                durationEl.style.padding = '6px 10px';
+                durationEl.style.borderRadius = '8px';
+                durationEl.style.fontSize = '13px';
+                durationEl.style.fontWeight = '600';
+                durationEl.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
+                durationEl.style.whiteSpace = 'nowrap';
+                durationEl.style.pointerEvents = 'none';
+                durationEl.textContent = formatDuration(duration);
+                
+                const durationMarker = new mapboxgl.Marker({
+                    element: durationEl,
+                    anchor: 'center'
+                })
+                    .setLngLat(midPoint)
+                    .addTo(mapInstance);
+                
+                // Store marker reference for cleanup
+                currentDurationMarkers.push(durationMarker);
             }
         }
     }
@@ -520,9 +696,9 @@
                 },
                 paint: {
                     'line-color': '#76908D',
-                    'line-width': 6,
+                    'line-width': 3,
                     'line-opacity': 0.9,
-                    'line-dasharray': [0, 1.5, 3]  // Dotted line: gap, shorter dot, longer gap
+                    'line-dasharray': [0.001, 2]  // Dotted line: round dots with spacing
                 }
             });
 
@@ -576,25 +752,29 @@
                     }
                 });
 
-                map.addLayer({
-                    id: 'route-label',
-                    type: 'symbol',
-                    source: 'route-label',
-                    layout: {
-                        'text-field': ['concat', '  ', ['get', 'duration'], '  '],
-                        'text-font': ['DIN Pro Medium', 'Arial Unicode MS Regular'],
-                        'text-size': 13,
-                        'text-offset': [0, 0],
-                        'text-anchor': 'center',
-                        'text-padding': 4
-                    },
-                    paint: {
-                        'text-color': '#ffffff',
-                        'text-halo-color': '#76908D',
-                        'text-halo-width': 10,
-                        'text-halo-blur': 0
-                    }
-                });
+                // Create custom HTML marker for duration label with card design
+                const durationEl = document.createElement('div');
+                durationEl.className = 'duration-label-card';
+                durationEl.style.backgroundColor = '#ffffff';
+                durationEl.style.color = '#1a1a1a';
+                durationEl.style.padding = '6px 10px';
+                durationEl.style.borderRadius = '8px';
+                durationEl.style.fontSize = '13px';
+                durationEl.style.fontWeight = '600';
+                durationEl.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
+                durationEl.style.whiteSpace = 'nowrap';
+                durationEl.style.pointerEvents = 'none';
+                durationEl.textContent = formatDuration(duration);
+                
+                const durationMarker = new mapboxgl.Marker({
+                    element: durationEl,
+                    anchor: 'center'
+                })
+                    .setLngLat(midPoint)
+                    .addTo(map);
+                
+                // Store marker reference for cleanup
+                currentDurationMarkers.push(durationMarker);
             }
 
             currentRoute = geometry;
@@ -610,6 +790,10 @@
      */
     function clearRouteFromMap(mapInstance) {
         if (!mapInstance) return;
+        
+        // Remove all duration markers
+        currentDurationMarkers.forEach(marker => marker.remove());
+        currentDurationMarkers = [];
         
         // Get all layers and sources on this map
         const style = mapInstance.getStyle();
@@ -793,6 +977,22 @@
                 const coordsAttr = item.getAttribute('data-poi-coords');
                 const imageUrl = item.getAttribute('data-poi-image');
                 const title = item.getAttribute('data-poi-title') || 'Untitled POI';
+                
+                // Get rating data from DOM
+                const ratingEl = item.querySelector('.poi-rating-value');
+                const ratingCountEl = item.querySelector('.poi-rating-count');
+                let rating = null;
+                
+                if (ratingEl) {
+                    const ratingText = ratingEl.textContent.replace(/\s+/g, ' ').trim();
+                    const ratingMatch = ratingText.match(/(\d+\.?\d*)/);
+                    if (ratingMatch) {
+                        rating = {
+                            value: parseFloat(ratingMatch[1]),
+                            count: ratingCountEl ? ratingCountEl.textContent.trim() : null
+                        };
+                    }
+                }
 
                 if (coordsAttr) {
                     try {
@@ -803,6 +1003,7 @@
                                 coords: [parseFloat(coords[1]), parseFloat(coords[0])], // [lng, lat] for Mapbox
                                 title: title.trim(),
                                 image: imageUrl || null,
+                                rating: rating,
                                 element: item // Store reference to DOM element
                             });
                         }
@@ -1404,8 +1605,8 @@
             // Image in label (if available)
             if (poi.image) {
                 const labelImage = document.createElement('div');
-                labelImage.style.width = '40px';
-                labelImage.style.height = '40px';
+                labelImage.style.width = '48px';
+                labelImage.style.height = '48px';
                 labelImage.style.borderRadius = '6px';
                 labelImage.style.backgroundImage = `url(${poi.image})`;
                 labelImage.style.backgroundSize = 'cover';
@@ -1428,6 +1629,41 @@
             titleSpan.style.lineHeight = '1.2';
             titleSpan.style.wordBreak = 'break-word';
             textContainer.appendChild(titleSpan);
+            
+            // Rating (if available)
+            if (poi.rating) {
+                const ratingContainer = document.createElement('span');
+                ratingContainer.style.display = 'flex';
+                ratingContainer.style.alignItems = 'center';
+                ratingContainer.style.gap = '4px';
+                ratingContainer.style.fontSize = '12px';
+                ratingContainer.style.whiteSpace = 'nowrap';
+                
+                // Star
+                const starSpan = document.createElement('span');
+                starSpan.textContent = '★';
+                starSpan.style.color = '#FBBC05';
+                starSpan.style.fontSize = '12px';
+                ratingContainer.appendChild(starSpan);
+                
+                // Rating value
+                const ratingValueSpan = document.createElement('span');
+                ratingValueSpan.textContent = poi.rating.value.toFixed(1);
+                ratingValueSpan.style.fontWeight = '500';
+                ratingValueSpan.style.color = '#1a202c';
+                ratingContainer.appendChild(ratingValueSpan);
+                
+                // Review count (if available)
+                if (poi.rating.count) {
+                    const countSpan = document.createElement('span');
+                    countSpan.textContent = poi.rating.count;
+                    countSpan.style.color = '#666';
+                    countSpan.style.fontSize = '11px';
+                    ratingContainer.appendChild(countSpan);
+                }
+                
+                textContainer.appendChild(ratingContainer);
+            }
             
             // Walking time (if available)
             if (walking) {

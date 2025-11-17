@@ -27,6 +27,27 @@ if ( empty( $chapter_anchor ) ) {
     $chapter_anchor = $chapter_id;
 }
 
+// Extract chapter number from chapter ID (e.g., "chapter-1" -> "1")
+$chapter_number = '';
+if ( preg_match( '/chapter-(\d+)/', $chapter_id, $matches ) ) {
+    $chapter_number = $matches[1];
+}
+
+// Count total chapters in this post
+global $post;
+$total_chapters = 0;
+if ( $post ) {
+    // Count opening chapter-wrapper blocks only (not closing tags)
+    preg_match_all( '/<!-- wp:placy\/chapter-wrapper/', $post->post_content, $matches );
+    $total_chapters = count( $matches[0] );
+}
+
+// Build progress indicator
+$progress = '';
+if ( ! empty( $chapter_number ) && $total_chapters > 0 ) {
+    $progress = $chapter_number . '/' . $total_chapters;
+}
+
 // Get block wrapper attributes
 $wrapper_attributes = get_block_wrapper_attributes( array(
     'class'                => 'chapter chapter-with-map',
@@ -39,6 +60,13 @@ $wrapper_attributes = get_block_wrapper_attributes( array(
 ?>
 
 <section <?php echo $wrapper_attributes; ?>>
+    <?php if ( ! empty( $chapter_title ) ) : ?>
+        <div class="chapter-title-header">
+            <span class="chapter-title-label" <?php if ( ! empty( $progress ) ) echo 'data-progress="(' . esc_attr( $progress ) . ')"'; ?>>
+                <?php echo esc_html( $chapter_title ); ?>
+            </span>
+        </div>
+    <?php endif; ?>
     <div class="chapter-grid">
         <div class="chapter-content">
             <?php echo $content; ?>

@@ -328,10 +328,10 @@ body {
 }
 
 .chapter-content p {
-    font-size: 1.125rem;
+    font-size: 1rem;
     line-height: 1.5;
     color: #4a5568;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.5rem
 }
 
 /* Chapter Map Column - Sticky within chapter */
@@ -486,4 +486,94 @@ body {
     100% {
         box-shadow: 0 0 0 4px rgba(118, 144, 141, 0.4), 0 8px 20px rgba(0,0,0,0.2);
     }
+}
+
+/* POI Google Rating Styles - Google Design System */
+.poi-rating {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.poi-rating-value {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-weight: 500;
+    color: #1f2937;
+}
+
+.poi-rating-value span:first-child {
+    color: #FBBC05; /* Google yellow star */
+    font-size: 1em;
+}
+
+.poi-rating-count {
+    color: #5f6368; /* Google gray */
+    font-size: 0.75rem;
+}
+
+.poi-rating a {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    text-decoration: none;
+    color: #5f6368;
+    transition: color 0.2s ease;
+}
+
+.poi-rating a:hover {
+    color: #1a73e8; /* Google blue on hover */
+}
+
+.poi-rating a svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* Property Marker Popup Styling */
+.property-marker-popup .mapboxgl-popup-content {
+    padding: 0;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.property-marker-popup .mapboxgl-popup-tip {
+    border-top-color: white;
+}
+
+/* Map Marker Labels - Fix Blurry Text from Subpixel Positioning */
+.tema-story-marker-label {
+    /* Force pixel-perfect rendering */
+    -webkit-font-smoothing: antialiased !important;
+    -moz-osx-font-smoothing: grayscale !important;
+    text-rendering: optimizeLegibility !important;
+    
+    /* Force whole pixel positioning */
+    transform: translateZ(0) !important;
+    backface-visibility: hidden !important;
+    
+    /* Better font rendering */
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+    letter-spacing: 0.01em;
+}
+
+.tema-story-marker-label * {
+    /* Apply same rendering to all children */
+    -webkit-font-smoothing: antialiased !important;
+    -moz-osx-font-smoothing: grayscale !important;
+    text-rendering: optimizeLegibility !important;
+}
+
+.tema-story-marker-label img,
+.tema-story-marker-label div[style*="background-image"] {
+    /* Sharp image rendering - prevents blurry scaled images */
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+    image-rendering: pixelated;
+    
+    /* Hardware acceleration for smoother rendering */
+    transform: translateZ(0);
+    backface-visibility: hidden;
 }

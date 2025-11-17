@@ -1,4 +1,10 @@
-
+/* Chapter title header */
+.chapter-title-header {
+    margin-bottom: .5rem;
+}
+.chapter-title-label::after {
+    content: attr(data-progress);
+}
 
 /* Editor styles */
 .editor-styles-wrapper .wp-block-placy-chapter-wrapper.chapter {
