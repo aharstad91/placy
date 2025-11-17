@@ -83,6 +83,7 @@ function placy_enqueue_scripts() {
         wp_enqueue_style( 'placy-chapter-wrapper', get_template_directory_uri() . '/blocks/chapter-wrapper/style.css', array(), '1.0.0' );
         wp_enqueue_script( 'placy-tema-story-map', get_template_directory_uri() . '/js/tema-story-map-multi.js', array( 'mapbox-gl-js' ), '2.3.0', true );
         wp_enqueue_script( 'placy-chapter-nav', get_template_directory_uri() . '/js/chapter-nav.js', array(), '1.0.0', true );
+        wp_enqueue_script( 'placy-chapter-header', get_template_directory_uri() . '/js/chapter-header.js', array(), '1.0.0', true );
         wp_enqueue_script( 'placy-intro-parallax', get_template_directory_uri() . '/js/intro-parallax.js', array(), '1.0.0', true );
         wp_enqueue_script( 'placy-container-gradient', get_template_directory_uri() . '/js/container-gradient.js', array(), '1.0.0', true );
         wp_enqueue_script( 'placy-scroll-indicator', get_template_directory_uri() . '/js/scroll-indicator.js', array(), '1.0.0', true );
