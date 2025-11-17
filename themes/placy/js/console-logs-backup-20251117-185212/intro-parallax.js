@@ -57,6 +57,7 @@
         // Initial call
         updateParallax();
         
+        console.log('Intro Parallax: Initialized');
     }
 
     // Initialize on DOM ready

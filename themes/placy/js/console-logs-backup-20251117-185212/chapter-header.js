@@ -51,6 +51,7 @@
             chapter.insertBefore(headerContainer, chapterGrid);
         });
         
+        console.log('Chapter Headers: Extracted and moved headers above grid');
     }
 
     // Initialize on DOM ready

@@ -29,6 +29,7 @@
     function initChapterNav() {
         // Prevent double initialization
         if (isInitialized) {
+            console.log('Chapter Navigation: Already initialized, skipping');
             return;
         }
         
@@ -61,6 +62,7 @@
             initScrollTracking(chapters, introNavContainer);
         }
         
+        console.log('Chapter Navigation: Initialized with', chapters.length, 'chapters');
     }
 
     /**
@@ -90,6 +92,7 @@
                     chapter.id = anchor;
                     chapter.setAttribute('data-chapter-anchor', anchor);
                 }
+                console.log('Chapter Navigation: Auto-generated anchor for chapter:', anchor);
             }
             
             // Get title from data attribute, fallback to generic if empty or missing
@@ -170,6 +173,7 @@
             entries.forEach(function(entry) {
                 if (entry.isIntersecting) {
                     const anchor = entry.target.getAttribute('data-chapter-anchor') || entry.target.id;
+                    console.log('Chapter Navigation: Chapter visible:', anchor);
                     setActiveNavItem(anchor, navContainer);
                 }
             });
@@ -187,6 +191,7 @@
      * @param {HTMLElement} navContainer - Navigation container
      */
     function setActiveNavItem(anchor, navContainer) {
+        console.log('Chapter Navigation: Setting active item:', anchor);
         
         // Remove active class from all items
         const navItems = navContainer.querySelectorAll('.chapter-nav-item');
@@ -196,9 +201,11 @@
 
         // Add active class to current item
         const activeItem = navContainer.querySelector('[data-chapter-anchor="' + anchor + '"]');
+        console.log('Chapter Navigation: Found nav item:', activeItem);
         
         if (activeItem) {
             activeItem.classList.add('active');
+            console.log('Chapter Navigation: Active class added');
         } else {
             console.warn('Chapter Navigation: Nav item not found for anchor:', anchor);
         }

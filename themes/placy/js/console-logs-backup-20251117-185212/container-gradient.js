@@ -145,6 +145,7 @@
         // Initial call
         updateGradient();
         
+        console.log('Container Gradient: Initialized with color', customColor);
     }
 
     // Initialize on DOM ready

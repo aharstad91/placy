@@ -60,6 +60,7 @@ function openPOIMapModal(blockId, poiSlug) {
         openMapModal(mapData, poiSlug);
     }
     
+    console.log('Point Map initialized:', blockId, isDesktop ? '(inline)' : '(modal)');
 }
 
 /**
@@ -170,6 +171,7 @@ function activateInlineMap(blockId) {
         });
     }, 300);
     
+    console.log('Inline map activated:', blockId);
 }
 
 /**
@@ -190,6 +192,7 @@ function closeInlineMap(blockId) {
         window.placyMapboxInstance = null;
     }
     
+    console.log('Inline map closed:', blockId);
 }
 
 /**
@@ -561,6 +564,7 @@ function closePOIMapModal() {
         window.placyMapboxInstance = null;
     }
     
+    console.log('POI Map closed');
 }
 
 /**

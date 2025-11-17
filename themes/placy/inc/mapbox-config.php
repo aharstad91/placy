@@ -24,14 +24,31 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Get your token from: https://account.mapbox.com/access-tokens/
  */
 function placy_get_mapbox_token() {
-    // Check if token is defined in wp-config.php
+    // Priority 1: Check WordPress options (set in admin or via plugin)
+    $token = get_option( 'placy_mapbox_token' );
+    if ( ! empty( $token ) ) {
+        return $token;
+    }
+    
+    // Priority 2: Check if token is defined in wp-config.php
     if ( defined( 'MAPBOX_ACCESS_TOKEN' ) ) {
         return MAPBOX_ACCESS_TOKEN;
     }
     
-    // Fallback token - REPLACE THIS WITH YOUR ACTUAL MAPBOX TOKEN
-    // Get your token from: https://account.mapbox.com/access-tokens/
-    return 'pk.eyJ1IjoicGxhY3ktdGVzdCIsImEiOiJjbTN2dHE0YWgwMm42MnFwdXFwNWxiOTZjIn0.L-uQzXJlWvqYGPQvXJ-Q0Q';
+    // Priority 3: Check environment variable
+    if ( ! empty( $_ENV['MAPBOX_TOKEN'] ) ) {
+        return $_ENV['MAPBOX_TOKEN'];
+    }
+    
+    // ERROR: No token configured
+    if ( is_admin() ) {
+        add_action( 'admin_notices', function() {
+            echo '<div class="notice notice-error"><p><strong>Placy Theme:</strong> Mapbox token not configured. Please add MAPBOX_ACCESS_TOKEN to wp-config.php or set placy_mapbox_token option.</p></div>';
+        } );
+    }
+    
+    error_log( 'Placy Theme: Mapbox token not configured. Maps will not work.' );
+    return '';
 }
 
 /**

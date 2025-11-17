@@ -63,8 +63,9 @@
                         el(InnerBlocks.Content)
                     );
                 },
-                migrate: function(attributes) {
-                    return attributes;
+                migrate: function(attributes, innerBlocks) {
+                    // CRITICAL: Must preserve both attributes AND innerBlocks to prevent data loss
+                    return [attributes, innerBlocks];
                 }
             },
             {
@@ -90,8 +91,9 @@
                         el(InnerBlocks.Content)
                     );
                 },
-                migrate: function(attributes) {
-                    return attributes;
+                migrate: function(attributes, innerBlocks) {
+                    // CRITICAL: Must preserve both attributes AND innerBlocks to prevent data loss
+                    return [attributes, innerBlocks];
                 }
             }
         ],

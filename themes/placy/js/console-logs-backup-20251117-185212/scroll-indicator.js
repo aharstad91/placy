@@ -60,6 +60,7 @@
             }
         });
 
+        console.log('Scroll Indicator: Initialized');
     }
 
     // Initialize on DOM ready

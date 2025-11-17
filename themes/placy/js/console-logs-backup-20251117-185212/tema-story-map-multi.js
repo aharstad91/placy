@@ -42,6 +42,7 @@
         // Try to get from placyMapConfig if passed from PHP
         if (placyMapConfig && placyMapConfig.startLocation) {
             startLocation = placyMapConfig.startLocation;
+            console.log('Tema Story Map: Start location loaded:', startLocation);
             return;
         }
         
@@ -53,6 +54,7 @@
             
             if (lat && lng) {
                 startLocation = [parseFloat(lng), parseFloat(lat)];
+                console.log('Tema Story Map: Start location loaded from container:', startLocation);
             }
         }
     }
@@ -141,6 +143,7 @@
                     // Mapbox needs: [lng, lat]
                     const lngLat = [parseFloat(coords[1]), parseFloat(coords[0])];
                     
+                    console.log(`Multi Map: POI "${title}" coords:`, {
                         original: coords,
                         mapbox: lngLat
                     });
@@ -185,6 +188,7 @@
             fitMapToBounds(mapInstance, pois);
         }
 
+        console.log(`Multi Map: Added ${pois.length} markers for chapter ${chapterId}`);
     }
     
     /**
@@ -671,6 +675,7 @@
             return;
         }
 
+        console.log(`Multi Map: Initializing ${chapterMaps.length} maps...`);
 
         // Get start location first
         getStartLocation();
@@ -722,6 +727,7 @@
             // Keep last one as fallback
             map = chapterMap;
             
+            console.log(`Multi Map: Initialized map for chapter ${chapterId}`);
         });
 
         // After all maps initialized, setup hover tracking
@@ -772,6 +778,7 @@
                 
                 poiItems = poisBetweenChapters;
                 if (poisBetweenChapters.length > 0) {
+                    console.log(`Tema Story Map: Found ${poisBetweenChapters.length} POIs between chapters for "${chapterId}"`);
                 }
             }
             // FALLBACK: If this is the last chapter and has no POIs, grab all remaining POIs
@@ -787,6 +794,7 @@
                 
                 poiItems = poisAfterChapter;
                 if (poisAfterChapter.length > 0) {
+                    console.log(`Tema Story Map: Found ${poisAfterChapter.length} POIs after last chapter "${chapterId}"`);
                 }
             }
 
@@ -818,9 +826,11 @@
 
             if (pois.length > 0) {
                 chapterData.set(chapterId, pois);
+                console.log(`Tema Story Map: Loaded ${pois.length} POIs for chapter "${chapterId}"`);
             }
         });
 
+        console.log(`Tema Story Map: Parsed ${chapterData.size} chapters with POIs`);
         
         // Add walking times to POI list items
         addWalkingTimesToPOIList();
@@ -974,6 +984,7 @@
     function initScrollTracking() {
         // DISABLED: Not needed with per-chapter map architecture
         // Each chapter has its own map that shows its markers independently
+        console.log('Multi Map: Scroll tracking disabled (not needed with per-chapter maps)');
         return;
         
         /* Original scroll tracking code preserved but disabled
@@ -1020,6 +1031,7 @@
             });
         });
         
+        console.log('Tema Story Map: Hover tracking initialized for', poiItems.length, 'POI items');
     }
 
     /**
@@ -1072,6 +1084,7 @@
             }
         });
         
+        console.log('Tema Story Map: Cleared all active POI states');
     }
 
     /**
@@ -1168,6 +1181,7 @@
                     }
                 });
                 
+                console.log('Tema Story Map: Highlighted card and marker for POI:', poiId);
                 
                 // Wait for scroll animation to complete (~600ms for smooth scroll)
                 setTimeout(resolve, 600);
@@ -1300,6 +1314,7 @@
             const chapterId = mostVisibleChapter.getAttribute('data-chapter-id');
             
             if (chapterId && chapterId !== activeChapterId) {
+                console.log('Tema Story Map: Active chapter changed to:', chapterId, 'with ratio:', highestRatio);
                 activeChapterId = chapterId;
                 
                 // Debounce map updates to prevent rapid firing during scroll

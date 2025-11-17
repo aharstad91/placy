@@ -42,6 +42,7 @@
         // Try to get from placyMapConfig if passed from PHP
         if (placyMapConfig && placyMapConfig.startLocation) {
             startLocation = placyMapConfig.startLocation;
+            console.log('Tema Story Map: Start location loaded:', startLocation);
             return;
         }
         
@@ -53,14 +54,15 @@
             
             if (lat && lng) {
                 startLocation = [parseFloat(lng), parseFloat(lat)];
+                console.log('Tema Story Map: Start location loaded from container:', startLocation);
             }
         }
     }
 
     /**
-     * Add a permanent marker for the property/start location to a specific map
+     * Add a permanent marker for the property/start location
      */
-    function addPropertyMarkerToMap(mapInstance) {
+    function addPropertyMarker() {
         if (!startLocation) {
             return;
         }
@@ -74,6 +76,7 @@
         el.style.backgroundColor = '#e74c3c';
         el.style.border = '3px solid white';
         el.style.boxShadow = '0 3px 8px rgba(0,0,0,0.3)';
+        el.style.transform = 'rotate(-45deg)';
         el.style.cursor = 'pointer';
 
         // Inner dot
@@ -87,320 +90,17 @@
         innerDot.style.left = '50%';
         innerDot.style.transform = 'translate(-50%, -50%)';
         el.appendChild(innerDot);
-        
-        // Wrapper for the rotated pin (so rotation doesn't affect Mapbox positioning)
-        const wrapper = document.createElement('div');
-        wrapper.style.width = '32px';
-        wrapper.style.height = '32px';
-        wrapper.style.position = 'relative';
-        el.style.position = 'absolute';
-        el.style.top = '0';
-        el.style.left = '0';
-        el.style.transform = 'rotate(-45deg)';
-        wrapper.appendChild(el);
 
-        // Add marker to THIS map with proper anchor (center-bottom for pin shape)
-        const propertyMarker = new mapboxgl.Marker({
-            element: wrapper,
-            anchor: 'bottom'
-        })
+        // Add marker to map
+        const propertyMarker = new mapboxgl.Marker(el)
             .setLngLat(startLocation)
             .setPopup(
                 new mapboxgl.Popup({ offset: 25 })
-                    .setHTML('<h3 style="margin: 0; font-size: 1rem; font-weight: 600;">Eiendommen</h3><p style="margin: 4px 0 0 0; font-size: 0.875rem; color: #666;">Startpunkt</p>')
+                    .setHTML('<h3 style="margin: 0; font-size: 1rem; font-weight: 600;">Eiendommen</h3><p style="margin: 4px 0 0 0; font-size: 0.875rem; color: #666;">Startpunkt for gangavstand</p>')
             )
-            .addTo(mapInstance);
-    }
-    
-    /**
-     * Parse POI data and add markers for a specific chapter
-     */
-    async function parseAndAddMarkersForChapter(mapInstance, chapterId) {
-        const chapter = document.querySelector(`.chapter[data-chapter-id="${chapterId}"]`);
-        if (!chapter) {
-            console.warn(`Multi Map: Chapter ${chapterId} not found in DOM`);
-            return;
-        }
+            .addTo(map);
 
-        const poiItems = chapter.querySelectorAll('.poi-list-item[data-poi-coords]');
-        const pois = [];
-        let markerIndex = 0;
-
-        for (const item of poiItems) {
-            const coordsAttr = item.getAttribute('data-poi-coords');
-            const poiId = item.getAttribute('data-poi-id');
-            const title = item.getAttribute('data-poi-title');
-            const image = item.getAttribute('data-poi-image');
-
-            if (!coordsAttr) continue;
-
-            try {
-                const coords = JSON.parse(coordsAttr);
-                if (Array.isArray(coords) && coords.length === 2) {
-                    // coords from HTML: [lat, lng]
-                    // Mapbox needs: [lng, lat]
-                    const lngLat = [parseFloat(coords[1]), parseFloat(coords[0])];
-                    
-                        original: coords,
-                        mapbox: lngLat
-                    });
-
-                    // Get walking distance if start location exists
-                    let walking = null;
-                    if (startLocation) {
-                        walking = await getWalkingDistance(lngLat);
-                        
-                        // Update POI element with walking time
-                        if (walking) {
-                            const walkTimeEl = item.querySelector('.poi-walking-time');
-                            if (walkTimeEl) {
-                                walkTimeEl.textContent = formatDuration(walking.duration) + ' gange';
-                            }
-                        }
-                    }
-
-                    const poi = {
-                        id: poiId,
-                        title: title || 'POI',
-                        coords: lngLat,
-                        image: image,
-                        element: item,
-                        index: markerIndex,
-                        walking: walking
-                    };
-
-                    pois.push(poi);
-
-                    // Create and add marker
-                    addMarkerForPOI(mapInstance, poi, chapterId);
-                    markerIndex++;
-                }
-            } catch (e) {
-                console.warn('Multi Map: Error parsing POI coords:', e);
-            }
-        }
-
-        // Fit map to show all POIs in this chapter
-        if (pois.length > 0) {
-            fitMapToBounds(mapInstance, pois);
-        }
-
-    }
-    
-    /**
-     * Add a marker for a POI to a specific map
-     */
-    function addMarkerForPOI(mapInstance, poi, chapterId) {
-        // Create wrapper container (needed for proper Mapbox positioning)
-        const wrapper = document.createElement('div');
-        wrapper.className = 'tema-story-marker-wrapper';
-        // DO NOT set any position, transform, or size styles on wrapper
-        // Mapbox will handle all positioning via transform
-        
-        // Create the visible label
-        const label = document.createElement('div');
-        label.className = 'tema-story-marker-label';
-        label.style.backgroundColor = 'white';
-        label.style.padding = '6px 10px';
-        label.style.borderRadius = '6px';
-        label.style.fontSize = '13px';
-        label.style.fontWeight = '600';
-        label.style.color = '#1a202c';
-        label.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
-        label.style.cursor = 'pointer';
-        label.style.display = 'inline-flex';
-        label.style.alignItems = 'center';
-        label.style.gap = '6px';
-        label.style.maxWidth = '180px';
-        label.style.transition = 'box-shadow 300ms ease, background-color 300ms ease';
-        label.style.opacity = '0';
-
-        // Image in label (if available) - smaller size
-        if (poi.image) {
-            const labelImage = document.createElement('div');
-            labelImage.style.width = '32px';
-            labelImage.style.height = '32px';
-            labelImage.style.borderRadius = '4px';
-            labelImage.style.backgroundImage = `url(${poi.image})`;
-            labelImage.style.backgroundSize = 'cover';
-            labelImage.style.backgroundPosition = 'center';
-            labelImage.style.flexShrink = '0';
-            label.appendChild(labelImage);
-        }
-
-        // Text container
-        const textContainer = document.createElement('div');
-        textContainer.style.display = 'flex';
-        textContainer.style.flexDirection = 'column';
-        textContainer.style.gap = '1px';
-        textContainer.style.minWidth = '0'; // Allow text to shrink
-        textContainer.style.overflow = 'hidden';
-
-        // Title
-        const titleSpan = document.createElement('span');
-        titleSpan.textContent = poi.title;
-        titleSpan.style.fontSize = '13px';
-        titleSpan.style.fontWeight = '600';
-        titleSpan.style.lineHeight = '1.3';
-        titleSpan.style.overflow = 'hidden';
-        titleSpan.style.textOverflow = 'ellipsis';
-        titleSpan.style.whiteSpace = 'nowrap';
-        textContainer.appendChild(titleSpan);
-
-        // Walking time (if available)
-        if (poi.walking) {
-            const walkTimeSpan = document.createElement('span');
-            walkTimeSpan.textContent = formatDuration(poi.walking.duration);
-            walkTimeSpan.style.fontSize = '11px';
-            walkTimeSpan.style.fontWeight = '400';
-            walkTimeSpan.style.color = '#666';
-            walkTimeSpan.style.whiteSpace = 'nowrap';
-            textContainer.appendChild(walkTimeSpan);
-        }
-
-        label.appendChild(textContainer);
-
-        // Append label to wrapper
-        wrapper.appendChild(label);
-
-        // Store POI ID on wrapper
-        wrapper.setAttribute('data-poi-id', poi.id);
-        wrapper.setAttribute('data-chapter-id', chapterId);
-
-        // Create Mapbox marker with left anchor (label extends to the right of the point)
-        const marker = new mapboxgl.Marker({
-            element: wrapper,
-            anchor: 'left',
-            offset: [0, 0] // No offset needed, anchor handles positioning
-        })
-            .setLngLat(poi.coords)
-            .addTo(mapInstance);
-
-        // Click handler
-        wrapper.addEventListener('click', function(e) {
-            e.stopPropagation();
-
-            // Fit bounds to show both start and POI
-            if (startLocation) {
-                const bounds = new mapboxgl.LngLatBounds();
-                bounds.extend(startLocation);
-                bounds.extend(poi.coords);
-
-                mapInstance.fitBounds(bounds, {
-                    padding: 120,
-                    duration: 1200,
-                    maxZoom: 16
-                });
-            } else {
-                mapInstance.flyTo({
-                    center: poi.coords,
-                    zoom: 16,
-                    duration: 1200
-                });
-            }
-
-            // Draw route if available
-            if (poi.walking && poi.walking.geometry) {
-                setTimeout(function() {
-                    drawRouteOnMap(mapInstance, poi.walking.geometry, poi.walking.duration);
-                }, 400);
-            }
-
-            // Highlight card
-            setTimeout(function() {
-                highlightCardInColumn(poi.id);
-            }, 800);
-        });
-
-        // Fade in label after marker is added
-        setTimeout(function() {
-            label.style.opacity = '1';
-        }, 50);
-
-        // Store marker reference
-        markers.push(marker);
-    }
-    
-    /**
-     * Draw walking route on a specific map
-     * @param {Object} mapInstance - The map instance
-     * @param {Object} geometry - GeoJSON geometry from Directions API
-     * @param {number} duration - Duration in seconds
-     */
-    function drawRouteOnMap(mapInstance, geometry, duration) {
-        // First, clear ALL existing routes from this map
-        clearRouteFromMap(mapInstance);
-        
-        // Use fixed IDs for this map instance
-        const routeId = 'walking-route';
-        const labelId = 'walking-route-label';
-
-        // Add new route
-        if (geometry) {
-            mapInstance.addSource(routeId, {
-                type: 'geojson',
-                data: {
-                    type: 'Feature',
-                    properties: {},
-                    geometry: geometry
-                }
-            });
-
-            mapInstance.addLayer({
-                id: routeId,
-                type: 'line',
-                source: routeId,
-                layout: {
-                    'line-join': 'round',
-                    'line-cap': 'round'
-                },
-                paint: {
-                    'line-color': '#76908D',
-                    'line-width': 6,
-                    'line-opacity': 0.9,
-                    'line-dasharray': [0, 1.5, 3]
-                }
-            });
-
-            // Add duration label at midpoint
-            if (duration && geometry.coordinates && geometry.coordinates.length > 0) {
-                const coords = geometry.coordinates;
-                const midPoint = coords[Math.floor(coords.length / 2)];
-
-                mapInstance.addSource(labelId, {
-                    type: 'geojson',
-                    data: {
-                        type: 'Feature',
-                        properties: {
-                            duration: formatDuration(duration)
-                        },
-                        geometry: {
-                            type: 'Point',
-                            coordinates: midPoint
-                        }
-                    }
-                });
-
-                mapInstance.addLayer({
-                    id: labelId,
-                    type: 'symbol',
-                    source: labelId,
-                    layout: {
-                        'text-field': ['concat', '  ', ['get', 'duration'], '  '],
-                        'text-font': ['DIN Pro Medium', 'Arial Unicode MS Regular'],
-                        'text-size': 13,
-                        'text-offset': [0, 0],
-                        'text-anchor': 'center'
-                    },
-                    paint: {
-                        'text-color': '#ffffff',
-                        'text-halo-color': '#76908D',
-                        'text-halo-width': 10,
-                        'text-halo-blur': 0
-                    }
-                });
-            }
-        }
+        console.log('Tema Story Map: Property marker added at', startLocation);
     }
 
     /**
@@ -608,126 +308,97 @@
     /**
      * Clear the route from the map
      */
-    /**
-     * Clear route from specific map
-     * @param {mapboxgl.Map} mapInstance - The map to clear route from
-     */
-    function clearRouteFromMap(mapInstance) {
-        if (!mapInstance) return;
-        
-        // Get all layers and sources on this map
-        const style = mapInstance.getStyle();
-        if (!style || !style.layers) return;
-        
-        // Find and remove all route-related layers (both old random IDs and new fixed IDs)
-        style.layers.forEach(function(layer) {
-            if (layer.id && (layer.id.startsWith('route-') || layer.id === 'walking-route' || layer.id === 'walking-route-label')) {
-                if (mapInstance.getLayer(layer.id)) {
-                    mapInstance.removeLayer(layer.id);
-                }
-            }
-        });
-        
-        // Find and remove all route-related sources
-        if (style.sources) {
-            Object.keys(style.sources).forEach(function(sourceId) {
-                if (sourceId.startsWith('route-') || sourceId === 'walking-route' || sourceId === 'walking-route-label') {
-                    if (mapInstance.getSource(sourceId)) {
-                        mapInstance.removeSource(sourceId);
-                    }
-                }
-            });
-        }
-    }
-
-    /**
-     * Clear routes from all maps (legacy function name for compatibility)
-     */
     function clearRoute() {
-        // Clear routes from all chapter maps
-        const chapterMaps = document.querySelectorAll('.chapter-map');
-        chapterMaps.forEach(function(mapContainer) {
-            const mapInstance = mapContainer._mapboxInstance;
-            if (mapInstance) {
-                clearRouteFromMap(mapInstance);
-            }
-        });
+        if (map.getLayer('route')) {
+            map.removeLayer('route');
+        }
+        if (map.getSource('route')) {
+            map.removeSource('route');
+        }
+        currentRoute = null;
     }
 
     /**
-     * Initialize multi-map system - one map per chapter
+     * Initialize the map
      */
     function initMap() {
-        const chapterMaps = document.querySelectorAll('.chapter-map');
+        const mapContainer = document.getElementById('tema-story-map');
         
-        if (chapterMaps.length === 0) {
-            console.warn('Multi Map: No chapter maps found');
+        if (!mapContainer) {
+            console.warn('Tema Story Map: Map container not found');
             return;
         }
 
         // Check if Mapbox token is available
         if (!placyMapConfig || !placyMapConfig.mapboxToken) {
-            console.error('Multi Map: Mapbox token not found');
+            console.error('Tema Story Map: Mapbox token not found');
+            mapContainer.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #666;">Mapbox token not configured</div>';
             return;
         }
 
+        // Check if Mapbox GL JS library is loaded
+        if (typeof mapboxgl === 'undefined') {
+            console.error('Tema Story Map: Mapbox GL JS library not loaded');
+            mapContainer.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #666; padding: 20px; text-align: center;">Map library failed to load. Please refresh the page.</div>';
+            return;
+        }
 
-        // Get start location first
-        getStartLocation();
-
-        mapboxgl.accessToken = placyMapConfig.mapboxToken;
-
-        // Initialize each chapter map
-        chapterMaps.forEach(function(mapContainer) {
-            const chapterId = mapContainer.getAttribute('data-chapter-id');
+        try {
+            // Initialize Mapbox map
+            mapboxgl.accessToken = placyMapConfig.mapboxToken;
             
-            if (!chapterId) {
-                console.warn('Multi Map: Map missing data-chapter-id');
-                return;
-            }
-
-            // Initialize Mapbox map for this chapter
-            const chapterMap = new mapboxgl.Map({
-                container: mapContainer.id,
+            map = new mapboxgl.Map({
+                container: 'tema-story-map',
                 style: 'mapbox://styles/mapbox/light-v11',
                 center: CONFIG.DEFAULT_CENTER,
                 zoom: CONFIG.DEFAULT_ZOOM,
             });
 
             // Add navigation controls
-            chapterMap.addControl(new mapboxgl.NavigationControl(), 'top-right');
+            map.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
-            // Store map instance on container
-            mapContainer._mapboxInstance = chapterMap;
-
-            // Wait for map to load
-            chapterMap.on('load', function() {
-                // Remove POI labels
-                const layers = chapterMap.getStyle().layers;
-                layers.forEach(function(layer) {
-                    if (layer.id.includes('poi') || layer.id.includes('label')) {
-                        chapterMap.setLayoutProperty(layer.id, 'visibility', 'none');
-                    }
-                });
-
-                // Add property marker if start location exists
-                if (startLocation) {
-                    addPropertyMarkerToMap(chapterMap);
+            // Handle map errors
+            map.on('error', function(e) {
+                console.error('Tema Story Map: Map error', e.error);
+                if (mapContainer) {
+                    mapContainer.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #666; padding: 20px; text-align: center;">Map failed to load. Please check your internet connection and refresh the page.</div>';
                 }
-
-                // Parse and add markers for THIS chapter only
-                parseAndAddMarkersForChapter(chapterMap, chapterId);
             });
 
-            // Keep last one as fallback
-            map = chapterMap;
+            // Wait for map to load before parsing data
+            map.on('load', function() {
+            // Remove POI labels and icons from the map
+            const layers = map.getStyle().layers;
+            layers.forEach(function(layer) {
+                if (layer.id.includes('poi') || layer.id.includes('label')) {
+                    map.setLayoutProperty(layer.id, 'visibility', 'none');
+                }
+            });
             
+            // Get start location from page
+            getStartLocation();
+            
+            // Add property marker if start location exists
+            if (startLocation) {
+                addPropertyMarker();
+            }
+            
+            parseChapterData();
+            initScrollTracking();
+            
+            // Show markers for first chapter on load
+            const firstChapterId = getFirstChapterId();
+            if (firstChapterId) {
+                updateMapForChapter(firstChapterId);
+            }
         });
-
-        // After all maps initialized, setup hover tracking
-        setTimeout(function() {
-            initPOIHoverTracking();
-        }, 1000);
+        
+        } catch (error) {
+            console.error('Tema Story Map: Failed to initialize map', error);
+            if (mapContainer) {
+                mapContainer.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #666; padding: 20px; text-align: center;">Map failed to initialize. Please refresh the page or contact support if the issue persists.</div>';
+            }
+        }
     }
 
     /**
@@ -772,6 +443,7 @@
                 
                 poiItems = poisBetweenChapters;
                 if (poisBetweenChapters.length > 0) {
+                    console.log(`Tema Story Map: Found ${poisBetweenChapters.length} POIs between chapters for "${chapterId}"`);
                 }
             }
             // FALLBACK: If this is the last chapter and has no POIs, grab all remaining POIs
@@ -787,6 +459,7 @@
                 
                 poiItems = poisAfterChapter;
                 if (poisAfterChapter.length > 0) {
+                    console.log(`Tema Story Map: Found ${poisAfterChapter.length} POIs after last chapter "${chapterId}"`);
                 }
             }
 
@@ -818,9 +491,11 @@
 
             if (pois.length > 0) {
                 chapterData.set(chapterId, pois);
+                console.log(`Tema Story Map: Loaded ${pois.length} POIs for chapter "${chapterId}"`);
             }
         });
 
+        console.log(`Tema Story Map: Parsed ${chapterData.size} chapters with POIs`);
         
         // Add walking times to POI list items
         addWalkingTimesToPOIList();
@@ -880,40 +555,15 @@
         const coordsAttr = poiItem.getAttribute('data-poi-coords');
         if (!coordsAttr) return;
 
-        // Find which chapter this POI belongs to
-        const chapterElement = button.closest('.chapter');
-        if (!chapterElement) {
-            console.warn('Could not find parent .chapter element for POI');
-            return;
-        }
-
-        const chapterId = chapterElement.getAttribute('data-chapter-id');
-        if (!chapterId) {
-            console.warn('Chapter element missing data-chapter-id attribute');
-            return;
-        }
-
-        // Find the map container by chapter ID (map is NOT inside .chapter, it's in a separate column)
-        const mapContainer = document.querySelector('.chapter-map[data-chapter-id="' + chapterId + '"]');
-        if (!mapContainer) {
-            console.warn('Could not find map container for chapter:', chapterId);
-            return;
-        }
-
-        // Get the Mapbox instance for this map
-        const mapInstance = mapContainer._mapboxInstance;
-        if (!mapInstance) {
-            console.warn('Map not initialized for chapter:', chapterId);
-            return;
-        }
-
         try {
             const coords = JSON.parse(coordsAttr);
             if (Array.isArray(coords) && coords.length === 2) {
                 const lngLat = [parseFloat(coords[1]), parseFloat(coords[0])]; // [lng, lat] for Mapbox
                 
-                // Get POI ID for highlighting
-                const poiId = poiItem.getAttribute('data-poi-id');
+                // Clear any active click state from previous marker clicks
+                document.querySelectorAll('.poi-list-item').forEach(function(item) {
+                    item.classList.remove('poi-active-click');
+                });
                 
                 // Fit bounds to show both start location and POI
                 if (startLocation) {
@@ -921,43 +571,36 @@
                     bounds.extend(startLocation);
                     bounds.extend(lngLat);
                     
-                    mapInstance.fitBounds(bounds, {
+                    map.fitBounds(bounds, {
                         padding: 120,
-                        duration: 1200,
+                        duration: 1500,
                         maxZoom: 16
                     });
                 } else {
                     // Fallback: just fly to POI if no start location
-                    mapInstance.flyTo({
+                    map.flyTo({
                         center: lngLat,
                         zoom: 16,
-                        duration: 1200,
+                        duration: 1500,
                         essential: true
                     });
                 }
 
-                // Scroll this specific map into view on mobile
-                const mapColumn = mapContainer.closest('.chapter-map-column');
+                // Scroll map into view on mobile
+                const mapColumn = document.querySelector('.map-column');
                 if (mapColumn && window.innerWidth < 1024) {
                     mapColumn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                 }
 
-                // Draw route on this map if we have start location
+                // Draw route if we have start location
                 if (startLocation) {
                     getWalkingDistance(lngLat).then(function(walking) {
                         if (walking && walking.geometry) {
                             setTimeout(function() {
-                                drawRouteOnMap(mapInstance, walking.geometry, walking.duration);
-                            }, 400);
+                                drawRoute(walking.geometry, walking.duration);
+                            }, 1000); // Wait for fly animation
                         }
                     });
-                }
-                
-                // Highlight the card after map animation starts
-                if (poiId) {
-                    setTimeout(function() {
-                        highlightCardInColumn(poiId);
-                    }, 800);
                 }
             }
         } catch (e) {
@@ -967,16 +610,8 @@
 
     /**
      * Initialize Intersection Observer for scroll tracking
-     * NOTE: With per-chapter maps, scroll tracking is not needed since each map
-     * is independent and always shows its chapter's markers. This is kept for
-     * potential future use but disabled.
      */
     function initScrollTracking() {
-        // DISABLED: Not needed with per-chapter map architecture
-        // Each chapter has its own map that shows its markers independently
-        return;
-        
-        /* Original scroll tracking code preserved but disabled
         const chapters = document.querySelectorAll('.chapter');
         
         if (chapters.length === 0) {
@@ -995,7 +630,7 @@
         chapters.forEach(function(chapter) {
             observer.observe(chapter);
         });
-        */
+
     }
 
     /**
@@ -1020,6 +655,7 @@
             });
         });
         
+        console.log('Tema Story Map: Hover tracking initialized for', poiItems.length, 'POI items');
     }
 
     /**
@@ -1072,6 +708,7 @@
             }
         });
         
+        console.log('Tema Story Map: Cleared all active POI states');
     }
 
     /**
@@ -1149,25 +786,7 @@
                     block: 'center'
                 });
                 
-                // Highlight corresponding marker on map
-                markers.forEach(function(marker) {
-                    const wrapper = marker.getElement();
-                    if (!wrapper) return;
-                    
-                    const markerPoiId = wrapper.getAttribute('data-poi-id');
-                    if (markerPoiId === poiId) {
-                        wrapper.style.zIndex = '1000';
-                        
-                        const markerLabel = wrapper.querySelector('.tema-story-marker-label');
-                        if (markerLabel) {
-                            markerLabel.style.backgroundColor = '#EFE9DE';
-                            markerLabel.style.border = '1px solid #cbbda4';
-                            markerLabel.style.boxShadow = '0 4px 16px rgba(203, 189, 164, 0.3)';
-                            markerLabel.style.fontWeight = '700';
-                        }
-                    }
-                });
-                
+                console.log('Tema Story Map: Highlighted card for POI:', poiId);
                 
                 // Wait for scroll animation to complete (~600ms for smooth scroll)
                 setTimeout(resolve, 600);
@@ -1211,18 +830,27 @@
      */
     function resetAllMarkers() {
         markers.forEach(function(marker) {
-            const wrapper = marker.getElement();
-            if (!wrapper) return;
+            const markerContainer = marker.getElement();
+            if (!markerContainer) return;
             
-            wrapper.style.zIndex = '1';
+            // Don't touch the container's transform - Mapbox uses it for positioning
+            markerContainer.style.zIndex = '1';
             
-            const markerLabel = wrapper.querySelector('.tema-story-marker-label');
+            const markerDot = markerContainer.querySelector('.tema-story-marker');
+            const markerLabel = markerContainer.querySelector('.tema-story-marker-label');
+            
+            // Reset inner elements
+            if (markerDot) {
+                markerDot.style.transform = 'scale(1)';
+                markerDot.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
+                markerDot.style.transition = 'transform 300ms ease-out, box-shadow 300ms ease-out';
+            }
             
             if (markerLabel) {
                 markerLabel.style.backgroundColor = 'white';
-                markerLabel.style.border = ''; // Remove border (back to default no border)
+                markerLabel.style.transform = 'scale(1)';
                 markerLabel.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
-                markerLabel.style.fontWeight = '600';
+                markerLabel.style.transition = 'transform 300ms ease-out, box-shadow 300ms ease-out, background-color 300ms ease-out';
             }
         });
     }
@@ -1237,25 +865,30 @@
         
         // Find and highlight the specific POI marker using direct POI ID matching
         markers.forEach(function(marker) {
-            const wrapper = marker.getElement();
-            if (!wrapper) return;
+            const markerContainer = marker.getElement();
+            if (!markerContainer) return;
             
-            // Get POI ID from data attribute stored on wrapper
-            const markerPoiId = wrapper.getAttribute('data-poi-id');
+            // Get POI ID from data attribute stored on marker container
+            const markerPoiId = markerContainer.getAttribute('data-poi-id');
             const isActive = markerPoiId === poiId;
             
             if (isActive) {
                 // Increase z-index for layering
-                wrapper.style.zIndex = '1000';
+                markerContainer.style.zIndex = '1000';
                 
-                // Add hover effect to label
-                const markerLabel = wrapper.querySelector('.tema-story-marker-label');
+                // Add hover effect to inner elements (not container!)
+                const markerDot = markerContainer.querySelector('.tema-story-marker');
+                const markerLabel = markerContainer.querySelector('.tema-story-marker-label');
+                
+                if (markerDot) {
+                    markerDot.style.transform = 'scale(1.15)';
+                    markerDot.style.boxShadow = '0 0 0 4px rgba(118, 144, 141, 0.3), 0 4px 12px rgba(0,0,0,0.3)';
+                }
                 
                 if (markerLabel) {
-                    markerLabel.style.backgroundColor = '#EFE9DE';
-                    markerLabel.style.border = '1px solid #cbbda4';
-                    markerLabel.style.boxShadow = '0 4px 16px rgba(203, 189, 164, 0.3)';
-                    markerLabel.style.fontWeight = '700'; // Slightly bolder text for emphasis
+                    markerLabel.style.backgroundColor = '#fffae1';
+                    markerLabel.style.transform = 'scale(1.05)';
+                    markerLabel.style.boxShadow = '0 4px 16px rgba(118, 144, 141, 0.3)';
                 }
             }
         });
@@ -1300,6 +933,7 @@
             const chapterId = mostVisibleChapter.getAttribute('data-chapter-id');
             
             if (chapterId && chapterId !== activeChapterId) {
+                console.log('Tema Story Map: Active chapter changed to:', chapterId, 'with ratio:', highestRatio);
                 activeChapterId = chapterId;
                 
                 // Debounce map updates to prevent rapid firing during scroll
@@ -1403,7 +1037,6 @@
             label.style.display = 'flex';
             label.style.alignItems = 'center';
             label.style.gap = '8px';
-            label.style.maxWidth = '200px';
             
             // Image in label (if available)
             if (poi.image) {
@@ -1429,8 +1062,7 @@
             titleSpan.textContent = poi.title;
             titleSpan.style.fontSize = '14px';
             titleSpan.style.fontWeight = '600';
-            titleSpan.style.lineHeight = '1.2';
-            titleSpan.style.wordBreak = 'break-word';
+            titleSpan.style.whiteSpace = 'nowrap';
             textContainer.appendChild(titleSpan);
             
             // Walking time (if available)
@@ -1517,21 +1149,21 @@
 
     /**
      * Fit map bounds to show all markers
-     * @param {Object} mapInstance - The map instance
      * @param {Array} pois - Array of POI objects with coords
      */
-    function fitMapToBounds(mapInstance, pois) {
-        if (!pois || pois.length === 0) {
+    function fitMapToBounds(pois) {
+        if (pois.length === 0) {
             return;
         }
 
         if (pois.length === 1) {
             // Single marker: center and zoom
-            mapInstance.flyTo({
+            map.flyTo({
                 center: pois[0].coords,
                 zoom: CONFIG.DEFAULT_ZOOM,
                 duration: 1000
             });
+            console.log('Tema Story Map: Zoom level after flyTo:', CONFIG.DEFAULT_ZOOM);
         } else {
             // Multiple markers: fit bounds
             const bounds = new mapboxgl.LngLatBounds();
@@ -1540,14 +1172,14 @@
                 bounds.extend(poi.coords);
             });
 
-            // Include start location if available
-            if (startLocation) {
-                bounds.extend(startLocation);
-            }
-
-            mapInstance.fitBounds(bounds, {
+            map.fitBounds(bounds, {
                 padding: CONFIG.FIT_BOUNDS_PADDING,
                 duration: 1000
+            });
+            
+            // Log zoom level after fitBounds completes
+            map.once('moveend', function() {
+                console.log('Tema Story Map: Zoom level after fitBounds:', map.getZoom());
             });
         }
     }

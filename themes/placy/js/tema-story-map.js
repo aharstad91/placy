@@ -42,7 +42,6 @@
         // Try to get from placyMapConfig if passed from PHP
         if (placyMapConfig && placyMapConfig.startLocation) {
             startLocation = placyMapConfig.startLocation;
-            console.log('Tema Story Map: Start location loaded:', startLocation);
             return;
         }
         
@@ -54,7 +53,6 @@
             
             if (lat && lng) {
                 startLocation = [parseFloat(lng), parseFloat(lat)];
-                console.log('Tema Story Map: Start location loaded from container:', startLocation);
             }
         }
     }
@@ -100,7 +98,6 @@
             )
             .addTo(map);
 
-        console.log('Tema Story Map: Property marker added at', startLocation);
     }
 
     /**
@@ -336,21 +333,37 @@
             return;
         }
 
-        // Initialize Mapbox map
-        mapboxgl.accessToken = placyMapConfig.mapboxToken;
-        
-        map = new mapboxgl.Map({
-            container: 'tema-story-map',
-            style: 'mapbox://styles/mapbox/light-v11',
-            center: CONFIG.DEFAULT_CENTER,
-            zoom: CONFIG.DEFAULT_ZOOM,
-        });
+        // Check if Mapbox GL JS library is loaded
+        if (typeof mapboxgl === 'undefined') {
+            console.error('Tema Story Map: Mapbox GL JS library not loaded');
+            mapContainer.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #666; padding: 20px; text-align: center;">Map library failed to load. Please refresh the page.</div>';
+            return;
+        }
 
-        // Add navigation controls
-        map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+        try {
+            // Initialize Mapbox map
+            mapboxgl.accessToken = placyMapConfig.mapboxToken;
+            
+            map = new mapboxgl.Map({
+                container: 'tema-story-map',
+                style: 'mapbox://styles/mapbox/light-v11',
+                center: CONFIG.DEFAULT_CENTER,
+                zoom: CONFIG.DEFAULT_ZOOM,
+            });
 
-        // Wait for map to load before parsing data
-        map.on('load', function() {
+            // Add navigation controls
+            map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+
+            // Handle map errors
+            map.on('error', function(e) {
+                console.error('Tema Story Map: Map error', e.error);
+                if (mapContainer) {
+                    mapContainer.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #666; padding: 20px; text-align: center;">Map failed to load. Please check your internet connection and refresh the page.</div>';
+                }
+            });
+
+            // Wait for map to load before parsing data
+            map.on('load', function() {
             // Remove POI labels and icons from the map
             const layers = map.getStyle().layers;
             layers.forEach(function(layer) {
@@ -376,6 +389,13 @@
                 updateMapForChapter(firstChapterId);
             }
         });
+        
+        } catch (error) {
+            console.error('Tema Story Map: Failed to initialize map', error);
+            if (mapContainer) {
+                mapContainer.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #666; padding: 20px; text-align: center;">Map failed to initialize. Please refresh the page or contact support if the issue persists.</div>';
+            }
+        }
     }
 
     /**
@@ -420,7 +440,6 @@
                 
                 poiItems = poisBetweenChapters;
                 if (poisBetweenChapters.length > 0) {
-                    console.log(`Tema Story Map: Found ${poisBetweenChapters.length} POIs between chapters for "${chapterId}"`);
                 }
             }
             // FALLBACK: If this is the last chapter and has no POIs, grab all remaining POIs
@@ -436,7 +455,6 @@
                 
                 poiItems = poisAfterChapter;
                 if (poisAfterChapter.length > 0) {
-                    console.log(`Tema Story Map: Found ${poisAfterChapter.length} POIs after last chapter "${chapterId}"`);
                 }
             }
 
@@ -468,11 +486,9 @@
 
             if (pois.length > 0) {
                 chapterData.set(chapterId, pois);
-                console.log(`Tema Story Map: Loaded ${pois.length} POIs for chapter "${chapterId}"`);
             }
         });
 
-        console.log(`Tema Story Map: Parsed ${chapterData.size} chapters with POIs`);
         
         // Add walking times to POI list items
         addWalkingTimesToPOIList();
@@ -632,7 +648,6 @@
             });
         });
         
-        console.log('Tema Story Map: Hover tracking initialized for', poiItems.length, 'POI items');
     }
 
     /**
@@ -685,7 +700,6 @@
             }
         });
         
-        console.log('Tema Story Map: Cleared all active POI states');
     }
 
     /**
@@ -763,7 +777,6 @@
                     block: 'center'
                 });
                 
-                console.log('Tema Story Map: Highlighted card for POI:', poiId);
                 
                 // Wait for scroll animation to complete (~600ms for smooth scroll)
                 setTimeout(resolve, 600);
@@ -910,7 +923,6 @@
             const chapterId = mostVisibleChapter.getAttribute('data-chapter-id');
             
             if (chapterId && chapterId !== activeChapterId) {
-                console.log('Tema Story Map: Active chapter changed to:', chapterId, 'with ratio:', highestRatio);
                 activeChapterId = chapterId;
                 
                 // Debounce map updates to prevent rapid firing during scroll
@@ -1140,7 +1152,6 @@
                 zoom: CONFIG.DEFAULT_ZOOM,
                 duration: 1000
             });
-            console.log('Tema Story Map: Zoom level after flyTo:', CONFIG.DEFAULT_ZOOM);
         } else {
             // Multiple markers: fit bounds
             const bounds = new mapboxgl.LngLatBounds();
@@ -1156,7 +1167,6 @@
             
             // Log zoom level after fitBounds completes
             map.once('moveend', function() {
-                console.log('Tema Story Map: Zoom level after fitBounds:', map.getZoom());
             });
         }
     }
