@@ -81,11 +81,11 @@
             }
         }
         
-        const whiteColor = '#ffffff';
+        const targetColor = '#F7F5EF'; // Warm beige background
         
         // Convert to RGB for interpolation
         const startRgb = hexToRgb(customColor);
-        const endRgb = hexToRgb(whiteColor);
+        const endRgb = hexToRgb(targetColor);
         
         // Set initial background to custom color (hex format)
         container.style.backgroundColor = customColor;

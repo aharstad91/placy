@@ -276,7 +276,7 @@ function placy_register_theme_story_post_type() {
         'hierarchical'          => false,
         'menu_position'         => 26,
         'menu_icon'             => 'dashicons-book-alt',
-        'supports'              => array( 'title', 'editor', 'thumbnail', 'excerpt' ),
+        'supports'              => array( 'title', 'editor', 'thumbnail', 'excerpt', 'revisions' ),
         'show_in_rest'          => true,
     );
 

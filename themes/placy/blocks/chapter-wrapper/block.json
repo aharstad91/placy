@@ -1,6 +1,6 @@
 {
   "$schema": "https://schemas.wp.org/trunk/block.json",
-  "apiVersion": 2,
+  "apiVersion": 3,
   "name": "placy/chapter-wrapper",
   "title": "Tema Story Kapittel",
   "category": "layout",
@@ -24,5 +24,7 @@
       "type": "string",
       "default": ""
     }
-  }
+  },
+  "editorScript": "file:./block.js",
+  "render": "file:./render.php"
 }

@@ -72,21 +72,13 @@ if ( ! defined( 'ABSPATH' ) ) {
     <div class="main-content-wrapper">
         <div class="tema-story-container" data-bg-color="<?php echo esc_attr( $container_bg_color ); ?>">
             
-            <!-- Content Wrapper - Two columns side by side -->
-            <div class="content-wrapper">
-                <!-- Content Column -->
-                <div class="content-column">
-                    <article id="post-<?php the_ID(); ?>" <?php post_class(); ?>>
-                        <div class="tema-story-content">
-                            <?php the_content(); ?>
-                        </div>
-                    </article>
-                </div>
-                
-                <!-- Map Column -->
-                <div class="map-column">
-                    <div id="tema-story-map" class="tema-story-map"></div>
-                </div>
+            <!-- Content with per-chapter maps -->
+            <div class="content-column">
+                <article id="post-<?php the_ID(); ?>" <?php post_class(); ?>>
+                    <div class="tema-story-content">
+                        <?php the_content(); ?>
+                    </div>
+                </article>
             </div>
 
             <!-- Navigation Column - Horizontal Sticky Top -->

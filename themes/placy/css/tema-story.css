@@ -105,6 +105,8 @@ body {
     position: relative;
     z-index: 2;
     color: white;
+    max-width: 960px;
+    margin: 0 auto;
     /* Parallax text movement - slower than scroll */
     transform: translateY(calc(var(--scroll-offset, 0) * 0.5));
     transition: transform 0.1s linear;
@@ -243,8 +245,8 @@ body {
 .tema-story-container {
     min-height: 100vh;
     border-radius: 10px;
-    /* Background color is set dynamically via JavaScript from ACF field */
-    padding: 8rem 8rem 4rem;
+    background-color: #F7F5EF;
+    padding: 8rem 4rem 4rem;
     transition: background 0.3s ease-out;
     max-width: 2200px;
     margin: 0 auto;
@@ -274,30 +276,84 @@ body {
     justify-content: space-between;
 }
 
-/* Content Wrapper - 2 column grid */
-.content-wrapper {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10rem;
-    max-width: 1400px;
-    margin: 0 auto;
-}
-
-/* Content Column - Component style */
+/* Content Column */
 .content-column {
-
+    max-width: 1680px;
+    margin: 0 auto;
     min-height: 80vh;
 }
 
-/* Map Column - Component style */
-.map-column {
+/* Chapter Sections */
+.chapter {
+   /* padding: 0 0 4rem 0; */
+    scroll-margin-top: 2rem;
+    /* margin-bottom: 4rem; */
+}
 
-    border: 1px solid #e5e7eb;
-    border-radius: 0.5rem;
-    overflow: hidden;
+/* Chapter Header - Full width above grid */
+.chapter-header {
+    max-width: 75%;
+    margin-bottom: 3rem;
+}
+
+.chapter-header h2,
+.chapter-header h3 {
+    font-size: 2.5rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: #2d3748;
+    line-height: 1.2;
+}
+
+.chapter-header p {
+    font-size: 1.25rem;
+    line-height: 1.6;
+    color: #4a5568;
+    margin-bottom: 0;
+}
+
+/* Chapter Grid Layout - Two columns per chapter */
+.chapter-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4rem;
+    align-items: start;
+}
+
+.chapter-content h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: #2d3748;
+}
+
+.chapter-content p {
+    font-size: 1rem;
+    line-height: 1.4;
+    color: #4a5568;
+    margin-bottom: 1.5rem;
+}
+
+/* Chapter Map Column - Sticky within chapter */
+.chapter-map-column {
+    position: relative;
+    min-height: 500px;
+    position: sticky;
+    top: 2rem;
+}
+
+.chapter-map-wrapper {
     position: sticky;
     top: 4rem;
     height: calc(100vh - 8rem);
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+.chapter-map {
+    width: 100%;
+    height: 100%;
 }
 
 .tema-story-map {
@@ -306,31 +362,6 @@ body {
 }
 
 
-
-/* Chapter Sections */
-.chapter {
-    padding: 0 0 20rem 0;
-    scroll-margin-top: 2rem; /* Offset for smooth scroll positioning */
-}
-
-.chapter h2 {
-    font-size: 2rem;
-    font-weight: 600;
-    margin-bottom: 1rem;
-    color: #2d3748;
-}
-
-.chapter p {
-    font-size: 1rem;
-    line-height: 1.4;
-    color: #4a5568;
-    margin-bottom: 1.5rem;
-}
-
-/* POI List within chapters */
-.chapter .poi-list-block {
-    margin: 2rem 0 3rem;
-}
 
 /* Mobile Layout */
 @media (max-width: 1024px) {
@@ -360,36 +391,36 @@ body {
         width: 100%;
     }
     
-    .content-wrapper {
-        grid-template-columns: 1fr;
-        gap: 1.5rem;
-    }
-    
     .content-column {
         padding: 2rem 1.5rem;
-    }
-    
-    .map-column {
-        position: relative;
-        top: 0;
-        height: 60vh;
-        min-height: 400px;
     }
     
     .chapter {
         padding: 2rem 0;
     }
+    
+    .chapter-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    
+    .chapter-map-wrapper {
+        position: relative;
+        top: 0;
+        height: 60vh;
+        min-height: 400px;
+    }
 }
 
 /* Tablet Layout */
 @media (min-width: 769px) and (max-width: 1024px) {
-    .content-wrapper {
-        grid-template-columns: 1fr;
-    }
-    
     .content-column {
         max-width: 768px;
         margin: 0 auto;
+    }
+    
+    .chapter-grid {
+        grid-template-columns: 1fr;
     }
 }
 
@@ -434,19 +465,15 @@ body {
 /* POI Card Interaction States */
 /* Hover state - when hovering over card or marker */
 .poi-list-item.poi-active-hover {
-    background: #f9fafb;
-    box-shadow: 0 0 0 3px rgba(118, 144, 141, 0.2), 0 4px 12px rgba(0,0,0,0.15);
-    transform: translateY(-2px);
-    transition: all 0.3s ease;
+    background: #EFE9DE;
+    border: 1px solid #cbbda4;
 }
 
 /* Click state - when marker is clicked */
 .poi-list-item.poi-active-click {
-    box-shadow: 0 0 0 4px rgba(118, 144, 141, 0.4), 0 8px 20px rgba(0,0,0,0.2);
-    transform: scale(1.02);
-    background: #fffae1;
-    transition: all 0.3s ease;
-    animation: pulse-highlight 0.6s ease-out;
+    background: #EFE9DE;
+    border: 1px solid #cbbda4;
+    transition: .2s all ease;
 }
 
 @keyframes pulse-highlight {

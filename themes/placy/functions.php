@@ -81,7 +81,7 @@ function placy_enqueue_scripts() {
     if ( is_singular( 'theme-story' ) ) {
         wp_enqueue_style( 'placy-tema-story', get_template_directory_uri() . '/css/tema-story.css', array(), '1.0.0' );
         wp_enqueue_style( 'placy-chapter-wrapper', get_template_directory_uri() . '/blocks/chapter-wrapper/style.css', array(), '1.0.0' );
-        wp_enqueue_script( 'placy-tema-story-map', get_template_directory_uri() . '/js/tema-story-map.js', array( 'mapbox-gl-js' ), '1.0.0', true );
+        wp_enqueue_script( 'placy-tema-story-map', get_template_directory_uri() . '/js/tema-story-map-multi.js', array( 'mapbox-gl-js' ), '2.3.0', true );
         wp_enqueue_script( 'placy-chapter-nav', get_template_directory_uri() . '/js/chapter-nav.js', array(), '1.0.0', true );
         wp_enqueue_script( 'placy-intro-parallax', get_template_directory_uri() . '/js/intro-parallax.js', array(), '1.0.0', true );
         wp_enqueue_script( 'placy-container-gradient', get_template_directory_uri() . '/js/container-gradient.js', array(), '1.0.0', true );
@@ -347,7 +347,7 @@ function placy_block_editor_styles() {
         'placy-chapter-wrapper-editor',
         get_template_directory_uri() . '/blocks/chapter-wrapper/block.js',
         array( 'wp-blocks', 'wp-element', 'wp-block-editor', 'wp-components' ),
-        '1.0.0',
+        '2.0.0', // Updated for multi-map support
         true
     );
 }

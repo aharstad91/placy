@@ -28,7 +28,7 @@ if ( empty( $chapter_anchor ) ) {
 
 // Get block wrapper attributes
 $wrapper_attributes = get_block_wrapper_attributes( array(
-    'class'                => 'chapter',
+    'class'                => 'chapter chapter-with-map',
     'id'                   => esc_attr( $chapter_anchor ),
     'data-chapter-id'      => esc_attr( $chapter_id ),
     'data-chapter-anchor'  => esc_attr( $chapter_anchor ),
@@ -38,5 +38,17 @@ $wrapper_attributes = get_block_wrapper_attributes( array(
 ?>
 
 <section <?php echo $wrapper_attributes; ?>>
-    <?php echo $content; ?>
+    <div class="chapter-grid">
+        <div class="chapter-content">
+            <?php echo $content; ?>
+        </div>
+        <div class="chapter-map-column">
+            <div class="chapter-map-wrapper">
+                <div id="<?php echo esc_attr( 'map-' . $chapter_id ); ?>" 
+                     class="tema-story-map chapter-map" 
+                     data-chapter-id="<?php echo esc_attr( $chapter_id ); ?>">
+                </div>
+            </div>
+        </div>
+    </div>
 </section>

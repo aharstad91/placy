@@ -32,7 +32,7 @@ $is_in_chapter = strpos( $parent_classes, 'chapter' ) !== false;
 
 ?>
 
-<div id="<?php echo esc_attr( $block_id ); ?>" class="<?php echo esc_attr( $class_name ); ?> w-full my-8">
+<div id="<?php echo esc_attr( $block_id ); ?>" class="<?php echo esc_attr( $class_name ); ?> w-full">
     <?php if ( $poi_items && is_array( $poi_items ) ) : ?>
         <div class="flex flex-col gap-6" <?php if ( $is_in_chapter ) echo 'data-chapter-poi-list="true"'; ?>>
             <?php foreach ( $poi_items as $poi ) : 

@@ -30,6 +30,44 @@
     blocks.registerBlockType('placy/chapter-wrapper', {
         deprecated: [
             {
+                // Version without map grid (pre multi-map)
+                attributes: {
+                    chapterId: {
+                        type: 'string',
+                        default: ''
+                    },
+                    chapterAnchor: {
+                        type: 'string',
+                        default: ''
+                    },
+                    chapterTitle: {
+                        type: 'string',
+                        default: ''
+                    }
+                },
+                save: function (props) {
+                    const { attributes } = props;
+                    const { chapterId, chapterAnchor, chapterTitle } = attributes;
+                    
+                    const blockProps = useBlockProps.save({
+                        className: 'chapter',
+                        id: chapterAnchor || chapterId || undefined,
+                        'data-chapter-id': chapterId || '',
+                        'data-chapter-anchor': chapterAnchor || '',
+                        'data-chapter-title': chapterTitle || '',
+                    });
+
+                    return el(
+                        'section',
+                        blockProps,
+                        el(InnerBlocks.Content)
+                    );
+                },
+                migrate: function(attributes) {
+                    return attributes;
+                }
+            },
+            {
                 // Old version that used client-side save() with section tags
                 attributes: {
                     chapterId: {
@@ -53,7 +91,6 @@
                     );
                 },
                 migrate: function(attributes) {
-                    // Just return attributes as-is, server-side rendering will handle the rest
                     return attributes;
                 }
             }
@@ -186,23 +223,11 @@
             );
         },
 
-        save: function (props) {
-            const { attributes } = props;
-            const { chapterId, chapterAnchor, chapterTitle } = attributes;
-            
-            const blockProps = useBlockProps.save({
-                className: 'chapter',
-                id: chapterAnchor || chapterId || undefined,
-                'data-chapter-id': chapterId || '',
-                'data-chapter-anchor': chapterAnchor || '',
-                'data-chapter-title': chapterTitle || '',
-            });
-
-            return el(
-                'section',
-                blockProps,
-                el(InnerBlocks.Content)
-            );
+        // Save function must return InnerBlocks.Content to preserve inner blocks
+        // Even though we use render.php for server-side rendering, we MUST save the inner blocks
+        // otherwise WordPress migration will DELETE all inner content
+        save: function () {
+            return el(InnerBlocks.Content);
         },
     });
 })(window.wp.blocks, window.wp.element, window.wp.blockEditor, window.wp.components);

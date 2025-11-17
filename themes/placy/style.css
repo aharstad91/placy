@@ -16,3 +16,13 @@ Tags: custom-logo, custom-menu, featured-images, threaded-comments, translation-
 
 /* Theme styles are loaded from css/styles.css */
 
+.poi-list-item{
+    background: #fff;
+}
+.chapter-map-column{
+    background: #fff;
+}
+.tema-story-content{
+    display: grid;
+    gap: 33vh;
+}
