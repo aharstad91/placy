@@ -935,7 +935,7 @@
             // FALLBACK: If this chapter has no POIs, look for POIs between this chapter and the next
             if (poiItems.length === 0 && index < chapters.length - 1) {
                 const nextChapter = chapters[index + 1];
-                const allPoisOnPage = document.querySelectorAll('.poi-list-item, .poi-list-card');
+                const allPoisOnPage = document.querySelectorAll('.poi-list-item');
                 const chapterRect = chapter.getBoundingClientRect();
                 const nextChapterRect = nextChapter.getBoundingClientRect();
                 
@@ -956,7 +956,7 @@
             }
             // FALLBACK: If this is the last chapter and has no POIs, grab all remaining POIs
             else if (poiItems.length === 0 && index === chapters.length - 1) {
-                const allPoisOnPage = document.querySelectorAll('.poi-list-item, .poi-list-card');
+                const allPoisOnPage = document.querySelectorAll('.poi-list-item');
                 const poisAfterChapter = Array.from(allPoisOnPage).filter(function(poi) {
                     let inChapter = false;
                     chapters.forEach(function(ch) {
@@ -1230,7 +1230,7 @@
         }
         
         // Clear card highlights and reset buttons
-        document.querySelectorAll('.poi-list-item, .poi-list-card').forEach(function(item) {
+        document.querySelectorAll('.poi-list-item').forEach(function(item) {
             item.classList.remove('poi-active-click');
             
             // Reset button container and button
@@ -1395,7 +1395,7 @@
      */
     function clearActivePOI() {
         // Remove highlight from all cards
-        document.querySelectorAll('.poi-list-item, .poi-list-card').forEach(function(item) {
+        document.querySelectorAll('.poi-list-item').forEach(function(item) {
             item.classList.remove('poi-active-hover');
         });
         

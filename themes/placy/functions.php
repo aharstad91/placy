@@ -88,12 +88,22 @@ function placy_enqueue_scripts() {
         wp_enqueue_script( 'placy-container-gradient', get_template_directory_uri() . '/js/container-gradient.js', array(), '1.0.0', true );
         wp_enqueue_script( 'placy-scroll-indicator', get_template_directory_uri() . '/js/scroll-indicator.js', array(), '1.0.0', true );
         
-        // Get start location from ACF fields
-        $start_lat = get_field( 'start_latitude' );
-        $start_lng = get_field( 'start_longitude' );
-        $property_logo = get_field( 'property_logo' );
-        $property_background = get_field( 'property_background' );
-        $property_label = get_field( 'property_label' );
+        // Get property data from related project
+        $project = get_field( 'project' );
+        $start_lat = null;
+        $start_lng = null;
+        $property_logo = null;
+        $property_background = null;
+        $property_label = null;
+        
+        if ( $project ) {
+            $start_lat = get_field( 'start_latitude', $project->ID );
+            $start_lng = get_field( 'start_longitude', $project->ID );
+            $property_logo = get_field( 'property_logo', $project->ID );
+            $property_background = get_field( 'property_background', $project->ID );
+            $property_label = get_field( 'property_label', $project->ID );
+        }
+        
         $start_location = null;
         
         if ( $start_lat && $start_lng ) {
@@ -189,24 +199,23 @@ add_filter( 'block_categories_all', 'placy_register_block_category', 10, 1 );
 /**
  * Enqueue block styles for both frontend and editor
  */
-function placy_enqueue_block_assets( $block_name ) {
+function placy_enqueue_block_assets() {
     // Map block names to their style files
     $block_styles = array(
-        'acf/poi-map-card'  => '/blocks/poi-map-card/style.css',
-        'acf/poi-list'      => '/blocks/poi-list/style.css',
-        'acf/poi-highlight' => '/blocks/poi-highlight/style.css',
-        'acf/poi-gallery'   => '/blocks/poi-gallery/style.css',
-        'acf/image-column'  => '/blocks/image-column/style.css',
+        'poi-map-card'  => '/blocks/poi-map-card/style.css',
+        'poi-list'      => '/blocks/poi-list/style.css',
+        'poi-highlight' => '/blocks/poi-highlight/style.css',
+        'poi-gallery'   => '/blocks/poi-gallery/style.css',
+        'image-column'  => '/blocks/image-column/style.css',
     );
     
-    // Check if this block has styles
-    if ( isset( $block_styles[ $block_name ] ) ) {
-        $style_path = $block_styles[ $block_name ];
+    // Enqueue all block styles
+    foreach ( $block_styles as $block_name => $style_path ) {
         $style_file = get_template_directory() . $style_path;
         
         // Only enqueue if file exists
         if ( file_exists( $style_file ) ) {
-            $handle = 'placy-' . str_replace( '/', '-', $block_name );
+            $handle = 'placy-block-' . $block_name;
             wp_enqueue_style(
                 $handle,
                 get_template_directory_uri() . $style_path,

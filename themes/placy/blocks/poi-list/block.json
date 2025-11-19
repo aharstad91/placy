@@ -11,6 +11,7 @@
     "align": ["wide", "full"],
     "anchor": true
   },
+  "style": "file:./style.css",
   "acf": {
     "mode": "preview",
     "renderTemplate": "template.php"

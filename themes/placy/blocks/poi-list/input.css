@@ -7,7 +7,7 @@
     margin: 2rem 0;
 }
 
-.poi-list-item {
+.poi-list-card {
     margin-bottom: 2rem;
     background: white;
     border-radius: 0.5rem;
@@ -16,11 +16,20 @@
     transition: box-shadow 0.2s;
 }
 
-.poi-list-item:hover {
+/* Force images to respect Tailwind sizes */
+.poi-list-card img {
+    width: 6rem !important;
+    height: 6rem !important;
+    object-fit: cover !important;
+    max-width: none !important;
+    max-height: none !important;
+}
+
+.poi-list-card:hover {
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
-.poi-list-item-content {
+.poi-list-card-content {
     padding: 1.5rem;
 }
 
@@ -32,6 +41,6 @@
     border-radius: 0.5rem;
 }
 
-.acf-block-preview .poi-list-item button {
+.acf-block-preview .poi-list-card button {
     pointer-events: none;
 }

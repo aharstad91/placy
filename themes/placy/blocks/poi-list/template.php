@@ -34,7 +34,7 @@ $is_in_chapter = strpos( $parent_classes, 'chapter' ) !== false;
 
 <div id="<?php echo esc_attr( $block_id ); ?>" class="<?php echo esc_attr( $class_name ); ?> w-full mb-6">
     <?php if ( $poi_items && is_array( $poi_items ) ) : ?>
-        <div class="flex flex-col gap-6" <?php if ( $is_in_chapter ) echo 'data-chapter-poi-list="true"'; ?>>
+        <div class="flex flex-col" <?php if ( $is_in_chapter ) echo 'data-chapter-poi-list="true"'; ?>>
             <?php foreach ( $poi_items as $poi ) : 
                 // Get POI coordinates
                 $lat = get_field( 'latitude', $poi->ID );
@@ -53,7 +53,7 @@ $is_in_chapter = strpos( $parent_classes, 'chapter' ) !== false;
                 $excerpt = get_the_excerpt( $poi->ID );
             ?>
                 <article 
-                    class="poi-list-item bg-white border border-gray-200 rounded-lg overflow-hidden transition-all duration-300 hover:border-gray-300"
+                    class="poi-list-card bg-white border border-gray-200 rounded-lg overflow-hidden transition-all duration-300 hover:border-gray-300"
                     data-poi-id="<?php echo esc_attr( $poi->ID ); ?>"
                     data-poi-title="<?php echo esc_attr( get_the_title( $poi->ID ) ); ?>"
                     <?php if ( $coords ) : ?>
@@ -68,77 +68,95 @@ $is_in_chapter = strpos( $parent_classes, 'chapter' ) !== false;
                             <div class="flex-shrink-0">
                                 <img src="<?php echo esc_url( $featured_image ); ?>" 
                                      alt="<?php echo esc_attr( get_the_title( $poi->ID ) ); ?>"
-                                     class="w-32 h-32 object-cover rounded-lg">
+                                     class="w-24 h-24 object-cover rounded-lg">
                             </div>
                         <?php endif; ?>
                         
-                        <div class="flex-1 min-w-0">
-                            <h3 class="text-lg font-semibold text-gray-900 mb-2 truncate">
-                                <?php echo esc_html( get_the_title( $poi->ID ) ); ?>
-                            </h3>
-                            
-                            <?php 
-                            // Get Google Places rating data
-                            $place_data = placy_get_poi_place_data( $poi->ID );
-                            if ( $place_data && isset( $place_data['rating'] ) ) :
-                            ?>
-                                <div class="poi-rating flex items-center gap-2 mb-2">
-                                    <span class="poi-rating-value flex items-center gap-1 text-sm font-medium text-gray-900">
-                                        <span class="text-yellow-500">★</span>
-                                        <?php echo number_format( $place_data['rating'], 1 ); ?>
-                                    </span>
-                                    <?php if ( isset( $place_data['review_count'] ) && $place_data['review_count'] > 0 ) : ?>
-                                        <span class="poi-rating-count text-xs text-gray-500">
-                                            (<?php echo number_format( $place_data['review_count'] ); ?>)
-                                        </span>
+                        <div class="flex-1 min-w-0 flex flex-col">
+                            <div class="flex items-start justify-between">
+                                <!-- Title row -->
+                                <div class="flex flex-col mb-2">
+                                    <h3 class="text-lg font-semibold text-gray-900">
+                                        <?php echo esc_html( get_the_title( $poi->ID ) ); ?>
+                                    </h3>
+                                    <?php 
+                                    // Get point_type terms
+                                    $point_types = get_the_terms( $poi->ID, 'point_type' );
+                                    if ( $point_types && ! is_wp_error( $point_types ) ) :
+                                    ?>
+                                        <div class="flex items-center gap-2 mt-1 mb-2">
+                                            <?php foreach ( $point_types as $term ) : ?>
+                                                <span class="inline-block px-2 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded">
+                                                    <?php echo esc_html( $term->name ); ?>
+                                                </span>
+                                            <?php endforeach; ?>
+                                        </div>
                                     <?php endif; ?>
-                                    <?php if ( ! empty( $place_data['google_maps_url'] ) ) : ?>
-                                        <a href="<?php echo esc_url( $place_data['google_maps_url'] ); ?>" 
-                                           target="_blank" 
-                                           rel="noopener noreferrer"
-                                           class="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition-colors"
-                                           title="Se anmeldelser på Google">
-                                            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
-                                                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-                                                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                                                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-                                                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                                    <!-- Google rating and walking time row -->
+                                    <div class="flex items-center gap-4">
+                                        <?php 
+                                        // Get Google Places rating data
+                                        $place_data = placy_get_poi_place_data( $poi->ID );
+                                        if ( $place_data && isset( $place_data['rating'] ) ) :
+                                        ?>
+                                            <div class="poi-rating flex items-center gap-2">
+                                                <span class="poi-rating-value flex items-center gap-1 text-sm font-medium text-gray-900">
+                                                    <span class="text-yellow-500">★</span>
+                                                    <?php echo number_format( $place_data['rating'], 1 ); ?>
+                                                </span>
+                                                <?php if ( isset( $place_data['review_count'] ) && $place_data['review_count'] > 0 ) : ?>
+                                                    <span class="poi-rating-count text-xs text-gray-500">
+                                                        (<?php echo number_format( $place_data['review_count'] ); ?>)
+                                                    </span>
+                                                <?php endif; ?>
+                                                <?php if ( ! empty( $place_data['google_maps_url'] ) ) : ?>
+                                                    <a href="<?php echo esc_url( $place_data['google_maps_url'] ); ?>" 
+                                                    target="_blank" 
+                                                    rel="noopener noreferrer"
+                                                    class="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                                                    title="Se anmeldelser på Google">
+                                                        <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+                                                            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                                                            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                                                            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                                                            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                                                        </svg>
+                                                        <span class="text-[10px]">Google</span>
+                                                    </a>
+                                                <?php endif; ?>
+                                            </div>
+                                        <?php endif; ?>
+                                        
+                                        <div class="flex items-center gap-2 text-gray-600">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                                             </svg>
-                                            <span class="text-[10px]">Google</span>
-                                        </a>
-                                    <?php endif; ?>
-                                </div>
-                            <?php endif; ?>
-                            
-                            <?php if ( $content ) : ?>
-                                <div class="poi-description text-sm text-gray-600 line-clamp-2 mb-3">
-                                    <?php echo wp_kses_post( $content ); ?>
-                                </div>
-                            <?php elseif ( $excerpt ) : ?>
-                                <div class="poi-description text-sm text-gray-600 line-clamp-2 mb-3">
-                                    <?php echo esc_html( $excerpt ); ?>
-                                </div>
-                            <?php endif; ?>
-                            
-                            <div class="flex items-center justify-between gap-4">
-                                <div class="flex items-center gap-2">
-                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                                    </svg>
-                                    <span class="poi-walking-time text-xs font-medium text-gray-500">
-                                        Beregner...
-                                    </span>
+                                            <span class="poi-walking-time text-sm font-medium">
+                                                Beregner...
+                                            </span>
+                                        </div>
+                                    </div>
                                 </div>
                                 
-                                <div class="poi-button-container flex items-center gap-2 flex-shrink-0">
+                                <div class="poi-button-container flex-shrink-0">
                                     <button 
-                                        class="poi-show-on-map px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium text-xs rounded transition-colors duration-200 whitespace-nowrap"
+                                        class="poi-show-on-map px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium text-sm rounded-lg transition-colors duration-200 whitespace-nowrap"
                                         onclick="showPOIOnMap(this)"
                                     >
                                         Se på kart
                                     </button>
                                 </div>
                             </div>
+                            <!-- Bottom row: Tekst kommer her -->
+                            <?php if ( $content ) : ?>
+                                <div class="poi-description text-sm text-gray-600 line-clamp-2">
+                                    <?php echo wp_kses_post( $content ); ?>
+                                </div>
+                            <?php elseif ( $excerpt ) : ?>
+                                <div class="poi-description text-sm text-gray-600 line-clamp-2">
+                                    <?php echo esc_html( $excerpt ); ?>
+                                </div>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </article>

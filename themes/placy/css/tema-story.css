@@ -254,7 +254,9 @@ body {
 
 /* Navigation Column - Horizontal Sticky Top */
 .nav-column {
-    background: white;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     border: 1px solid #e5e7eb;
     border-radius: 0.5rem;
     padding: 1.5rem;

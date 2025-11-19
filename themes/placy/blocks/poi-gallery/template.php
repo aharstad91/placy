@@ -53,9 +53,26 @@ if ( ! $pois || empty( $pois ) ) {
         <?php endif; ?>
         
         <div class="poi-gallery-content p-6">
+
+            <?php 
+            // Get point_type terms
+            $point_types = get_the_terms( $poi_id, 'point_type' );
+            if ( $point_types && ! is_wp_error( $point_types ) ) :
+            ?>
+                <div class="flex items-center gap-2 mb-3">
+                    <?php foreach ( $point_types as $term ) : ?>
+                        <span class="inline-block px-2 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded">
+                            <?php echo esc_html( $term->name ); ?>
+                        </span>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+
             <h3 class="text-xl font-bold mb-3 text-gray-900">
                 <?php echo esc_html( $title ); ?>
             </h3>
+            
+
             
             <div class="flex items-center justify-between gap-4 mb-3">
                 <?php 
