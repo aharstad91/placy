@@ -209,6 +209,12 @@ function placy_register_places_api_endpoints() {
                 'description' => 'Place type/category to search for',
                 'default' => 'restaurant',
             ),
+            'keyword' => array(
+                'required' => false,
+                'type' => 'string',
+                'description' => 'Keyword for text search (e.g., "pizza", "sushi", "fine dining")',
+                'default' => '',
+            ),
             'lat' => array(
                 'required' => true,
                 'type' => 'number',
@@ -236,6 +242,18 @@ function placy_register_places_api_endpoints() {
                 'type' => 'integer',
                 'description' => 'Minimum number of reviews',
                 'default' => 50,
+            ),
+            'excludeTypes' => array(
+                'required' => false,
+                'type' => 'string',
+                'description' => 'JSON array of place types to exclude (e.g., ["lodging", "hospital"])',
+                'default' => '["lodging"]',
+            ),
+            'excludePlaceIds' => array(
+                'required' => false,
+                'type' => 'string',
+                'description' => 'JSON array of Google Place IDs to exclude from results (to prevent duplicates with manually curated POIs)',
+                'default' => '[]',
             ),
         ),
     ) );
@@ -270,19 +288,43 @@ add_action( 'rest_api_init', 'placy_register_places_api_endpoints' );
  */
 function placy_places_nearby_search( $request ) {
     $category = $request->get_param( 'category' );
+    $keyword = $request->get_param( 'keyword' );
     $lat = $request->get_param( 'lat' );
     $lng = $request->get_param( 'lng' );
     $radius = $request->get_param( 'radius' );
     $min_rating = $request->get_param( 'minRating' );
     $min_reviews = $request->get_param( 'minReviews' );
     
-    // Create cache key
+    // Parse exclude types from JSON string
+    $exclude_types_param = $request->get_param( 'excludeTypes' );
+    $exclude_types = array( 'lodging' ); // Default
+    if ( ! empty( $exclude_types_param ) ) {
+        $decoded = json_decode( $exclude_types_param, true );
+        if ( is_array( $decoded ) ) {
+            $exclude_types = $decoded;
+        }
+    }
+    
+    // Parse exclude place IDs from JSON string
+    $exclude_place_ids_param = $request->get_param( 'excludePlaceIds' );
+    $exclude_place_ids = array();
+    if ( ! empty( $exclude_place_ids_param ) ) {
+        $decoded = json_decode( $exclude_place_ids_param, true );
+        if ( is_array( $decoded ) ) {
+            $exclude_place_ids = $decoded;
+        }
+    }
+    
+    // Create cache key (include keyword, exclude types, and exclude place IDs)
     $cache_key = sprintf(
-        'placy_places_search_%s_%s_%s_%d',
+        'placy_places_search_%s_%s_%s_%s_%d_%s_%s',
         $category,
+        $keyword,
         $lat,
         $lng,
-        $radius
+        $radius,
+        implode( '_', $exclude_types ),
+        implode( '_', $exclude_place_ids )
     );
     $cache_key = md5( $cache_key );
     
@@ -304,12 +346,19 @@ function placy_places_nearby_search( $request ) {
     }
     
     // Build request URL for Nearby Search
-    $url = add_query_arg( array(
+    $query_args = array(
         'location' => $lat . ',' . $lng,
         'radius' => $radius,
         'type' => $category,
         'key' => $api_key,
-    ), 'https://maps.googleapis.com/maps/api/place/nearbysearch/json' );
+    );
+    
+    // Add keyword if provided
+    if ( ! empty( $keyword ) ) {
+        $query_args['keyword'] = $keyword;
+    }
+    
+    $url = add_query_arg( $query_args, 'https://maps.googleapis.com/maps/api/place/nearbysearch/json' );
     
     // Make API request
     $response = wp_remote_get( $url, array(
@@ -350,7 +399,32 @@ function placy_places_nearby_search( $request ) {
     
     // Filter and transform results
     $places = array();
+    
+    // Use the exclude types from request parameter
     foreach ( $data['results'] as $place ) {
+        $place_id = isset( $place['place_id'] ) ? $place['place_id'] : '';
+        
+        // Skip if this place ID is in the excluded list (prevents duplicates with curated POIs)
+        if ( ! empty( $place_id ) && in_array( $place_id, $exclude_place_ids ) ) {
+            continue;
+        }
+        
+        // Get place types
+        $place_types = isset( $place['types'] ) ? $place['types'] : array();
+        
+        // Skip if place has any excluded types
+        $has_excluded_type = false;
+        foreach ( $exclude_types as $excluded_type ) {
+            if ( in_array( $excluded_type, $place_types ) ) {
+                $has_excluded_type = true;
+                break;
+            }
+        }
+        
+        if ( $has_excluded_type ) {
+            continue;
+        }
+        
         // Apply filters
         $rating = isset( $place['rating'] ) ? floatval( $place['rating'] ) : 0;
         $review_count = isset( $place['user_ratings_total'] ) ? intval( $place['user_ratings_total'] ) : 0;

@@ -43,6 +43,12 @@ if ( ! $pois || empty( $pois ) ) {
     <article class="poi-list-item poi-gallery-item overflow-hidden border-gray-200 border rounded-lg" 
              data-poi-id="<?php echo esc_attr( $poi_id ); ?>"
              data-poi-title="<?php echo esc_attr( $title ); ?>"
+             <?php 
+                $google_place_id = get_field( 'google_place_id', $poi_id );
+                if ( $google_place_id ) : 
+             ?>
+                data-google-place-id="<?php echo esc_attr( $google_place_id ); ?>"
+             <?php endif; ?>
              <?php if ( $coords ) : ?>
                 data-poi-coords="<?php echo $coords; ?>"
              <?php endif; ?>

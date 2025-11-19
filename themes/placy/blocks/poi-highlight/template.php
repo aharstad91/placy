@@ -46,6 +46,12 @@ $show_bike_availability = get_field( 'show_bike_availability', $poi_id );
 <article class="poi-list-item poi-highlight p-6 mb-8 border border-gray-200 rounded-lg" 
          data-poi-id="<?php echo esc_attr( $poi_id ); ?>"
          data-poi-title="<?php echo esc_attr( $title ); ?>"
+         <?php 
+            $google_place_id = get_field( 'google_place_id', $poi_id );
+            if ( $google_place_id ) : 
+         ?>
+            data-google-place-id="<?php echo esc_attr( $google_place_id ); ?>"
+         <?php endif; ?>
          <?php if ( $coords ) : ?>
             data-poi-coords="<?php echo $coords; ?>"
          <?php endif; ?>

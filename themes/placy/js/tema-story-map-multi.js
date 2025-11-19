@@ -1105,7 +1105,7 @@
      * @param {number} minReviews - Minimum reviews filter
      * @returns {Promise<Object>} API response
      */
-    async function fetchNearbyPlaces(chapterId, lat, lng, category = 'restaurant', radius = 1500, minRating = 4.3, minReviews = 50) {
+    async function fetchNearbyPlaces(chapterId, lat, lng, category = 'restaurant', radius = 1500, minRating = 4.3, minReviews = 50, keyword = '', excludeTypes = ['lodging'], excludePlaceIds = []) {
         // Check if we already have results for this chapter
         if (placesApiResults.has(chapterId)) {
             return placesApiResults.get(chapterId);
@@ -1121,6 +1121,21 @@
             url.searchParams.append('radius', radius);
             url.searchParams.append('minRating', minRating);
             url.searchParams.append('minReviews', minReviews);
+            
+            // Add keyword if provided
+            if (keyword && keyword.trim()) {
+                url.searchParams.append('keyword', keyword.trim());
+            }
+            
+            // Add exclude types as JSON
+            if (excludeTypes && excludeTypes.length > 0) {
+                url.searchParams.append('excludeTypes', JSON.stringify(excludeTypes));
+            }
+            
+            // Add exclude place IDs as JSON
+            if (excludePlaceIds && excludePlaceIds.length > 0) {
+                url.searchParams.append('excludePlaceIds', JSON.stringify(excludePlaceIds));
+            }
             
             const response = await fetch(url.toString());
             
@@ -1403,7 +1418,7 @@
      * @param {string} chapterId - Chapter ID
      * @param {number} count - Number of places available
      */
-    function addShowAllButton(chapterId, count) {
+    function addShowAllButton(chapterId, categoryNorwegian) {
         const chapter = document.querySelector('.chapter[data-chapter-id="' + chapterId + '"]');
         if (!chapter) return;
         
@@ -1425,7 +1440,8 @@
         // Create button
         const button = document.createElement('button');
         button.className = 'places-api-show-all-button';
-        button.textContent = 'Se alle ' + count + ' restauranter i området';
+        button.textContent = 'Se flere ' + categoryNorwegian + ' i området';
+        button.setAttribute('data-category-norwegian', categoryNorwegian);
         button.style.padding = '12px 24px';
         button.style.backgroundColor = '#EF4444';
         button.style.color = 'white';
@@ -1461,41 +1477,75 @@
         const isShowing = showingApiResults.get(chapterId);
         
         if (isShowing) {
-            // Hide API results
-            hideApiResults(chapterId);
-            showingApiResults.set(chapterId, false);
-            
-            // Update button text
-            const apiData = placesApiResults.get(chapterId);
-            if (apiData) {
-                button.textContent = 'Se alle ' + apiData.count + ' restauranter i området';
-            }
-        } else {
-            // Show loading state
-            button.textContent = 'Laster...';
-            button.disabled = true;
-            
-            // Show API results
-            await showApiResults(chapterId);
-            showingApiResults.set(chapterId, true);
-            
-            // Update button
-            button.textContent = 'Skjul ekstra restauranter';
-            button.disabled = false;
+            // Already showing - do nothing (button will be hidden)
+            return;
         }
+        
+        // Show loading state with spinner animation
+        const categoryNorwegian = button.getAttribute('data-category-norwegian') || 'steder';
+        
+        // Create spinner element
+        const spinner = document.createElement('span');
+        spinner.style.display = 'inline-block';
+        spinner.style.width = '14px';
+        spinner.style.height = '14px';
+        spinner.style.border = '2px solid rgba(255, 255, 255, 0.3)';
+        spinner.style.borderTopColor = '#fff';
+        spinner.style.borderRadius = '50%';
+        spinner.style.marginRight = '8px';
+        spinner.style.animation = 'spin 0.8s linear infinite';
+        
+        // Add keyframes for spinner if not already added
+        if (!document.getElementById('spinner-keyframes')) {
+            const style = document.createElement('style');
+            style.id = 'spinner-keyframes';
+            style.textContent = `
+                @keyframes spin {
+                    to { transform: rotate(360deg); }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        button.innerHTML = '';
+        button.appendChild(spinner);
+        button.appendChild(document.createTextNode('Henter lignende ' + categoryNorwegian + ' fra Google...'));
+        button.disabled = true;
+        button.style.opacity = '0.9';
+        
+        // Fetch API data but don't display yet
+        const apiData = await fetchApiData(chapterId);
+        
+        // Wait for minimum 2 seconds before displaying
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Now display the results after 2 seconds
+        if (apiData && apiData.success && apiData.places.length > 0) {
+            displayApiResults(chapterId, apiData);
+        }
+        
+        showingApiResults.set(chapterId, true);
+        
+        // Hide button after results are shown
+        button.style.display = 'none';
     }
     
     /**
-     * Show API results for a chapter
+     * Fetch API data for a chapter (without displaying)
      * @param {string} chapterId - Chapter ID
+     * @returns {Promise<Object>} API data
      */
-    async function showApiResults(chapterId) {
+    async function fetchApiData(chapterId) {
+        // Get chapter element to read configuration
+        const chapter = document.querySelector('[data-chapter-id="' + chapterId + '"]');
+        if (!chapter) return null;
+        
         // Get chapter map
         const mapContainer = document.querySelector('.chapter-map[data-chapter-id="' + chapterId + '"]');
-        if (!mapContainer) return;
+        if (!mapContainer) return null;
         
         const mapInstance = mapContainer._mapboxInstance;
-        if (!mapInstance) return;
+        if (!mapInstance) return null;
         
         // Get center coordinates (use start location or map center)
         let lat, lng;
@@ -1508,13 +1558,57 @@
             lng = center.lng;
         }
         
+        // Read configuration from chapter data attributes
+        const category = chapter.getAttribute('data-places-category') || 'restaurant';
+        const radius = parseInt(chapter.getAttribute('data-places-radius')) || 1500;
+        const minRating = parseFloat(chapter.getAttribute('data-places-min-rating')) || 4.3;
+        const minReviews = parseInt(chapter.getAttribute('data-places-min-reviews')) || 50;
+        const keyword = chapter.getAttribute('data-places-keyword') || '';
+        
+        // Get exclude types (JSON array)
+        let excludeTypes = ['lodging']; // Default
+        const excludeTypesAttr = chapter.getAttribute('data-places-exclude-types');
+        if (excludeTypesAttr) {
+            try {
+                excludeTypes = JSON.parse(excludeTypesAttr);
+            } catch (e) {
+                console.warn('Failed to parse exclude types:', e);
+            }
+        }
+        
+        // Collect Google Place IDs from existing POIs in this chapter to exclude them
+        const excludePlaceIds = [];
+        const poiItems = chapter.querySelectorAll('[data-google-place-id]');
+        poiItems.forEach(function(poiItem) {
+            const placeId = poiItem.getAttribute('data-google-place-id');
+            if (placeId && placeId.trim()) {
+                excludePlaceIds.push(placeId.trim());
+            }
+        });
+        
         // Fetch places
-        const apiData = await fetchNearbyPlaces(chapterId, lat, lng, 'restaurant', 1500, 4.3, 50);
+        const apiData = await fetchNearbyPlaces(chapterId, lat, lng, category, radius, minRating, minReviews, keyword, excludeTypes, excludePlaceIds);
         
         if (!apiData.success || apiData.places.length === 0) {
             console.warn('No places found for chapter:', chapterId);
-            return;
+            return null;
         }
+        
+        return apiData;
+    }
+    
+    /**
+     * Display API results for a chapter
+     * @param {string} chapterId - Chapter ID
+     * @param {Object} apiData - API data with places
+     */
+    function displayApiResults(chapterId, apiData) {
+        // Get chapter map
+        const mapContainer = document.querySelector('.chapter-map[data-chapter-id="' + chapterId + '"]');
+        if (!mapContainer) return;
+        
+        const mapInstance = mapContainer._mapboxInstance;
+        if (!mapInstance) return;
         
         // Add markers to map
         addPlacesMarkersToMap(mapInstance, chapterId, apiData.places);
@@ -1554,13 +1648,52 @@
         const listContainer = lastSection.querySelector('.flex.flex-col');
         if (!listContainer) return;
         
+        // Read configuration for disclaimer
+        const category = chapter.getAttribute('data-places-category') || 'restaurant';
+        const keyword = chapter.getAttribute('data-places-keyword') || '';
+        
+        // Map category to Norwegian plural
+        const categoryMap = {
+            'restaurant': 'restauranter',
+            'cafe': 'kafeer',
+            'bar': 'barer',
+            'bakery': 'bakerier',
+            'meal_takeaway': 'takeaway-steder',
+            'food': 'spisesteder'
+        };
+        const categoryNorwegian = categoryMap[category] || 'steder';
+        
         // Create container for API results
         const apiContainer = document.createElement('div');
         apiContainer.className = 'places-api-results';
-        apiContainer.style.marginTop = '16px';
-        apiContainer.style.paddingTop = '16px';
-        apiContainer.style.borderTop = '2px solid #E5E7EB';
+        apiContainer.style.marginTop = '24px';
+        apiContainer.style.paddingTop = '0';
         
+        // Add disclaimer header
+        const disclaimerHeader = document.createElement('div');
+        disclaimerHeader.className = 'google-places-disclaimer';
+        disclaimerHeader.style.marginBottom = '16px';
+        disclaimerHeader.style.padding = '12px 16px';
+        disclaimerHeader.style.backgroundColor = '#F3F4F6';
+        disclaimerHeader.style.borderLeft = '4px solid #9CA3AF';
+        disclaimerHeader.style.borderRadius = '4px';
+        
+        let disclaimerText = '<p style="margin: 0; font-size: 14px; color: #4B5563; line-height: 1.5;">';
+        disclaimerText += '<strong style="color: #1F2937;">Google-søk:</strong> ';
+        
+        if (keyword && keyword.trim()) {
+            disclaimerText += 'Viser lignende <strong>' + categoryNorwegian + '</strong> tagget med <em>"' + keyword.trim() + '"</em>';
+        } else {
+            disclaimerText += 'Viser lignende <strong>' + categoryNorwegian + '</strong> i området';
+        }
+        
+        disclaimerText += ' <span style="color: #6B7280;">— hentet fra Google Places</span>';
+        disclaimerText += '</p>';
+        
+        disclaimerHeader.innerHTML = disclaimerText;
+        apiContainer.appendChild(disclaimerHeader);
+        
+        // Add place cards
         places.forEach(function(place) {
             const card = createPlaceListCard(place);
             apiContainer.appendChild(card);
@@ -1731,13 +1864,44 @@
                 }
             }
             
-            // Fetch count without displaying results yet
-            const apiData = await fetchNearbyPlaces(chapterId, lat, lng, 'restaurant', 1500, 4.3, 50);
+            // Read Places API configuration from data attributes on chapter element
+            const placesEnabledAttr = chapter.getAttribute('data-places-enabled');
+            const placesEnabled = placesEnabledAttr !== 'false'; // Default to true if not set
             
-            if (apiData.success && apiData.count > 0) {
-                // Add button to show results
-                addShowAllButton(chapterId, apiData.count);
+            // Skip if Places API is explicitly disabled for this chapter
+            if (!placesEnabled) return;
+            
+            // Get search parameters from data attributes or use defaults
+            const category = chapter.getAttribute('data-places-category') || 'restaurant';
+            const keyword = chapter.getAttribute('data-places-keyword') || '';
+            const radius = parseInt(chapter.getAttribute('data-places-radius')) || 1500;
+            const minRating = parseFloat(chapter.getAttribute('data-places-min-rating')) || 4.3;
+            const minReviews = parseInt(chapter.getAttribute('data-places-min-reviews')) || 50;
+            
+            // Get exclude types (JSON array)
+            let excludeTypes = ['lodging']; // Default
+            const excludeTypesAttr = chapter.getAttribute('data-places-exclude-types');
+            if (excludeTypesAttr) {
+                try {
+                    excludeTypes = JSON.parse(excludeTypesAttr);
+                } catch (e) {
+                    console.warn('Failed to parse exclude types:', e);
+                }
             }
+            
+            // Map category to Norwegian plural for button text
+            const categoryMap = {
+                'restaurant': 'restauranter',
+                'cafe': 'kafeer',
+                'bar': 'barer',
+                'bakery': 'bakerier',
+                'meal_takeaway': 'takeaway-steder',
+                'food': 'spisesteder'
+            };
+            const categoryNorwegian = categoryMap[category] || 'steder';
+            
+            // Add button to show results (without fetching data yet)
+            addShowAllButton(chapterId, categoryNorwegian);
         });
     }
 

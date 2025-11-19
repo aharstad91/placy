@@ -66,6 +66,12 @@ $is_in_chapter = strpos( $parent_classes, 'chapter' ) !== false;
                     class="poi-list-card bg-white border border-gray-200 rounded-lg overflow-hidden transition-all duration-300 hover:border-gray-300"
                     data-poi-id="<?php echo esc_attr( $poi->ID ); ?>"
                     data-poi-title="<?php echo esc_attr( get_the_title( $poi->ID ) ); ?>"
+                    <?php 
+                        $google_place_id = get_field( 'google_place_id', $poi->ID );
+                        if ( $google_place_id ) : 
+                    ?>
+                        data-google-place-id="<?php echo esc_attr( $google_place_id ); ?>"
+                    <?php endif; ?>
                     <?php if ( $coords ) : ?>
                         data-poi-coords="<?php echo $coords; ?>"
                     <?php endif; ?>

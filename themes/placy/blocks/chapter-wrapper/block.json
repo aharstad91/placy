@@ -23,6 +23,34 @@
     "chapterTitle": {
       "type": "string",
       "default": ""
+    },
+    "placesEnabled": {
+      "type": "boolean",
+      "default": true
+    },
+    "placesCategory": {
+      "type": "string",
+      "default": "restaurant"
+    },
+    "placesKeyword": {
+      "type": "string",
+      "default": ""
+    },
+    "placesRadius": {
+      "type": "number",
+      "default": 1500
+    },
+    "placesMinRating": {
+      "type": "number",
+      "default": 4.3
+    },
+    "placesMinReviews": {
+      "type": "number",
+      "default": 50
+    },
+    "placesExcludeTypes": {
+      "type": "array",
+      "default": ["lodging"]
     }
   },
   "editorScript": "file:./block.js",
