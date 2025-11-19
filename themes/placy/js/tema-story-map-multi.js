@@ -22,6 +22,18 @@
         FIT_BOUNDS_PADDING: 80,         // Padding around markers in fitBounds
         DEFAULT_ZOOM: 13,               // Default zoom if single marker
         DEFAULT_CENTER: [10.3951, 63.4305], // Trondheim center as fallback
+        // Marker size based on zoom level
+        MARKER_SIZES: {
+            SMALL: { size: 24, minZoom: 12, maxZoom: 14 },
+            MEDIUM: { size: 48, minZoom: 15, maxZoom: 16 },
+            BIG: { size: 64, minZoom: 17, maxZoom: 22 }
+        },
+        // Label collision detection - dynamic based on zoom
+        LABEL_COLLISION_ZOOM_START: 16,  // Start applying collision detection
+        LABEL_COLLISION_ZOOM_END: 18,    // Full visibility at this zoom
+        LABEL_MIN_DISTANCE: 140,         // Minimum pixel distance between labels
+        LABEL_PRIORITY_DISTANCE: 100,    // Distance to check for nearby labels
+        LABEL_MAX_VISIBLE: 8             // Max number of labels visible at once at low zoom
     };
 
     // State
@@ -35,6 +47,224 @@
     let walkingDistances = new Map(); // Cache for walking distances
     let currentRoute = null; // Currently displayed route
     let currentDurationMarkers = []; // Store duration markers for cleanup
+
+    /**
+     * Get marker size based on current zoom level
+     * @param {number} zoom - Current zoom level
+     * @returns {number} Marker size in pixels
+     */
+    function getMarkerSize(zoom) {
+        if (zoom >= CONFIG.MARKER_SIZES.BIG.minZoom) {
+            return CONFIG.MARKER_SIZES.BIG.size;
+        } else if (zoom >= CONFIG.MARKER_SIZES.MEDIUM.minZoom) {
+            return CONFIG.MARKER_SIZES.MEDIUM.size;
+        } else {
+            return CONFIG.MARKER_SIZES.SMALL.size;
+        }
+    }
+
+    /**
+     * Update all marker sizes based on zoom level
+     * TASK 3: Also handle label visibility based on zoom
+     * @param {number} zoom - Current zoom level
+     */
+    function updateMarkerSizes(zoom) {
+        const size = getMarkerSize(zoom);
+        console.log('Current zoom level:', zoom, '| Marker size:', size + 'px');
+        
+        // Update all POI markers
+        const allMarkers = document.querySelectorAll('.marker-circle-container');
+        allMarkers.forEach(function(circle) {
+            // Only update if not currently scaled by hover/active
+            const wrapper = circle.closest('.tema-story-marker-wrapper');
+            const isActive = wrapper && wrapper.classList.contains('marker-active');
+            const currentTransform = circle.style.transform;
+            
+            circle.style.width = size + 'px';
+            circle.style.height = size + 'px';
+            
+            // Preserve any scale transform
+            if (currentTransform && currentTransform.includes('scale')) {
+                // Keep existing scale
+            } else {
+                circle.style.transform = 'scale(1)';
+            }
+        });
+        
+        // TASK 3: Update label visibility based on zoom level
+        updateLabelVisibility(zoom);
+    }
+    
+    /**
+     * Update POI label visibility based on zoom level
+     * TASK 3: Hide labels at zoom < 15, show at zoom >= 15
+     * Property labels always visible, hover/active labels always visible
+     * IMPROVED: Dynamic collision detection that intensifies at lower zoom levels
+     * @param {number} zoom - Current zoom level
+     */
+    function updateLabelVisibility(zoom) {
+        // Get all POI labels (not Property labels)
+        const poiLabels = document.querySelectorAll('.marker-label-poi');
+        
+        // Calculate collision detection intensity based on zoom
+        // Lower zoom = stricter spacing, higher zoom = more relaxed
+        const zoomFactor = Math.max(0, Math.min(1, 
+            (zoom - CONFIG.LABEL_COLLISION_ZOOM_START) / 
+            (CONFIG.LABEL_COLLISION_ZOOM_END - CONFIG.LABEL_COLLISION_ZOOM_START)
+        ));
+        
+        // Dynamic spacing: 180px at zoom 13, gradually reducing to 80px at zoom 17+
+        const dynamicMinDistance = CONFIG.LABEL_MIN_DISTANCE + (40 * (1 - zoomFactor));
+        
+        // Dynamic max visible: 6 at low zoom, unlimited at high zoom
+        const dynamicMaxVisible = zoom < 16 ? 
+            Math.floor(CONFIG.LABEL_MAX_VISIBLE * (0.75 + 0.25 * zoomFactor)) : 
+            Infinity;
+        
+        // First pass: determine which labels should be visible
+        const labelsData = [];
+        poiLabels.forEach(function(label) {
+            const wrapper = label.closest('.tema-story-marker-wrapper');
+            if (!wrapper) return;
+            
+            // Check if this marker is hovered or active (force visible)
+            const isHovered = label.hasAttribute('data-force-visible');
+            const isActive = wrapper.classList.contains('marker-active');
+            const isProperty = wrapper.getAttribute('data-marker-type') === 'property';
+            
+            // Get screen position
+            const rect = wrapper.getBoundingClientRect();
+            
+            labelsData.push({
+                label: label,
+                wrapper: wrapper,
+                isHovered: isHovered,
+                isActive: isActive,
+                isProperty: isProperty,
+                x: rect.left + rect.width / 2,
+                y: rect.top + rect.height / 2,
+                shouldShow: isHovered || isActive || zoom >= CONFIG.LABEL_COLLISION_ZOOM_START
+            });
+        });
+        
+        // Sort by priority: active > hovered > normal
+        labelsData.sort(function(a, b) {
+            if (a.isActive && !b.isActive) return -1;
+            if (!a.isActive && b.isActive) return 1;
+            if (a.isHovered && !b.isHovered) return -1;
+            if (!a.isHovered && b.isHovered) return 1;
+            return 0;
+        });
+        
+        // Second pass: apply visibility with collision detection
+        const visiblePositions = [];
+        let visibleCount = 0;
+        
+        labelsData.forEach(function(data) {
+            const { label, wrapper, isHovered, isActive, shouldShow, x, y } = data;
+            
+            if (isHovered || isActive) {
+                // Always show if hovered or active
+                label.style.opacity = '1';
+                label.style.visibility = 'visible';
+                label.style.pointerEvents = 'auto';
+                label.style.transform = 'none';
+                visiblePositions.push({ x, y });
+                visibleCount++;
+            } else if (zoom < CONFIG.LABEL_COLLISION_ZOOM_START) {
+                // Below collision zoom threshold - hide all labels
+                label.style.opacity = '0';
+                label.style.visibility = 'hidden';
+                label.style.pointerEvents = 'none';
+            } else if (zoom < 16) {
+                // Between collision start and full visibility - use dynamic spacing
+                const hasNearbyLabel = visiblePositions.some(function(pos) {
+                    const distance = Math.sqrt(Math.pow(pos.x - x, 2) + Math.pow(pos.y - y, 2));
+                    return distance < dynamicMinDistance;
+                });
+                
+                if (hasNearbyLabel || visibleCount >= dynamicMaxVisible) {
+                    // Hide if too close to another label or too many visible
+                    label.style.opacity = '0';
+                    label.style.visibility = 'hidden';
+                    label.style.pointerEvents = 'none';
+                } else {
+                    // Show this label with opacity based on zoom
+                    const labelOpacity = 0.85 + (0.15 * zoomFactor);
+                    label.style.opacity = labelOpacity.toString();
+                    label.style.visibility = 'visible';
+                    label.style.pointerEvents = 'auto';
+                    label.style.transform = 'none';
+                    visiblePositions.push({ x, y });
+                    visibleCount++;
+                }
+            } else if (zoom < CONFIG.LABEL_COLLISION_ZOOM_END) {
+                // Between 15 and 17 - gradually show more labels with slight offsets
+                const hasNearbyLabel = visiblePositions.some(function(pos) {
+                    const distance = Math.sqrt(Math.pow(pos.x - x, 2) + Math.pow(pos.y - y, 2));
+                    return distance < CONFIG.LABEL_PRIORITY_DISTANCE;
+                });
+                
+                if (hasNearbyLabel) {
+                    // Offset label slightly to avoid overlap
+                    label.style.transform = 'translateY(-8px)';
+                    label.style.opacity = '0.9';
+                } else {
+                    label.style.transform = 'none';
+                    label.style.opacity = '1';
+                }
+                
+                label.style.visibility = 'visible';
+                label.style.pointerEvents = 'auto';
+                visiblePositions.push({ x, y });
+            } else {
+                // High zoom (>= 17) - show all labels with minimal collision detection
+                const hasVeryCloseLabel = visiblePositions.some(function(pos) {
+                    const distance = Math.sqrt(Math.pow(pos.x - x, 2) + Math.pow(pos.y - y, 2));
+                    return distance < 60; // Very tight threshold
+                });
+                
+                if (hasVeryCloseLabel) {
+                    label.style.transform = 'translateY(-10px)';
+                } else {
+                    label.style.transform = 'none';
+                }
+                
+                label.style.opacity = '1';
+                label.style.visibility = 'visible';
+                label.style.pointerEvents = 'auto';
+                visiblePositions.push({ x, y });
+            }
+        });
+        
+        // Property labels always visible (no changes needed, but ensure they stay visible)
+        const propertyLabels = document.querySelectorAll('.marker-label-property');
+        propertyLabels.forEach(function(label) {
+            label.style.opacity = '1';
+            label.style.visibility = 'visible';
+            label.style.pointerEvents = 'auto';
+            label.style.transform = 'none';
+        });
+    }
+
+    /**
+     * Setup zoom listener for a map instance
+     * @param {mapboxgl.Map} mapInstance - The map instance
+     */
+    function setupZoomListener(mapInstance) {
+        if (!mapInstance) return;
+        
+        mapInstance.on('zoom', function() {
+            const currentZoom = mapInstance.getZoom();
+            updateMarkerSizes(currentZoom);
+        });
+        
+        // Initial size update
+        mapInstance.on('load', function() {
+            const currentZoom = mapInstance.getZoom();
+            updateMarkerSizes(currentZoom);
+        });
+    }
 
     /**
      * Get start location from page meta data
@@ -70,148 +300,111 @@
         const propertyBackground = placyMapConfig.propertyBackground;
         const propertyLabel = placyMapConfig.propertyLabel || 'Eiendommen';
 
-        // Create white card marker similar to POI markers
-        const el = document.createElement('div');
-        el.className = 'property-marker-card';
-        el.style.width = '160px';
-        el.style.backgroundColor = 'white';
-        el.style.borderRadius = '12px';
-        el.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15), 0 2px 4px rgba(0,0,0,0.1)';
-        el.style.cursor = 'pointer';
-        el.style.transition = 'all 0.2s ease';
-        el.style.overflow = 'hidden';
-        el.style.border = '2px solid white';
-
-        // Background image section
-        if (propertyBackground) {
-            const bgSection = document.createElement('div');
-            bgSection.style.width = '100%';
-            bgSection.style.height = '80px';
-            bgSection.style.backgroundImage = `url('${propertyBackground}')`;
-            bgSection.style.backgroundSize = 'cover';
-            bgSection.style.backgroundPosition = 'center';
-            bgSection.style.position = 'relative';
-            bgSection.style.display = 'flex';
-            bgSection.style.alignItems = 'flex-end';
-            bgSection.style.justifyContent = 'flex-start';
-            bgSection.style.padding = '8px';
-            
-            // Logo with white background
-            if (propertyLogo) {
-                const logoContainer = document.createElement('div');
-                logoContainer.style.width = '48px';
-                logoContainer.style.height = '48px';
-                logoContainer.style.backgroundColor = 'white';
-                logoContainer.style.borderRadius = '8px';
-                logoContainer.style.padding = '8px';
-                logoContainer.style.display = 'flex';
-                logoContainer.style.alignItems = 'center';
-                logoContainer.style.justifyContent = 'center';
-                logoContainer.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
-                
-                const logoImg = document.createElement('img');
-                logoImg.src = propertyLogo;
-                logoImg.style.width = '100%';
-                logoImg.style.height = '100%';
-                logoImg.style.objectFit = 'contain';
-                
-                logoContainer.appendChild(logoImg);
-                bgSection.appendChild(logoContainer);
-            }
-            
-            el.appendChild(bgSection);
-        }
-
-        // Title section with white background
-        const titleSection = document.createElement('div');
-        titleSection.style.padding = '8px 10px';
-        titleSection.style.backgroundColor = 'white';
-        titleSection.style.textAlign = 'center';
-        
-        const title = document.createElement('div');
-        title.style.fontSize = '0.875rem';
-        title.style.fontWeight = '600';
-        title.style.color = '#1a1a1a';
-        title.style.lineHeight = '1.3';
-        title.textContent = propertyLabel;
-        
-        titleSection.appendChild(title);
-        el.appendChild(titleSection);
-
-        // Add hover effect
-        el.addEventListener('mouseenter', () => {
-            el.style.transform = 'translateY(-4px)';
-            el.style.boxShadow = '0 8px 20px rgba(0,0,0,0.2), 0 4px 8px rgba(0,0,0,0.15)';
-        });
-        el.addEventListener('mouseleave', () => {
-            el.style.transform = 'translateY(0)';
-            el.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15), 0 2px 4px rgba(0,0,0,0.1)';
-        });
-        
-        // Wrapper for positioning
+        // Create wrapper container (same as POI markers)
         const wrapper = document.createElement('div');
-        wrapper.appendChild(el);
+        wrapper.className = 'tema-story-marker-wrapper';
+        wrapper.style.display = 'flex';
+        wrapper.style.flexDirection = 'column';
+        wrapper.style.alignItems = 'center';
+        wrapper.style.gap = '8px';
+        wrapper.style.cursor = 'pointer';
+        wrapper.style.zIndex = '1000'; // TASK 2: Highest z-index - Property always on top
+        wrapper.setAttribute('data-marker-type', 'property');
 
-        // Enhanced popup with logo, background image and custom label
-        let popupHTML;
+        // Create circular image container with dynamic size (same as POI markers)
+        const initialSize = getMarkerSize(mapInstance.getZoom());
+        const circleContainer = document.createElement('div');
+        circleContainer.className = 'marker-circle-container';
+        circleContainer.style.width = initialSize + 'px';
+        circleContainer.style.height = initialSize + 'px';
+        circleContainer.style.borderRadius = '50%';
+        circleContainer.style.border = '3px solid white';
+        circleContainer.style.overflow = 'hidden';
+        circleContainer.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
+        circleContainer.style.transition = 'transform 0.3s ease, box-shadow 0.3s ease, width 0.3s ease, height 0.3s ease';
+        circleContainer.style.transformOrigin = 'center center';
         
-        // Build popup with optional background image
-        const backgroundStyle = propertyBackground 
-            ? `background: linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.6)), url('${propertyBackground}') center/cover; color: white;` 
-            : '';
-        
-        if (propertyLogo) {
-            popupHTML = `
-                <div style="min-width: 220px; max-width: 280px;">
-                    ${propertyBackground ? `<div style="height: 120px; ${backgroundStyle} border-radius: 12px 12px 0 0; margin: -15px -15px 0 -15px;"></div>` : ''}
-                    <div style="padding: ${propertyBackground ? '12px 8px 8px' : '8px'};">
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <div style="width: 40px; height: 40px; background: white; border: 2px solid #e5e7eb; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; ${propertyBackground ? 'margin-top: -30px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);' : ''}">
-                                <img src="${propertyLogo}" alt="${propertyLabel}" style="width: 100%; height: 100%; object-fit: contain;" />
-                            </div>
-                            <div style="flex: 1;">
-                                <h3 style="margin: 0; font-size: 1rem; font-weight: 600; color: #1a1a1a; line-height: 1.3;">${propertyLabel}</h3>
-                                <p style="margin: 2px 0 0 0; font-size: 0.75rem; color: #666;">Utgangspunkt (Punkt A)</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
+        // Use property background or logo
+        if (propertyBackground) {
+            circleContainer.style.backgroundImage = `url(${propertyBackground})`;
+            circleContainer.style.backgroundSize = 'cover';
+            circleContainer.style.backgroundPosition = 'center';
+        } else if (propertyLogo) {
+            // If no background, use logo on white background
+            circleContainer.style.backgroundColor = 'white';
+            circleContainer.style.backgroundImage = `url(${propertyLogo})`;
+            circleContainer.style.backgroundSize = '60%';
+            circleContainer.style.backgroundPosition = 'center';
+            circleContainer.style.backgroundRepeat = 'no-repeat';
         } else {
-            popupHTML = `
-                <div style="min-width: 220px; max-width: 280px;">
-                    ${propertyBackground ? `<div style="height: 120px; ${backgroundStyle} border-radius: 12px 12px 0 0; margin: -15px -15px 0 -15px;"></div>` : ''}
-                    <div style="padding: ${propertyBackground ? '12px 8px 8px' : '8px'};">
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; ${propertyBackground ? 'margin-top: -30px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);' : ''}">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
-                                </svg>
-                            </div>
-                            <div style="flex: 1;">
-                                <h3 style="margin: 0; font-size: 1rem; font-weight: 600; color: #1a1a1a; line-height: 1.3;">${propertyLabel}</h3>
-                                <p style="margin: 2px 0 0 0; font-size: 0.75rem; color: #666;">Utgangspunkt (Punkt A)</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
+            // Fallback: red circle for property
+            circleContainer.style.backgroundColor = '#e74c3c';
         }
+        
+        // Create label container under circle (same as POI markers)
+        // TASK 2: Property label always visible
+        const labelContainer = document.createElement('div');
+        labelContainer.className = 'marker-label-container marker-label-property';
+        labelContainer.style.display = 'flex';
+        labelContainer.style.flexDirection = 'column';
+        labelContainer.style.alignItems = 'center';
+        labelContainer.style.gap = '2px';
+        labelContainer.style.maxWidth = '120px';
+        labelContainer.style.textAlign = 'center';
+        labelContainer.style.opacity = '1'; // Always visible
+        labelContainer.style.visibility = 'visible';
+        labelContainer.style.pointerEvents = 'auto';
+        
+        // Property name
+        const nameLabel = document.createElement('div');
+        nameLabel.className = 'marker-name-label';
+        nameLabel.textContent = propertyLabel;
+        nameLabel.style.fontSize = '12px';
+        nameLabel.style.fontWeight = '600';
+        nameLabel.style.color = '#1a202c';
+        nameLabel.style.lineHeight = '1.2';
+        nameLabel.style.textShadow = '0 1px 2px rgba(255,255,255,0.8)';
+        nameLabel.style.whiteSpace = 'nowrap';
+        nameLabel.style.overflow = 'hidden';
+        nameLabel.style.textOverflow = 'ellipsis';
+        nameLabel.style.width = '100%';
+        labelContainer.appendChild(nameLabel);
+        
+        // Subtitle "Punkt A"
+        const subtitleLabel = document.createElement('div');
+        subtitleLabel.textContent = 'Punkt A';
+        subtitleLabel.style.fontSize = '10px';
+        subtitleLabel.style.fontWeight = '500';
+        subtitleLabel.style.color = '#6B7280';
+        subtitleLabel.style.textShadow = '0 1px 2px rgba(255,255,255,0.8)';
+        labelContainer.appendChild(subtitleLabel);
+        
+        // Append elements to wrapper
+        wrapper.appendChild(circleContainer);
+        wrapper.appendChild(labelContainer);
 
-        // Add marker to THIS map with center anchor for card design
+        // Hover effect - same as POI markers
+        wrapper.addEventListener('mouseenter', function() {
+            circleContainer.style.transform = 'scale(1.15)';
+            circleContainer.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+        });
+        
+        wrapper.addEventListener('mouseleave', function() {
+            circleContainer.style.transform = 'scale(1)';
+            circleContainer.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
+        });
+
+        // Create Mapbox marker with center anchor (same as POI markers)
         const propertyMarker = new mapboxgl.Marker({
             element: wrapper,
-            anchor: 'center'
+            anchor: 'center',
+            offset: [0, -10] // Offset up slightly so label doesn't overlap coordinate
         })
             .setLngLat(startLocation)
-            .setPopup(
-                new mapboxgl.Popup({ 
-                    offset: 15,
-                    className: 'property-marker-popup'
-                })
-                    .setHTML(popupHTML)
-            )
             .addTo(mapInstance);
+        
+        // Store marker reference
+        markers.push(propertyMarker);
     }
     
     /**
@@ -304,131 +497,192 @@
     
     /**
      * Add a marker for a POI to a specific map
+     * Snapchat-style circular marker with image + label
      */
     function addMarkerForPOI(mapInstance, poi, chapterId) {
         // Create wrapper container (needed for proper Mapbox positioning)
         const wrapper = document.createElement('div');
         wrapper.className = 'tema-story-marker-wrapper';
-        // DO NOT set any position, transform, or size styles on wrapper
-        // Mapbox will handle all positioning via transform
+        wrapper.style.display = 'flex';
+        wrapper.style.flexDirection = 'column';
+        wrapper.style.alignItems = 'center';
+        wrapper.style.gap = '8px';
+        wrapper.style.cursor = 'pointer';
+        wrapper.style.zIndex = '10'; // TASK 2: Default POI z-index
         
-        // Create the visible label
-        const label = document.createElement('div');
-        label.className = 'tema-story-marker-label';
-        label.style.backgroundColor = 'white';
-        label.style.padding = '8px 12px';
-        label.style.borderRadius = '8px';
-        label.style.fontSize = '13px';
-        label.style.fontWeight = '600';
-        label.style.color = '#1a202c';
-        label.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
-        label.style.cursor = 'pointer';
-        label.style.display = 'inline-flex';
-        label.style.alignItems = 'center';
-        label.style.gap = '8px';
-        label.style.maxWidth = '200px';
-        label.style.transition = 'box-shadow 300ms ease, background-color 300ms ease';
-        label.style.opacity = '0';
-
-        // Image in label (if available) - larger size for clarity
+        // Create circular image container with dynamic size
+        const initialSize = getMarkerSize(mapInstance.getZoom());
+        const circleContainer = document.createElement('div');
+        circleContainer.className = 'marker-circle-container';
+        circleContainer.style.width = initialSize + 'px';
+        circleContainer.style.height = initialSize + 'px';
+        circleContainer.style.borderRadius = '50%';
+        circleContainer.style.border = '3px solid white';
+        circleContainer.style.overflow = 'hidden';
+        circleContainer.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
+        circleContainer.style.transition = 'transform 0.3s ease, box-shadow 0.3s ease, width 0.3s ease, height 0.3s ease';
+        circleContainer.style.transformOrigin = 'center center';
+        
+        // Set image or gray background
         if (poi.image) {
-            const labelImage = document.createElement('div');
-            labelImage.style.width = '48px';
-            labelImage.style.height = '48px';
-            labelImage.style.borderRadius = '6px';
-            labelImage.style.backgroundImage = `url(${poi.image})`;
-            labelImage.style.backgroundSize = 'cover';
-            labelImage.style.backgroundPosition = 'center';
-            labelImage.style.flexShrink = '0';
-            label.appendChild(labelImage);
+            circleContainer.style.backgroundImage = `url(${poi.image})`;
+            circleContainer.style.backgroundSize = 'cover';
+            circleContainer.style.backgroundPosition = 'center';
+        } else {
+            circleContainer.style.backgroundColor = '#9CA3AF'; // Gray background for missing images
         }
-
-        // Text container
-        const textContainer = document.createElement('div');
-        textContainer.style.display = 'flex';
-        textContainer.style.flexDirection = 'column';
-        textContainer.style.gap = '1px';
-        textContainer.style.minWidth = '0'; // Allow text to shrink
-        textContainer.style.overflow = 'hidden';
-
-        // Title
-        const titleSpan = document.createElement('span');
-        titleSpan.textContent = poi.title;
-        titleSpan.style.fontSize = '13px';
-        titleSpan.style.fontWeight = '600';
-        titleSpan.style.lineHeight = '1.3';
-        titleSpan.style.overflow = 'hidden';
-        titleSpan.style.textOverflow = 'ellipsis';
-        titleSpan.style.whiteSpace = 'nowrap';
-        textContainer.appendChild(titleSpan);
-
-        // Rating (if available)
+        
+        // Create label container under circle
+        // TASK 3: POI labels with zoom-based visibility
+        const labelContainer = document.createElement('div');
+        labelContainer.className = 'marker-label-container marker-label-poi';
+        labelContainer.style.display = 'flex';
+        labelContainer.style.flexDirection = 'column';
+        labelContainer.style.alignItems = 'center';
+        labelContainer.style.gap = '2px';
+        labelContainer.style.maxWidth = '120px';
+        labelContainer.style.textAlign = 'center';
+        labelContainer.style.transition = 'opacity 0.3s ease, visibility 0.3s ease';
+        // Initial state based on zoom level (will be updated by updateLabelVisibility)
+        const currentZoom = mapInstance.getZoom();
+        if (currentZoom < 15) {
+            labelContainer.style.opacity = '0';
+            labelContainer.style.visibility = 'hidden';
+            labelContainer.style.pointerEvents = 'none';
+        } else {
+            labelContainer.style.opacity = '1';
+            labelContainer.style.visibility = 'visible';
+            labelContainer.style.pointerEvents = 'auto';
+        }
+        
+        // POI name
+        const nameLabel = document.createElement('div');
+        nameLabel.className = 'marker-name-label';
+        nameLabel.textContent = poi.title;
+        nameLabel.style.fontSize = '12px';
+        nameLabel.style.fontWeight = '600';
+        nameLabel.style.color = '#1a202c';
+        nameLabel.style.lineHeight = '1.2';
+        nameLabel.style.textShadow = '0 1px 2px rgba(255,255,255,0.8)';
+        nameLabel.style.whiteSpace = 'nowrap';
+        nameLabel.style.overflow = 'hidden';
+        nameLabel.style.textOverflow = 'ellipsis';
+        nameLabel.style.width = '100%';
+        labelContainer.appendChild(nameLabel);
+        
+        // Rating row (if available)
         if (poi.rating) {
-            const ratingContainer = document.createElement('span');
-            ratingContainer.style.display = 'flex';
-            ratingContainer.style.alignItems = 'center';
-            ratingContainer.style.gap = '3px';
-            ratingContainer.style.fontSize = '11px';
-            ratingContainer.style.whiteSpace = 'nowrap';
+            const ratingRow = document.createElement('div');
+            ratingRow.style.display = 'flex';
+            ratingRow.style.alignItems = 'center';
+            ratingRow.style.gap = '3px';
+            ratingRow.style.fontSize = '10px';
             
             // Star
             const starSpan = document.createElement('span');
             starSpan.textContent = '★';
             starSpan.style.color = '#FBBC05';
             starSpan.style.fontSize = '11px';
-            ratingContainer.appendChild(starSpan);
+            ratingRow.appendChild(starSpan);
             
             // Rating value
-            const ratingValueSpan = document.createElement('span');
-            ratingValueSpan.textContent = poi.rating.value.toFixed(1);
-            ratingValueSpan.style.fontWeight = '500';
-            ratingValueSpan.style.color = '#1a202c';
-            ratingContainer.appendChild(ratingValueSpan);
+            const ratingValue = document.createElement('span');
+            ratingValue.textContent = poi.rating.value.toFixed(1);
+            ratingValue.style.fontWeight = '500';
+            ratingValue.style.color = '#374151';
+            ratingValue.style.textShadow = '0 1px 2px rgba(255,255,255,0.8)';
+            ratingRow.appendChild(ratingValue);
             
-            // Review count (if available)
-            if (poi.rating.count) {
-                const countSpan = document.createElement('span');
-                countSpan.textContent = poi.rating.count;
-                countSpan.style.color = '#666';
-                countSpan.style.fontSize = '10px';
-                ratingContainer.appendChild(countSpan);
-            }
-            
-            textContainer.appendChild(ratingContainer);
+            labelContainer.appendChild(ratingRow);
         }
-
+        
         // Walking time (if available)
         if (poi.walking) {
-            const walkTimeSpan = document.createElement('span');
-            walkTimeSpan.textContent = formatDuration(poi.walking.duration);
-            walkTimeSpan.style.fontSize = '11px';
-            walkTimeSpan.style.fontWeight = '400';
-            walkTimeSpan.style.color = '#666';
-            walkTimeSpan.style.whiteSpace = 'nowrap';
-            textContainer.appendChild(walkTimeSpan);
+            const walkTimeLabel = document.createElement('div');
+            walkTimeLabel.textContent = formatDuration(poi.walking.duration);
+            walkTimeLabel.style.fontSize = '10px';
+            walkTimeLabel.style.fontWeight = '500';
+            walkTimeLabel.style.color = '#6B7280';
+            walkTimeLabel.style.textShadow = '0 1px 2px rgba(255,255,255,0.8)';
+            labelContainer.appendChild(walkTimeLabel);
         }
-
-        label.appendChild(textContainer);
-
-        // Append label to wrapper
-        wrapper.appendChild(label);
+        
+        // Append elements to wrapper
+        wrapper.appendChild(circleContainer);
+        wrapper.appendChild(labelContainer);
 
         // Store POI ID on wrapper
         wrapper.setAttribute('data-poi-id', poi.id);
         wrapper.setAttribute('data-chapter-id', chapterId);
+        wrapper.setAttribute('data-marker-type', 'poi'); // Not the property marker
 
-        // Create Mapbox marker with left anchor (label extends to the right of the point)
-        const marker = new mapboxgl.Marker({
-            element: wrapper,
-            anchor: 'left',
-            offset: [0, 0] // No offset needed, anchor handles positioning
-        })
-            .setLngLat(poi.coords)
-            .addTo(mapInstance);
+        // Hover effect - scale circle only, not wrapper
+        // TASK 3: Show label on hover even at low zoom
+        wrapper.addEventListener('mouseenter', function() {
+            if (!wrapper.classList.contains('marker-active')) {
+                circleContainer.style.transform = 'scale(1.15)';
+                circleContainer.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+                wrapper.style.zIndex = '50'; // TASK 2: Hover POI z-index
+                // Show label on hover regardless of zoom
+                labelContainer.style.opacity = '1';
+                labelContainer.style.visibility = 'visible';
+                labelContainer.style.pointerEvents = 'auto';
+                labelContainer.setAttribute('data-force-visible', 'true');
+            }
+        });
+        
+        wrapper.addEventListener('mouseleave', function() {
+            if (!wrapper.classList.contains('marker-active')) {
+                circleContainer.style.transform = 'scale(1)';
+                circleContainer.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
+                wrapper.style.zIndex = '10'; // TASK 2: Default POI z-index
+                // Hide label if zoom < 15 and not force visible
+                labelContainer.removeAttribute('data-force-visible');
+                const currentZoom = mapInstance.getZoom();
+                if (currentZoom < 15) {
+                    labelContainer.style.opacity = '0';
+                    labelContainer.style.visibility = 'hidden';
+                    labelContainer.style.pointerEvents = 'none';
+                }
+            }
+        });
 
         // Click handler
         wrapper.addEventListener('click', function(e) {
             e.stopPropagation();
+            
+            // Remove active state from all markers
+            document.querySelectorAll('.tema-story-marker-wrapper[data-marker-type="poi"]').forEach(function(m) {
+                m.classList.remove('marker-active');
+                m.style.zIndex = '10'; // TASK 2: Default POI z-index
+                const circle = m.querySelector('.marker-circle-container');
+                if (circle) {
+                    circle.style.transform = 'scale(1)';
+                    circle.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
+                }
+                // Hide label if zoom < 15 when deactivating
+                const label = m.querySelector('.marker-label-poi');
+                if (label && !label.hasAttribute('data-force-visible')) {
+                    const currentZoom = mapInstance.getZoom();
+                    if (currentZoom < 15) {
+                        label.style.opacity = '0';
+                        label.style.visibility = 'hidden';
+                        label.style.pointerEvents = 'none';
+                    }
+                }
+            });
+            
+            // Set this marker as active
+            // TASK 3: Active marker shows label and gets high z-index
+            wrapper.classList.add('marker-active');
+            wrapper.style.zIndex = '100'; // TASK 2: Active POI z-index
+            circleContainer.style.transform = 'scale(1.25)';
+            circleContainer.style.boxShadow = '0 6px 16px rgba(0,0,0,0.4)';
+            // Force label visible when active
+            labelContainer.style.opacity = '1';
+            labelContainer.style.visibility = 'visible';
+            labelContainer.style.pointerEvents = 'auto';
+            labelContainer.setAttribute('data-force-visible', 'true');
 
             // Fit bounds to show both start and POI
             if (startLocation) {
@@ -462,10 +716,14 @@
             }, 800);
         });
 
-        // Fade in label after marker is added
-        setTimeout(function() {
-            label.style.opacity = '1';
-        }, 50);
+        // Create Mapbox marker with center anchor (marker centers on coordinate)
+        const marker = new mapboxgl.Marker({
+            element: wrapper,
+            anchor: 'center',
+            offset: [0, -10] // Offset up slightly so label doesn't overlap coordinate
+        })
+            .setLngLat(poi.coords)
+            .addTo(mapInstance);
 
         // Store marker reference
         markers.push(marker);
@@ -879,6 +1137,9 @@
 
             // Store map instance on container
             mapContainer._mapboxInstance = chapterMap;
+
+            // Setup zoom listener for dynamic marker sizing
+            setupZoomListener(chapterMap);
 
             // Wait for map to load
             chapterMap.on('load', function() {
@@ -1404,32 +1665,51 @@
     }
 
     /**
-     * Reset all markers to default state
+     * Reset all POI markers to default state (not property markers)
+     * TASK 2: Use proper z-index values
      */
     function resetAllMarkers() {
         markers.forEach(function(marker) {
             const wrapper = marker.getElement();
             if (!wrapper) return;
             
-            wrapper.style.zIndex = '1';
+            // Skip property markers - they should maintain their z-index (1000)
+            if (wrapper.getAttribute('data-marker-type') === 'property') return;
             
-            const markerLabel = wrapper.querySelector('.tema-story-marker-label');
+            // Reset POI markers only
+            wrapper.classList.remove('marker-active');
+            wrapper.style.zIndex = '10'; // TASK 2: Default POI z-index
             
-            if (markerLabel) {
-                markerLabel.style.backgroundColor = 'white';
-                markerLabel.style.border = ''; // Remove border (back to default no border)
-                markerLabel.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
-                markerLabel.style.fontWeight = '600';
+            const circle = wrapper.querySelector('.marker-circle-container');
+            if (circle) {
+                circle.style.transform = 'scale(1)';
+                circle.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
+            }
+            
+            // TASK 3: Reset label visibility based on zoom (unless force visible)
+            const label = wrapper.querySelector('.marker-label-poi');
+            if (label && !label.hasAttribute('data-force-visible')) {
+                // Find the map instance to get current zoom
+                const mapContainer = wrapper.closest('.chapter-map');
+                if (mapContainer && mapContainer._mapboxInstance) {
+                    const currentZoom = mapContainer._mapboxInstance.getZoom();
+                    if (currentZoom < 15) {
+                        label.style.opacity = '0';
+                        label.style.visibility = 'hidden';
+                        label.style.pointerEvents = 'none';
+                    }
+                }
             }
         });
     }
 
     /**
      * Highlight marker on map (hover effect)
+     * TASK 2: Use proper z-index, TASK 3: Show label on hover
      * @param {string} poiId - The POI ID to highlight
      */
     function highlightMarkerOnMap(poiId) {
-        // Reset all markers first
+        // Reset all POI markers first (not property markers)
         resetAllMarkers();
         
         // Find and highlight the specific POI marker using direct POI ID matching
@@ -1437,22 +1717,30 @@
             const wrapper = marker.getElement();
             if (!wrapper) return;
             
+            // Skip property markers - they should always stay on top (z-index 1000)
+            if (wrapper.getAttribute('data-marker-type') === 'property') return;
+            
             // Get POI ID from data attribute stored on wrapper
             const markerPoiId = wrapper.getAttribute('data-poi-id');
             const isActive = markerPoiId === poiId;
             
             if (isActive) {
-                // Increase z-index for layering
-                wrapper.style.zIndex = '1000';
+                // TASK 2: Increase z-index for layering (but below property marker)
+                wrapper.style.zIndex = '50'; // Hover POI z-index
                 
-                // Add hover effect to label
-                const markerLabel = wrapper.querySelector('.tema-story-marker-label');
+                const circle = wrapper.querySelector('.marker-circle-container');
+                if (circle) {
+                    circle.style.transform = 'scale(1.15)';
+                    circle.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+                }
                 
-                if (markerLabel) {
-                    markerLabel.style.backgroundColor = '#EFE9DE';
-                    markerLabel.style.border = '1px solid #cbbda4';
-                    markerLabel.style.boxShadow = '0 4px 16px rgba(203, 189, 164, 0.3)';
-                    markerLabel.style.fontWeight = '700'; // Slightly bolder text for emphasis
+                // TASK 3: Show label on hover regardless of zoom
+                const label = wrapper.querySelector('.marker-label-poi');
+                if (label) {
+                    label.style.opacity = '1';
+                    label.style.visibility = 'visible';
+                    label.style.pointerEvents = 'auto';
+                    label.setAttribute('data-force-visible', 'true');
                 }
             }
         });
