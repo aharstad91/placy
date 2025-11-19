@@ -224,6 +224,105 @@ if ( function_exists( 'acf_add_local_field_group' ) ) {
 }
 
 /**
+ * Register API Integrations Fields for Point CPT
+ * Conditional visibility: Only shown when Point Type = "Transport"
+ */
+if ( function_exists( 'acf_add_local_field_group' ) ) {
+    acf_add_local_field_group( array(
+        'key' => 'group_point_api_integrations',
+        'title' => 'API Integrations',
+        'fields' => array(
+            array(
+                'key' => 'field_entur_stopplace_id',
+                'label' => 'Entur StopPlace ID',
+                'name' => 'entur_stopplace_id',
+                'type' => 'text',
+                'instructions' => 'StopPlace ID fra Entur (format: NSR:StopPlace:xxxxx). Finn ID på stoppested.entur.org. Eksempel: NSR:StopPlace:74006 (Trondheim hurtigbåtterminal)',
+                'required' => 0,
+                'placeholder' => 'NSR:StopPlace:74006',
+            ),
+            array(
+                'key' => 'field_entur_quay_id',
+                'label' => 'Entur Quay ID',
+                'name' => 'entur_quay_id',
+                'type' => 'text',
+                'instructions' => 'Valgfri - For spesifikk kai/plattform (format: NSR:Quay:xxxxx). La stå tom for å vise alle avganger fra stoppestedet.',
+                'required' => 0,
+                'placeholder' => 'NSR:Quay:xxxxx',
+            ),
+            array(
+                'key' => 'field_entur_transport_mode',
+                'label' => 'Transportmiddel',
+                'name' => 'entur_transport_mode',
+                'type' => 'select',
+                'instructions' => 'Valgfri - Filtrer avganger på transportmiddel. Viktig for steder med både tog og buss (som Trondheim S).',
+                'required' => 0,
+                'choices' => array(
+                    '' => 'Alle transportmiddel',
+                    'rail' => 'Tog',
+                    'bus' => 'Buss',
+                    'water' => 'Båt/Ferge',
+                    'metro' => 'T-bane',
+                    'tram' => 'Trikk',
+                ),
+                'default_value' => '',
+                'allow_null' => 1,
+                'ui' => 1,
+                'return_format' => 'value',
+            ),
+            array(
+                'key' => 'field_show_live_departures',
+                'label' => 'Vis Live Avganger',
+                'name' => 'show_live_departures',
+                'type' => 'true_false',
+                'instructions' => 'Aktiver for å vise sanntids avgangsinformasjon fra Entur i POI-kortet',
+                'required' => 0,
+                'default_value' => 0,
+                'ui' => 1,
+            ),
+            array(
+                'key' => 'field_bysykkel_station_id',
+                'label' => 'Trondheim Bysykkel Station ID',
+                'name' => 'bysykkel_station_id',
+                'type' => 'text',
+                'instructions' => 'Station ID fra Trondheim Bysykkel (format: 5430 eller 66). Finn ID på urbansharing.com eller via API. Eksempel: 5430 (Jernbanebrua)',
+                'required' => 0,
+                'placeholder' => '5430',
+            ),
+            array(
+                'key' => 'field_show_bike_availability',
+                'label' => 'Vis Ledig Bysykkel',
+                'name' => 'show_bike_availability',
+                'type' => 'true_false',
+                'instructions' => 'Aktiver for å vise antall ledige sykler i sanntid fra Trondheim Bysykkel',
+                'required' => 0,
+                'default_value' => 0,
+                'ui' => 1,
+            ),
+        ),
+        'location' => array(
+            array(
+                array(
+                    'param' => 'post_type',
+                    'operator' => '==',
+                    'value' => 'point',
+                ),
+                array(
+                    'param' => 'post_taxonomy',
+                    'operator' => '==',
+                    'value' => 'point_type:transport',
+                ),
+            ),
+        ),
+        'menu_order' => 1,
+        'position' => 'normal',
+        'style' => 'default',
+        'label_placement' => 'top',
+        'instruction_placement' => 'label',
+    ) );
+}
+
+/**
  * Register Detail Fields
  */
 if ( function_exists( 'acf_add_local_field_group' ) ) {

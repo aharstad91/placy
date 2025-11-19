@@ -51,6 +51,16 @@ $is_in_chapter = strpos( $parent_classes, 'chapter' ) !== false;
                 // Get POI content
                 $content = apply_filters( 'the_content', get_post_field( 'post_content', $poi->ID ) );
                 $excerpt = get_the_excerpt( $poi->ID );
+                
+                // Get Entur integration data
+                $entur_stopplace_id = get_field( 'entur_stopplace_id', $poi->ID );
+                $entur_quay_id = get_field( 'entur_quay_id', $poi->ID );
+                $entur_transport_mode = get_field( 'entur_transport_mode', $poi->ID );
+                $show_live_departures = get_field( 'show_live_departures', $poi->ID );
+                
+                // Get Bysykkel integration data
+                $bysykkel_station_id = get_field( 'bysykkel_station_id', $poi->ID );
+                $show_bike_availability = get_field( 'show_bike_availability', $poi->ID );
             ?>
                 <article 
                     class="poi-list-card bg-white border border-gray-200 rounded-lg overflow-hidden transition-all duration-300 hover:border-gray-300"
@@ -61,6 +71,20 @@ $is_in_chapter = strpos( $parent_classes, 'chapter' ) !== false;
                     <?php endif; ?>
                     <?php if ( $featured_image ) : ?>
                         data-poi-image="<?php echo esc_url( $featured_image ); ?>"
+                    <?php endif; ?>
+                    <?php if ( $entur_stopplace_id && $show_live_departures ) : ?>
+                        data-entur-stopplace-id="<?php echo esc_attr( $entur_stopplace_id ); ?>"
+                        data-show-live-departures="1"
+                        <?php if ( $entur_quay_id ) : ?>
+                            data-entur-quay-id="<?php echo esc_attr( $entur_quay_id ); ?>"
+                        <?php endif; ?>
+                        <?php if ( $entur_transport_mode ) : ?>
+                            data-entur-transport-mode="<?php echo esc_attr( $entur_transport_mode ); ?>"
+                        <?php endif; ?>
+                    <?php endif; ?>
+                    <?php if ( $bysykkel_station_id && $show_bike_availability ) : ?>
+                        data-bysykkel-station-id="<?php echo esc_attr( $bysykkel_station_id ); ?>"
+                        data-show-bike-availability="1"
                     <?php endif; ?>
                 >
                     <div class="poi-card-content flex gap-4 p-4">

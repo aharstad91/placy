@@ -25,8 +25,7 @@
         // Marker size based on zoom level
         MARKER_SIZES: {
             SMALL: { size: 24, minZoom: 12, maxZoom: 14 },
-            MEDIUM: { size: 48, minZoom: 15, maxZoom: 16 },
-            BIG: { size: 64, minZoom: 17, maxZoom: 22 }
+            MEDIUM: { size: 48, minZoom: 15, maxZoom: 22 }
         },
         // Label collision detection - dynamic based on zoom
         LABEL_COLLISION_ZOOM_START: 16,  // Start applying collision detection
@@ -47,6 +46,11 @@
     let walkingDistances = new Map(); // Cache for walking distances
     let currentRoute = null; // Currently displayed route
     let currentDurationMarkers = []; // Store duration markers for cleanup
+    
+    // Google Places API state
+    let placesApiResults = new Map(); // Store API results per chapter
+    let placesMarkers = []; // Store Google Places markers separately
+    let showingApiResults = new Map(); // Track which chapters are showing API results
 
     /**
      * Get marker size based on current zoom level
@@ -54,9 +58,7 @@
      * @returns {number} Marker size in pixels
      */
     function getMarkerSize(zoom) {
-        if (zoom >= CONFIG.MARKER_SIZES.BIG.minZoom) {
-            return CONFIG.MARKER_SIZES.BIG.size;
-        } else if (zoom >= CONFIG.MARKER_SIZES.MEDIUM.minZoom) {
+        if (zoom >= CONFIG.MARKER_SIZES.MEDIUM.minZoom) {
             return CONFIG.MARKER_SIZES.MEDIUM.size;
         } else {
             return CONFIG.MARKER_SIZES.SMALL.size;
@@ -1093,6 +1095,653 @@
     }
 
     /**
+     * Fetch nearby places from Google Places API
+     * @param {string} chapterId - Chapter ID
+     * @param {number} lat - Latitude
+     * @param {number} lng - Longitude
+     * @param {string} category - Place category/type
+     * @param {number} radius - Search radius in meters
+     * @param {number} minRating - Minimum rating filter
+     * @param {number} minReviews - Minimum reviews filter
+     * @returns {Promise<Object>} API response
+     */
+    async function fetchNearbyPlaces(chapterId, lat, lng, category = 'restaurant', radius = 1500, minRating = 4.3, minReviews = 50) {
+        // Check if we already have results for this chapter
+        if (placesApiResults.has(chapterId)) {
+            return placesApiResults.get(chapterId);
+        }
+        
+        try {
+            // Get WordPress REST API root from the link tag
+            const restApiRoot = document.querySelector('link[rel="https://api.w.org/"]')?.href || '/wp-json/';
+            const url = new URL(restApiRoot + 'placy/v1/places/search', window.location.origin);
+            url.searchParams.append('lat', lat);
+            url.searchParams.append('lng', lng);
+            url.searchParams.append('category', category);
+            url.searchParams.append('radius', radius);
+            url.searchParams.append('minRating', minRating);
+            url.searchParams.append('minReviews', minReviews);
+            
+            const response = await fetch(url.toString());
+            
+            if (!response.ok) {
+                throw new Error('API request failed: ' + response.status);
+            }
+            
+            const data = await response.json();
+            
+            // Cache the results
+            placesApiResults.set(chapterId, data);
+            
+            return data;
+        } catch (error) {
+            console.error('Error fetching nearby places:', error);
+            return { success: false, count: 0, places: [] };
+        }
+    }
+    
+    /**
+     * Get photo URL from Google Places
+     * @param {string} photoReference - Photo reference from Places API
+     * @param {number} maxWidth - Maximum width for photo
+     * @returns {Promise<string>} Photo URL
+     */
+    async function getPlacePhotoUrl(photoReference, maxWidth = 400) {
+        try {
+            // Get WordPress REST API root from the link tag
+            const restApiRoot = document.querySelector('link[rel="https://api.w.org/"]')?.href || '/wp-json/';
+            const url = new URL(restApiRoot + 'placy/v1/places/photo/' + photoReference, window.location.origin);
+            url.searchParams.append('maxwidth', maxWidth);
+            
+            const response = await fetch(url.toString());
+            const data = await response.json();
+            
+            if (data.success && data.photoUrl) {
+                return data.photoUrl;
+            }
+        } catch (error) {
+            console.error('Error fetching place photo:', error);
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Add Google Places markers to map
+     * @param {Object} mapInstance - Map instance
+     * @param {string} chapterId - Chapter ID
+     * @param {Array} places - Array of place objects from API
+     */
+    function addPlacesMarkersToMap(mapInstance, chapterId, places) {
+        places.forEach(function(place) {
+            // Create marker wrapper
+            const wrapper = document.createElement('div');
+            wrapper.className = 'tema-story-marker-wrapper places-api-marker';
+            wrapper.style.display = 'flex';
+            wrapper.style.flexDirection = 'column';
+            wrapper.style.alignItems = 'center';
+            wrapper.style.gap = '8px';
+            wrapper.style.cursor = 'pointer';
+            wrapper.style.zIndex = '5'; // Lower than POI markers
+            wrapper.setAttribute('data-marker-type', 'places-api');
+            wrapper.setAttribute('data-chapter-id', chapterId);
+            wrapper.setAttribute('data-place-id', place.placeId);
+            
+            // Create circular marker (smaller and red)
+            const initialSize = Math.max(24, getMarkerSize(mapInstance.getZoom()) * 0.6);
+            const circleContainer = document.createElement('div');
+            circleContainer.className = 'marker-circle-container';
+            circleContainer.style.width = initialSize + 'px';
+            circleContainer.style.height = initialSize + 'px';
+            circleContainer.style.borderRadius = '50%';
+            circleContainer.style.border = '2px solid white';
+            circleContainer.style.backgroundColor = '#EF4444'; // Red color
+            circleContainer.style.overflow = 'hidden';
+            circleContainer.style.boxShadow = '0 2px 6px rgba(0,0,0,0.2)';
+            circleContainer.style.transition = 'transform 0.3s ease, box-shadow 0.3s ease';
+            
+            // Add simple icon
+            circleContainer.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;color:white;font-size:14px;">📍</div>';
+            
+            // Create label
+            const labelContainer = document.createElement('div');
+            labelContainer.className = 'marker-label-container marker-label-poi';
+            labelContainer.style.display = 'flex';
+            labelContainer.style.flexDirection = 'column';
+            labelContainer.style.alignItems = 'center';
+            labelContainer.style.gap = '2px';
+            labelContainer.style.maxWidth = '140px';
+            labelContainer.style.textAlign = 'center';
+            labelContainer.style.transition = 'opacity 0.3s ease';
+            
+            const currentZoom = mapInstance.getZoom();
+            if (currentZoom < 15) {
+                labelContainer.style.opacity = '0';
+                labelContainer.style.visibility = 'hidden';
+                labelContainer.style.pointerEvents = 'none';
+            }
+            
+            // Name label
+            const nameLabel = document.createElement('div');
+            nameLabel.className = 'marker-name-label';
+            nameLabel.textContent = place.name;
+            nameLabel.style.fontSize = '11px';
+            nameLabel.style.fontWeight = '600';
+            nameLabel.style.color = '#1a202c';
+            nameLabel.style.lineHeight = '1.2';
+            nameLabel.style.textShadow = '0 1px 2px rgba(255,255,255,0.8)';
+            nameLabel.style.whiteSpace = 'nowrap';
+            nameLabel.style.overflow = 'hidden';
+            nameLabel.style.textOverflow = 'ellipsis';
+            nameLabel.style.width = '100%';
+            labelContainer.appendChild(nameLabel);
+            
+            // Rating
+            if (place.rating) {
+                const ratingRow = document.createElement('div');
+                ratingRow.style.display = 'flex';
+                ratingRow.style.alignItems = 'center';
+                ratingRow.style.gap = '3px';
+                ratingRow.style.fontSize = '10px';
+                
+                const starSpan = document.createElement('span');
+                starSpan.textContent = '★';
+                starSpan.style.color = '#FBBC05';
+                starSpan.style.fontSize = '10px';
+                ratingRow.appendChild(starSpan);
+                
+                const ratingValue = document.createElement('span');
+                ratingValue.textContent = place.rating.toFixed(1);
+                ratingValue.style.fontWeight = '500';
+                ratingValue.style.color = '#374151';
+                ratingValue.style.textShadow = '0 1px 2px rgba(255,255,255,0.8)';
+                ratingRow.appendChild(ratingValue);
+                
+                labelContainer.appendChild(ratingRow);
+            }
+            
+            // "Fra Google" badge
+            const googleBadge = document.createElement('div');
+            googleBadge.textContent = 'Google';
+            googleBadge.style.fontSize = '9px';
+            googleBadge.style.fontWeight = '500';
+            googleBadge.style.color = '#9CA3AF';
+            googleBadge.style.textShadow = '0 1px 2px rgba(255,255,255,0.8)';
+            labelContainer.appendChild(googleBadge);
+            
+            wrapper.appendChild(circleContainer);
+            wrapper.appendChild(labelContainer);
+            
+            // Hover effects
+            wrapper.addEventListener('mouseenter', function() {
+                circleContainer.style.transform = 'scale(1.15)';
+                circleContainer.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+                wrapper.style.zIndex = '45';
+                labelContainer.style.opacity = '1';
+                labelContainer.style.visibility = 'visible';
+                labelContainer.style.pointerEvents = 'auto';
+                labelContainer.setAttribute('data-force-visible', 'true');
+            });
+            
+            wrapper.addEventListener('mouseleave', function() {
+                circleContainer.style.transform = 'scale(1)';
+                circleContainer.style.boxShadow = '0 2px 6px rgba(0,0,0,0.2)';
+                wrapper.style.zIndex = '5';
+                labelContainer.removeAttribute('data-force-visible');
+                const currentZoom = mapInstance.getZoom();
+                if (currentZoom < 15) {
+                    labelContainer.style.opacity = '0';
+                    labelContainer.style.visibility = 'hidden';
+                    labelContainer.style.pointerEvents = 'none';
+                }
+            });
+            
+            // Click handler - show popup with details
+            wrapper.addEventListener('click', function(e) {
+                e.stopPropagation();
+                showPlacePopup(mapInstance, place, wrapper);
+            });
+            
+            // Create Mapbox marker
+            const lngLat = [place.coordinates.lng, place.coordinates.lat];
+            const marker = new mapboxgl.Marker({
+                element: wrapper,
+                anchor: 'center',
+                offset: [0, -10]
+            })
+                .setLngLat(lngLat)
+                .addTo(mapInstance);
+            
+            placesMarkers.push(marker);
+        });
+    }
+    
+    /**
+     * Show popup for a Google Place
+     * @param {Object} mapInstance - Map instance
+     * @param {Object} place - Place data
+     * @param {HTMLElement} markerElement - Marker element
+     */
+    function showPlacePopup(mapInstance, place, markerElement) {
+        // Create popup content
+        const popupContent = document.createElement('div');
+        popupContent.style.minWidth = '200px';
+        popupContent.style.maxWidth = '300px';
+        
+        let html = '<div style="padding: 8px;">';
+        html += '<h3 style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600;">' + place.name + '</h3>';
+        
+        // Rating
+        if (place.rating) {
+            html += '<div style="display: flex; align-items: center; gap: 4px; margin-bottom: 6px; font-size: 12px;">';
+            html += '<span style="color: #FBBC05;">★</span>';
+            html += '<span>' + place.rating.toFixed(1) + '</span>';
+            if (place.userRatingsTotal) {
+                html += '<span style="color: #666;">(' + place.userRatingsTotal + ')</span>';
+            }
+            html += '</div>';
+        }
+        
+        // Address
+        if (place.vicinity) {
+            html += '<p style="margin: 0 0 6px 0; font-size: 12px; color: #666;">' + place.vicinity + '</p>';
+        }
+        
+        // Open now status
+        if (place.openNow !== null) {
+            const status = place.openNow ? 'Åpent nå' : 'Stengt';
+            const color = place.openNow ? '#10B981' : '#EF4444';
+            html += '<p style="margin: 0 0 6px 0; font-size: 11px; color: ' + color + '; font-weight: 500;">' + status + '</p>';
+        }
+        
+        // Price level
+        if (place.priceLevel !== null) {
+            const priceSymbols = '€'.repeat(place.priceLevel);
+            html += '<p style="margin: 0 0 8px 0; font-size: 12px; color: #666;">' + priceSymbols + '</p>';
+        }
+        
+        // Google Maps link
+        html += '<a href="https://www.google.com/maps/place/?q=place_id:' + place.placeId + '" ';
+        html += 'target="_blank" rel="noopener" ';
+        html += 'style="display: inline-block; margin-top: 8px; padding: 6px 12px; background: #4285F4; color: white; text-decoration: none; border-radius: 4px; font-size: 12px; font-weight: 500;">';
+        html += 'Se på Google Maps →</a>';
+        
+        html += '</div>';
+        
+        popupContent.innerHTML = html;
+        
+        // Create popup
+        const popup = new mapboxgl.Popup({
+            offset: 25,
+            closeButton: true,
+            closeOnClick: false
+        })
+            .setLngLat([place.coordinates.lng, place.coordinates.lat])
+            .setDOMContent(popupContent)
+            .addTo(mapInstance);
+    }
+    
+    /**
+     * Remove all Google Places markers from map
+     * @param {string} chapterId - Optional chapter ID to remove markers for specific chapter
+     */
+    function removePlacesMarkers(chapterId = null) {
+        placesMarkers = placesMarkers.filter(function(marker) {
+            const markerElement = marker.getElement();
+            const markerChapterId = markerElement ? markerElement.getAttribute('data-chapter-id') : null;
+            
+            if (chapterId === null || markerChapterId === chapterId) {
+                marker.remove();
+                return false;
+            }
+            return true;
+        });
+    }
+    
+    /**
+     * Add "Show All" button to chapter
+     * @param {string} chapterId - Chapter ID
+     * @param {number} count - Number of places available
+     */
+    function addShowAllButton(chapterId, count) {
+        const chapter = document.querySelector('.chapter[data-chapter-id="' + chapterId + '"]');
+        if (!chapter) return;
+        
+        // Find the last POI list section in this chapter
+        const poiListSections = chapter.querySelectorAll('.poi-list-block');
+        if (poiListSections.length === 0) return;
+        
+        const lastSection = poiListSections[poiListSections.length - 1];
+        
+        // Check if button already exists
+        if (lastSection.querySelector('.places-api-show-all-button')) return;
+        
+        // Create button container
+        const buttonContainer = document.createElement('div');
+        buttonContainer.className = 'places-api-button-container';
+        buttonContainer.style.marginTop = '24px';
+        buttonContainer.style.textAlign = 'center';
+        
+        // Create button
+        const button = document.createElement('button');
+        button.className = 'places-api-show-all-button';
+        button.textContent = 'Se alle ' + count + ' restauranter i området';
+        button.style.padding = '12px 24px';
+        button.style.backgroundColor = '#EF4444';
+        button.style.color = 'white';
+        button.style.border = 'none';
+        button.style.borderRadius = '8px';
+        button.style.fontSize = '14px';
+        button.style.fontWeight = '600';
+        button.style.cursor = 'pointer';
+        button.style.transition = 'background-color 0.2s';
+        
+        button.addEventListener('mouseenter', function() {
+            button.style.backgroundColor = '#DC2626';
+        });
+        
+        button.addEventListener('mouseleave', function() {
+            button.style.backgroundColor = '#EF4444';
+        });
+        
+        button.addEventListener('click', function() {
+            toggleApiResults(chapterId, button);
+        });
+        
+        buttonContainer.appendChild(button);
+        lastSection.appendChild(buttonContainer);
+    }
+    
+    /**
+     * Toggle showing API results for a chapter
+     * @param {string} chapterId - Chapter ID
+     * @param {HTMLElement} button - Button element
+     */
+    async function toggleApiResults(chapterId, button) {
+        const isShowing = showingApiResults.get(chapterId);
+        
+        if (isShowing) {
+            // Hide API results
+            hideApiResults(chapterId);
+            showingApiResults.set(chapterId, false);
+            
+            // Update button text
+            const apiData = placesApiResults.get(chapterId);
+            if (apiData) {
+                button.textContent = 'Se alle ' + apiData.count + ' restauranter i området';
+            }
+        } else {
+            // Show loading state
+            button.textContent = 'Laster...';
+            button.disabled = true;
+            
+            // Show API results
+            await showApiResults(chapterId);
+            showingApiResults.set(chapterId, true);
+            
+            // Update button
+            button.textContent = 'Skjul ekstra restauranter';
+            button.disabled = false;
+        }
+    }
+    
+    /**
+     * Show API results for a chapter
+     * @param {string} chapterId - Chapter ID
+     */
+    async function showApiResults(chapterId) {
+        // Get chapter map
+        const mapContainer = document.querySelector('.chapter-map[data-chapter-id="' + chapterId + '"]');
+        if (!mapContainer) return;
+        
+        const mapInstance = mapContainer._mapboxInstance;
+        if (!mapInstance) return;
+        
+        // Get center coordinates (use start location or map center)
+        let lat, lng;
+        if (startLocation) {
+            lng = startLocation[0];
+            lat = startLocation[1];
+        } else {
+            const center = mapInstance.getCenter();
+            lat = center.lat;
+            lng = center.lng;
+        }
+        
+        // Fetch places
+        const apiData = await fetchNearbyPlaces(chapterId, lat, lng, 'restaurant', 1500, 4.3, 50);
+        
+        if (!apiData.success || apiData.places.length === 0) {
+            console.warn('No places found for chapter:', chapterId);
+            return;
+        }
+        
+        // Add markers to map
+        addPlacesMarkersToMap(mapInstance, chapterId, apiData.places);
+        
+        // Add list items to chapter
+        addPlacesListItems(chapterId, apiData.places);
+        
+        // Adjust map bounds to include new markers
+        adjustMapBounds(mapInstance, apiData.places);
+    }
+    
+    /**
+     * Hide API results for a chapter
+     * @param {string} chapterId - Chapter ID
+     */
+    function hideApiResults(chapterId) {
+        // Remove markers
+        removePlacesMarkers(chapterId);
+        
+        // Remove list items
+        removePlacesListItems(chapterId);
+    }
+    
+    /**
+     * Add Google Places list items to chapter
+     * @param {string} chapterId - Chapter ID
+     * @param {Array} places - Array of places
+     */
+    function addPlacesListItems(chapterId, places) {
+        const chapter = document.querySelector('.chapter[data-chapter-id="' + chapterId + '"]');
+        if (!chapter) return;
+        
+        const poiListSections = chapter.querySelectorAll('.poi-list-block');
+        if (poiListSections.length === 0) return;
+        
+        const lastSection = poiListSections[poiListSections.length - 1];
+        const listContainer = lastSection.querySelector('.flex.flex-col');
+        if (!listContainer) return;
+        
+        // Create container for API results
+        const apiContainer = document.createElement('div');
+        apiContainer.className = 'places-api-results';
+        apiContainer.style.marginTop = '16px';
+        apiContainer.style.paddingTop = '16px';
+        apiContainer.style.borderTop = '2px solid #E5E7EB';
+        
+        places.forEach(function(place) {
+            const card = createPlaceListCard(place);
+            apiContainer.appendChild(card);
+        });
+        
+        listContainer.appendChild(apiContainer);
+    }
+    
+    /**
+     * Create list card for a Google Place
+     * @param {Object} place - Place data
+     * @returns {HTMLElement} Card element
+     */
+    function createPlaceListCard(place) {
+        const card = document.createElement('article');
+        card.className = 'poi-list-card bg-white border border-gray-200 rounded-lg overflow-hidden transition-all duration-300 hover:border-gray-300';
+        card.style.backgroundColor = '#F9FAFB'; // Light gray background
+        card.setAttribute('data-place-id', place.placeId);
+        card.setAttribute('data-marker-type', 'places-api');
+        
+        let html = '<div class="poi-card-content flex gap-4 p-4">';
+        
+        // Image placeholder or actual image
+        html += '<div class="flex-shrink-0">';
+        html += '<div class="w-24 h-24 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400">';
+        html += '<span style="font-size: 32px;">📍</span>';
+        html += '</div>';
+        html += '</div>';
+        
+        html += '<div class="flex-1 min-w-0 flex flex-col">';
+        html += '<div class="flex items-start justify-between">';
+        html += '<div class="flex flex-col mb-2">';
+        
+        // Title
+        html += '<h3 class="text-lg font-semibold text-gray-900">' + place.name + '</h3>';
+        
+        // Google badge
+        html += '<div class="flex items-center gap-2 mt-1 mb-2">';
+        html += '<span class="inline-block px-2 py-1 text-xs font-medium text-gray-600 bg-gray-200 rounded">Fra Google</span>';
+        html += '</div>';
+        
+        // Rating and status
+        html += '<div class="flex items-center gap-4">';
+        
+        if (place.rating) {
+            html += '<div class="poi-rating flex items-center gap-2">';
+            html += '<span class="flex items-center gap-1 text-sm font-medium text-gray-900">';
+            html += '<span class="text-yellow-500">★</span>';
+            html += place.rating.toFixed(1);
+            html += '</span>';
+            if (place.userRatingsTotal) {
+                html += '<span class="text-xs text-gray-500">(' + place.userRatingsTotal + ')</span>';
+            }
+            html += '</div>';
+        }
+        
+        if (place.openNow !== null) {
+            const statusText = place.openNow ? 'Åpent nå' : 'Stengt';
+            const statusColor = place.openNow ? 'text-green-600' : 'text-red-600';
+            html += '<span class="text-sm font-medium ' + statusColor + '">' + statusText + '</span>';
+        }
+        
+        html += '</div>'; // End rating row
+        html += '</div>'; // End left column
+        
+        // Button
+        html += '<div class="flex-shrink-0">';
+        html += '<a href="https://www.google.com/maps/place/?q=place_id:' + place.placeId + '" ';
+        html += 'target="_blank" rel="noopener" ';
+        html += 'class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm rounded-lg transition-colors duration-200 whitespace-nowrap inline-block">';
+        html += 'Se på Google Maps';
+        html += '</a>';
+        html += '</div>';
+        
+        html += '</div>'; // End flex container
+        
+        // Description
+        if (place.vicinity) {
+            html += '<div class="text-sm text-gray-600 mt-2">' + place.vicinity + '</div>';
+        }
+        
+        html += '</div>'; // End content column
+        html += '</div>'; // End card content
+        
+        card.innerHTML = html;
+        
+        return card;
+    }
+    
+    /**
+     * Remove Google Places list items
+     * @param {string} chapterId - Chapter ID
+     */
+    function removePlacesListItems(chapterId) {
+        const chapter = document.querySelector('.chapter[data-chapter-id="' + chapterId + '"]');
+        if (!chapter) return;
+        
+        const apiContainers = chapter.querySelectorAll('.places-api-results');
+        apiContainers.forEach(function(container) {
+            container.remove();
+        });
+    }
+    
+    /**
+     * Adjust map bounds to include new places
+     * @param {Object} mapInstance - Map instance
+     * @param {Array} places - Array of places
+     */
+    function adjustMapBounds(mapInstance, places) {
+        if (places.length === 0) return;
+        
+        const bounds = new mapboxgl.LngLatBounds();
+        
+        // Include start location
+        if (startLocation) {
+            bounds.extend(startLocation);
+        }
+        
+        // Include existing POIs
+        markers.forEach(function(marker) {
+            const lngLat = marker.getLngLat();
+            bounds.extend([lngLat.lng, lngLat.lat]);
+        });
+        
+        // Include new places (only add a sample to avoid zooming out too much)
+        const sampleSize = Math.min(5, places.length);
+        for (let i = 0; i < sampleSize; i++) {
+            bounds.extend([places[i].coordinates.lng, places[i].coordinates.lat]);
+        }
+        
+        mapInstance.fitBounds(bounds, {
+            padding: 100,
+            duration: 1000,
+            maxZoom: 14
+        });
+    }
+    
+    /**
+     * Initialize Places API integration for all chapters
+     */
+    function initPlacesApiIntegration() {
+        // For each chapter with a map, check if it should have a "Show All" button
+        const chapters = document.querySelectorAll('.chapter[data-chapter-id]');
+        
+        chapters.forEach(async function(chapter) {
+            const chapterId = chapter.getAttribute('data-chapter-id');
+            
+            // Check if this chapter has POIs (if it has POIs, offer to show more)
+            const poiListSections = chapter.querySelectorAll('.poi-list-block');
+            if (poiListSections.length === 0) return;
+            
+            // Get coordinates for search
+            let lat, lng;
+            if (startLocation) {
+                lng = startLocation[0];
+                lat = startLocation[1];
+            } else {
+                // Use first POI coordinates as fallback
+                const firstPoi = chapter.querySelector('[data-poi-coords]');
+                if (!firstPoi) return;
+                
+                try {
+                    const coords = JSON.parse(firstPoi.getAttribute('data-poi-coords'));
+                    lat = coords[0];
+                    lng = coords[1];
+                } catch (e) {
+                    return;
+                }
+            }
+            
+            // Fetch count without displaying results yet
+            const apiData = await fetchNearbyPlaces(chapterId, lat, lng, 'restaurant', 1500, 4.3, 50);
+            
+            if (apiData.success && apiData.count > 0) {
+                // Add button to show results
+                addShowAllButton(chapterId, apiData.count);
+            }
+        });
+    }
+
+    /**
      * Initialize multi-map system - one map per chapter
      */
     function initMap() {
@@ -2085,9 +2734,19 @@
      * Initialize on DOM ready
      */
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initMap);
+        document.addEventListener('DOMContentLoaded', function() {
+            initMap();
+            // Initialize Places API integration after a short delay
+            setTimeout(function() {
+                initPlacesApiIntegration();
+            }, 2000);
+        });
     } else {
         initMap();
+        // Initialize Places API integration after a short delay
+        setTimeout(function() {
+            initPlacesApiIntegration();
+        }, 2000);
     }
 
 })();

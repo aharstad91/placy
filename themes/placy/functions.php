@@ -87,6 +87,18 @@ function placy_enqueue_scripts() {
         wp_enqueue_script( 'placy-intro-parallax', get_template_directory_uri() . '/js/intro-parallax.js', array(), '1.0.0', true );
         wp_enqueue_script( 'placy-container-gradient', get_template_directory_uri() . '/js/container-gradient.js', array(), '1.0.0', true );
         wp_enqueue_script( 'placy-scroll-indicator', get_template_directory_uri() . '/js/scroll-indicator.js', array(), '1.0.0', true );
+        wp_enqueue_script( 'placy-entur-live-departures', get_template_directory_uri() . '/js/entur-live-departures.js', array(), '1.0.0', true );
+        wp_enqueue_script( 'placy-bysykkel-live-availability', get_template_directory_uri() . '/js/bysykkel-live-availability.js', array(), '1.0.0', true );
+        
+        // Localize Entur script with REST API URL
+        wp_localize_script( 'placy-entur-live-departures', 'enturSettings', array(
+            'restUrl' => esc_url_raw( rest_url( 'placy/v1/entur/departures' ) ),
+        ) );
+        
+        // Localize Bysykkel script with REST API URL
+        wp_localize_script( 'placy-bysykkel-live-availability', 'bysykkelSettings', array(
+            'restUrl' => esc_url_raw( rest_url( 'placy/v1/bysykkel/availability' ) ),
+        ) );
         
         // Get property data from related project
         $project = get_field( 'project' );
@@ -173,6 +185,16 @@ require_once get_template_directory() . '/inc/mapbox-config.php';
  */
 require_once get_template_directory() . '/inc/google-places.php';
 require_once get_template_directory() . '/inc/test-google-places.php';
+
+/**
+ * Include Entur API integration
+ */
+require_once get_template_directory() . '/inc/entur-integration.php';
+
+/**
+ * Include Trondheim Bysykkel API integration
+ */
+require_once get_template_directory() . '/inc/bysykkel-integration.php';
 
 /**
  * Include Tema Story block patterns
