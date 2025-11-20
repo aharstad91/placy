@@ -224,11 +224,12 @@ add_filter( 'block_categories_all', 'placy_register_block_category', 10, 1 );
 function placy_enqueue_block_assets() {
     // Map block names to their style files
     $block_styles = array(
-        'poi-map-card'  => '/blocks/poi-map-card/style.css',
-        'poi-list'      => '/blocks/poi-list/style.css',
-        'poi-highlight' => '/blocks/poi-highlight/style.css',
-        'poi-gallery'   => '/blocks/poi-gallery/style.css',
-        'image-column'  => '/blocks/image-column/style.css',
+        'poi-map-card'      => '/blocks/poi-map-card/style.css',
+        'poi-list'          => '/blocks/poi-list/style.css',
+        'poi-list-dynamic'  => '/blocks/poi-list-dynamic/style.css',
+        'poi-highlight'     => '/blocks/poi-highlight/style.css',
+        'poi-gallery'       => '/blocks/poi-gallery/style.css',
+        'image-column'      => '/blocks/image-column/style.css',
     );
     
     // Enqueue all block styles
@@ -346,13 +347,43 @@ function placy_register_chapter_wrapper_block() {
 add_action( 'init', 'placy_register_chapter_wrapper_block' );
 
 /**
+ * Register POI List Dynamic Block
+ */
+function placy_register_poi_list_dynamic_block() {
+    $block_path = get_template_directory() . '/blocks/poi-list-dynamic';
+    
+    if ( file_exists( $block_path . '/block.json' ) ) {
+        $result = register_block_type( $block_path );
+        if ( is_wp_error( $result ) ) {
+            error_log( 'POI List Dynamic registration error: ' . $result->get_error_message() );
+        }
+    } else {
+        error_log( 'POI List Dynamic block.json not found at: ' . $block_path );
+    }
+}
+add_action( 'init', 'placy_register_poi_list_dynamic_block' );
+
+/**
  * Enqueue block editor styles and scripts (admin only)
  */
 function placy_block_editor_styles() {
+    // Enqueue POI List Dynamic block editor script (manual enqueue as fallback)
+    $block_js = get_template_directory() . '/blocks/poi-list-dynamic/block.js';
+    if ( file_exists( $block_js ) ) {
+        wp_enqueue_script(
+            'placy-poi-list-dynamic-editor',
+            get_template_directory_uri() . '/blocks/poi-list-dynamic/block.js',
+            array( 'wp-blocks', 'wp-element', 'wp-block-editor', 'wp-components' ),
+            filemtime( $block_js ),
+            true
+        );
+    }
+    
     // Enqueue all block styles in editor
     $blocks = array(
         'poi-map-card',
         'poi-list',
+        'poi-list-dynamic',
         'poi-highlight',
         'poi-gallery',
         'image-column'

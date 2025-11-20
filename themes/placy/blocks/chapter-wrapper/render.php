@@ -17,15 +17,6 @@ $chapter_id = isset( $attributes['chapterId'] ) && ! empty( $attributes['chapter
 $chapter_anchor = isset( $attributes['chapterAnchor'] ) && ! empty( $attributes['chapterAnchor'] ) ? $attributes['chapterAnchor'] : '';
 $chapter_title = isset( $attributes['chapterTitle'] ) && ! empty( $attributes['chapterTitle'] ) ? $attributes['chapterTitle'] : '';
 
-// Google Places API attributes
-$places_enabled = isset( $attributes['placesEnabled'] ) ? $attributes['placesEnabled'] : true;
-$places_category = isset( $attributes['placesCategory'] ) ? $attributes['placesCategory'] : 'restaurant';
-$places_keyword = isset( $attributes['placesKeyword'] ) ? $attributes['placesKeyword'] : '';
-$places_radius = isset( $attributes['placesRadius'] ) ? intval( $attributes['placesRadius'] ) : 1500;
-$places_min_rating = isset( $attributes['placesMinRating'] ) ? floatval( $attributes['placesMinRating'] ) : 4.3;
-$places_min_reviews = isset( $attributes['placesMinReviews'] ) ? intval( $attributes['placesMinReviews'] ) : 50;
-$places_exclude_types = isset( $attributes['placesExcludeTypes'] ) && is_array( $attributes['placesExcludeTypes'] ) ? $attributes['placesExcludeTypes'] : array( 'lodging' );
-
 // If no chapter ID is set, generate one based on block ID
 if ( empty( $chapter_id ) ) {
     $chapter_id = 'chapter-' . substr( $block['id'], 0, 8 );
@@ -57,29 +48,14 @@ if ( ! empty( $chapter_number ) && $total_chapters > 0 ) {
     $progress = $chapter_number . '/' . $total_chapters;
 }
 
-// Build data attributes array for Places API
+// Build data attributes array
 $data_attributes = array(
     'class'                => 'chapter chapter-with-map',
     'id'                   => esc_attr( $chapter_anchor ),
     'data-chapter-id'      => esc_attr( $chapter_id ),
     'data-chapter-anchor'  => esc_attr( $chapter_anchor ),
     'data-chapter-title'   => esc_attr( $chapter_title ),
-    'data-places-enabled'  => $places_enabled ? 'true' : 'false',
-    'data-places-category' => esc_attr( $places_category ),
-    'data-places-radius'   => esc_attr( $places_radius ),
-    'data-places-min-rating' => esc_attr( $places_min_rating ),
-    'data-places-min-reviews' => esc_attr( $places_min_reviews ),
 );
-
-// Add keyword if not empty
-if ( ! empty( $places_keyword ) ) {
-    $data_attributes['data-places-keyword'] = esc_attr( $places_keyword );
-}
-
-// Add exclude types as JSON string
-if ( ! empty( $places_exclude_types ) ) {
-    $data_attributes['data-places-exclude-types'] = esc_attr( json_encode( $places_exclude_types ) );
-}
 
 // Get block wrapper attributes
 $wrapper_attributes = get_block_wrapper_attributes( $data_attributes );

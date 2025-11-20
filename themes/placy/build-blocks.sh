@@ -9,7 +9,7 @@ THEME_DIR="/Applications/MAMP/htdocs/placy/wp-content/themes/placy"
 BLOCKS_DIR="$THEME_DIR/blocks"
 
 # Array of blocks that need Tailwind compilation
-BLOCKS=("poi-map-card" "poi-list" "poi-highlight" "poi-gallery" "image-column")
+BLOCKS=("poi-map-card" "poi-list" "poi-list-dynamic" "poi-highlight" "poi-gallery" "image-column")
 
 for BLOCK in "${BLOCKS[@]}"; do
     BLOCK_DIR="$BLOCKS_DIR/$BLOCK"

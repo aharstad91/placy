@@ -17,6 +17,7 @@
         'core/spacer',
         'core/group',
         'acf/poi-list',
+        'placy/poi-list-dynamic',
         'acf/poi-highlight',
         'acf/poi-gallery',
         'acf/image-column',
@@ -104,14 +105,7 @@
             const { 
                 chapterId, 
                 chapterAnchor, 
-                chapterTitle,
-                placesEnabled,
-                placesCategory,
-                placesKeyword,
-                placesRadius,
-                placesMinRating,
-                placesMinReviews,
-                placesExcludeTypes
+                chapterTitle
             } = attributes;
             
             // Auto-generate chapter ID on first render if not set
@@ -194,140 +188,6 @@
                                 },
                                 placeholder: 'Michelin & Fine Dining',
                             })
-                        ),
-                        el(
-                            PanelBody,
-                            { title: 'Google Places API - Søkeparametere', initialOpen: false },
-                            el(ToggleControl, {
-                                label: 'Aktiver Google Places for dette kapitlet',
-                                help: 'Vis restauranter fra Google Places API',
-                                checked: placesEnabled,
-                                onChange: function (value) {
-                                    setAttributes({ placesEnabled: value });
-                                },
-                            }),
-                            placesEnabled && [
-                                el(SelectControl, {
-                                    key: 'category',
-                                    label: 'Kategori',
-                                    help: 'Type sted å søke etter',
-                                    value: placesCategory,
-                                    onChange: function (value) {
-                                        setAttributes({ placesCategory: value });
-                                    },
-                                    options: [
-                                        { label: 'Restaurant', value: 'restaurant' },
-                                        { label: 'Cafe', value: 'cafe' },
-                                        { label: 'Bar', value: 'bar' },
-                                        { label: 'Bakery', value: 'bakery' },
-                                        { label: 'Meal Takeaway', value: 'meal_takeaway' },
-                                        { label: 'Food', value: 'food' },
-                                    ],
-                                }),
-                                el(TextControl, {
-                                    key: 'keyword',
-                                    label: 'Søkeord (valgfritt)',
-                                    help: 'F.eks. "pizza", "sushi", "fine dining", "vegan"',
-                                    value: placesKeyword,
-                                    onChange: function (value) {
-                                        setAttributes({ placesKeyword: value });
-                                    },
-                                    placeholder: 'fine dining michelin',
-                                }),
-                                el(RangeControl, {
-                                    key: 'radius',
-                                    label: 'Søkeradius (meter)',
-                                    help: 'Hvor langt fra senterpunktet søkes det',
-                                    value: placesRadius,
-                                    onChange: function (value) {
-                                        setAttributes({ placesRadius: value });
-                                    },
-                                    min: 500,
-                                    max: 5000,
-                                    step: 100,
-                                }),
-                                el(RangeControl, {
-                                    key: 'rating',
-                                    label: 'Minimum rating',
-                                    help: 'Laveste rating som vises (0-5)',
-                                    value: placesMinRating,
-                                    onChange: function (value) {
-                                        setAttributes({ placesMinRating: value });
-                                    },
-                                    min: 3.0,
-                                    max: 5.0,
-                                    step: 0.1,
-                                }),
-                                el(RangeControl, {
-                                    key: 'reviews',
-                                    label: 'Minimum antall anmeldelser',
-                                    help: 'Minimum antall Google-anmeldelser',
-                                    value: placesMinReviews,
-                                    onChange: function (value) {
-                                        setAttributes({ placesMinReviews: value });
-                                    },
-                                    min: 0,
-                                    max: 200,
-                                    step: 10,
-                                }),
-                                el('hr', { key: 'divider', style: { margin: '16px 0', borderColor: '#ddd' } }),
-                                el('h4', { key: 'exclude-title', style: { marginBottom: '8px', fontSize: '13px', fontWeight: '600' } }, 'Ekskluder typer (valgfritt)'),
-                                el('p', { key: 'exclude-help', style: { fontSize: '12px', color: '#757575', marginBottom: '12px' } }, 
-                                    'Velg hvilke typer steder som skal filtreres bort. For hotell-stories, fjern haken på "Hoteller".'
-                                ),
-                                el(CheckboxControl, {
-                                    key: 'exclude-lodging',
-                                    label: 'Hoteller (lodging)',
-                                    checked: placesExcludeTypes && placesExcludeTypes.includes('lodging'),
-                                    onChange: function (checked) {
-                                        const newTypes = placesExcludeTypes ? [...placesExcludeTypes] : [];
-                                        if (checked && !newTypes.includes('lodging')) {
-                                            newTypes.push('lodging');
-                                        } else if (!checked) {
-                                            const index = newTypes.indexOf('lodging');
-                                            if (index > -1) newTypes.splice(index, 1);
-                                        }
-                                        setAttributes({ placesExcludeTypes: newTypes });
-                                    },
-                                }),
-                                el(CheckboxControl, {
-                                    key: 'exclude-hospital',
-                                    label: 'Sykehus/Apotek (hospital, pharmacy)',
-                                    checked: placesExcludeTypes && (placesExcludeTypes.includes('hospital') || placesExcludeTypes.includes('pharmacy')),
-                                    onChange: function (checked) {
-                                        const newTypes = placesExcludeTypes ? [...placesExcludeTypes] : [];
-                                        if (checked) {
-                                            if (!newTypes.includes('hospital')) newTypes.push('hospital');
-                                            if (!newTypes.includes('pharmacy')) newTypes.push('pharmacy');
-                                        } else {
-                                            const hospitalIndex = newTypes.indexOf('hospital');
-                                            const pharmacyIndex = newTypes.indexOf('pharmacy');
-                                            if (hospitalIndex > -1) newTypes.splice(hospitalIndex, 1);
-                                            if (pharmacyIndex > -1) newTypes.splice(pharmacyIndex, 1);
-                                        }
-                                        setAttributes({ placesExcludeTypes: newTypes });
-                                    },
-                                }),
-                                el(CheckboxControl, {
-                                    key: 'exclude-transport',
-                                    label: 'Transport (gas_station, car_rental, parking)',
-                                    checked: placesExcludeTypes && (placesExcludeTypes.includes('gas_station') || placesExcludeTypes.includes('car_rental') || placesExcludeTypes.includes('parking')),
-                                    onChange: function (checked) {
-                                        const newTypes = placesExcludeTypes ? [...placesExcludeTypes] : [];
-                                        if (checked) {
-                                            if (!newTypes.includes('gas_station')) newTypes.push('gas_station');
-                                            if (!newTypes.includes('car_rental')) newTypes.push('car_rental');
-                                            if (!newTypes.includes('parking')) newTypes.push('parking');
-                                        } else {
-                                            ['gas_station', 'car_rental', 'parking'].forEach(function(type) {
-                                                const index = newTypes.indexOf(type);
-                                                if (index > -1) newTypes.splice(index, 1);
-                                            });
-                                        }
-                                        setAttributes({ placesExcludeTypes: newTypes });
-                                    },
-                                }),
-                            ]
                         )
                     ),
 

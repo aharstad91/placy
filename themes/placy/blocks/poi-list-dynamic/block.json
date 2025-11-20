@@ -1,0 +1,47 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 2,
+  "name": "placy/poi-list-dynamic",
+  "title": "POI List Dynamic",
+  "category": "placy-content",
+  "icon": "location-alt",
+  "description": "Dynamisk POI-liste fra Google Places API",
+  "keywords": ["poi", "point", "interest", "google", "places", "dynamic"],
+  "supports": {
+    "align": ["wide", "full"],
+    "anchor": true
+  },
+  "style": "file:./style.css",
+  "editorScript": "file:./block.js",
+  "attributes": {
+    "placesEnabled": {
+      "type": "boolean",
+      "default": true
+    },
+    "placesCategory": {
+      "type": "string",
+      "default": "restaurant"
+    },
+    "placesKeyword": {
+      "type": "string",
+      "default": ""
+    },
+    "placesRadius": {
+      "type": "number",
+      "default": 1500
+    },
+    "placesMinRating": {
+      "type": "number",
+      "default": 4.3
+    },
+    "placesMinReviews": {
+      "type": "number",
+      "default": 50
+    },
+    "placesExcludeTypes": {
+      "type": "array",
+      "default": ["lodging"]
+    }
+  },
+  "render": "file:./template.php"
+}

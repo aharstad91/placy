@@ -1971,6 +1971,9 @@
 
                 // Parse and add markers for THIS chapter only
                 parseAndAddMarkersForChapter(chapterMap, chapterId);
+                
+                // Initialize dynamic POI lists for this chapter
+                initDynamicPoiLists();
             });
 
             // Keep last one as fallback
@@ -2892,6 +2895,341 @@
     function getFirstChapterId() {
         const firstChapter = document.querySelector('.chapter[data-chapter-id]');
         return firstChapter ? firstChapter.getAttribute('data-chapter-id') : null;
+    }
+
+    /**
+     * Initialize dynamic POI lists (poi-list-dynamic blocks)
+     * Each block can have its own Google Places API configuration
+     */
+    function initDynamicPoiLists() {
+        const dynamicBlocks = document.querySelectorAll('.poi-list-dynamic-block');
+        
+        dynamicBlocks.forEach(function(block) {
+            const placesEnabled = block.getAttribute('data-places-enabled') !== 'false';
+            if (!placesEnabled) return;
+            
+            // Get chapter ID from parent
+            const chapter = block.closest('[data-chapter-id]');
+            if (!chapter) {
+                console.warn('Dynamic POI block found outside chapter:', block);
+                return;
+            }
+            const chapterId = chapter.getAttribute('data-chapter-id');
+            
+            // Get configuration from block attributes
+            const category = block.getAttribute('data-places-category') || 'restaurant';
+            const keyword = block.getAttribute('data-places-keyword') || '';
+            
+            // Map category to Norwegian plural
+            const categoryMap = {
+                'restaurant': 'restauranter',
+                'cafe': 'kafeer',
+                'bar': 'barer',
+                'bakery': 'bakerier',
+                'meal_takeaway': 'takeaway-steder',
+                'food': 'spisesteder',
+                'pharmacy': 'apotek',
+                'dentist': 'tannleger',
+                'doctor': 'leger',
+                'hospital': 'sykehus',
+                'physiotherapist': 'fysioterapeuter',
+                'store': 'butikker',
+                'supermarket': 'supermarkeder',
+                'gym': 'treningssentre',
+                'spa': 'spa-steder',
+                'beauty_salon': 'skjønnhetssalonger',
+                'hair_care': 'frisører',
+                'museum': 'museer',
+                'art_gallery': 'kunstgallerier',
+                'performing_arts_theater': 'teatre',
+                'movie_theater': 'kinoer',
+                'park': 'parker',
+                'tourist_attraction': 'turistattraksjoner'
+            };
+            const categoryNorwegian = categoryMap[category] || 'steder';
+            
+            // Add button to this specific block
+            addDynamicBlockButton(block, chapterId, categoryNorwegian);
+        });
+    }
+
+    /**
+     * Add "Show more" button to a dynamic POI block
+     * @param {HTMLElement} block - The poi-list-dynamic block element
+     * @param {string} chapterId - Chapter ID for map integration
+     * @param {string} categoryNorwegian - Norwegian category name for button text
+     */
+    function addDynamicBlockButton(block, chapterId, categoryNorwegian) {
+        const placeholder = block.querySelector('.poi-list-dynamic-placeholder');
+        if (!placeholder) return;
+        
+        // Check if button already exists
+        if (placeholder.querySelector('.places-api-show-all-button')) return;
+        
+        // Create button container
+        const buttonContainer = document.createElement('div');
+        buttonContainer.className = 'places-api-button-container';
+        buttonContainer.style.marginTop = '24px';
+        buttonContainer.style.textAlign = 'center';
+        
+        // Create button
+        const button = document.createElement('button');
+        button.className = 'places-api-show-all-button';
+        button.textContent = 'Se flere ' + categoryNorwegian + ' i området';
+        button.setAttribute('data-category-norwegian', categoryNorwegian);
+        button.style.padding = '12px 24px';
+        button.style.backgroundColor = '#EF4444';
+        button.style.color = 'white';
+        button.style.border = 'none';
+        button.style.borderRadius = '8px';
+        button.style.fontSize = '14px';
+        button.style.fontWeight = '600';
+        button.style.cursor = 'pointer';
+        button.style.transition = 'background-color 0.2s';
+        
+        button.addEventListener('mouseenter', function() {
+            button.style.backgroundColor = '#DC2626';
+        });
+        
+        button.addEventListener('mouseleave', function() {
+            button.style.backgroundColor = '#EF4444';
+        });
+        
+        button.addEventListener('click', function() {
+            toggleDynamicBlockResults(block, chapterId, button);
+        });
+        
+        buttonContainer.appendChild(button);
+        placeholder.appendChild(buttonContainer);
+    }
+
+    /**
+     * Toggle showing API results for a dynamic POI block
+     * @param {HTMLElement} block - The poi-list-dynamic block element
+     * @param {string} chapterId - Chapter ID for map integration
+     * @param {HTMLElement} button - Button element
+     */
+    async function toggleDynamicBlockResults(block, chapterId, button) {
+        const isShowing = button.hasAttribute('data-results-shown');
+        
+        if (isShowing) {
+            // Already showing - do nothing (button will be hidden)
+            return;
+        }
+        
+        // Show loading state with spinner animation
+        const categoryNorwegian = button.getAttribute('data-category-norwegian') || 'steder';
+        
+        // Create spinner element
+        const spinner = document.createElement('span');
+        spinner.style.display = 'inline-block';
+        spinner.style.width = '14px';
+        spinner.style.height = '14px';
+        spinner.style.border = '2px solid rgba(255, 255, 255, 0.3)';
+        spinner.style.borderTopColor = '#fff';
+        spinner.style.borderRadius = '50%';
+        spinner.style.marginRight = '8px';
+        spinner.style.animation = 'spin 0.8s linear infinite';
+        
+        // Add keyframes for spinner if not already added
+        if (!document.getElementById('spinner-keyframes')) {
+            const style = document.createElement('style');
+            style.id = 'spinner-keyframes';
+            style.textContent = `
+                @keyframes spin {
+                    to { transform: rotate(360deg); }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        button.innerHTML = '';
+        button.appendChild(spinner);
+        button.appendChild(document.createTextNode('Henter lignende ' + categoryNorwegian + ' fra Google...'));
+        button.disabled = true;
+        button.style.opacity = '0.9';
+        
+        // Fetch API data but don't display yet
+        const apiData = await fetchDynamicBlockData(block, chapterId);
+        
+        // Wait for minimum 2 seconds before displaying
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Now display the results after 2 seconds
+        if (apiData && apiData.success && apiData.places.length > 0) {
+            displayDynamicBlockResults(block, chapterId, apiData);
+        }
+        
+        button.setAttribute('data-results-shown', 'true');
+        
+        // Hide button after results are shown
+        button.style.display = 'none';
+    }
+
+    /**
+     * Fetch API data for a dynamic POI block (without displaying)
+     * @param {HTMLElement} block - The poi-list-dynamic block element
+     * @param {string} chapterId - Chapter ID
+     * @returns {Promise<Object>} API data
+     */
+    async function fetchDynamicBlockData(block, chapterId) {
+        // Get chapter element
+        const chapter = document.querySelector('[data-chapter-id="' + chapterId + '"]');
+        if (!chapter) return null;
+        
+        // Get chapter map
+        const mapContainer = document.querySelector('.chapter-map[data-chapter-id="' + chapterId + '"]');
+        if (!mapContainer) return null;
+        
+        const mapInstance = mapContainer._mapboxInstance;
+        if (!mapInstance) return null;
+        
+        // Get center coordinates (use start location or map center)
+        let lat, lng;
+        if (startLocation) {
+            lng = startLocation[0];
+            lat = startLocation[1];
+        } else {
+            const center = mapInstance.getCenter();
+            lat = center.lat;
+            lng = center.lng;
+        }
+        
+        // Read configuration from block data attributes
+        const category = block.getAttribute('data-places-category') || 'restaurant';
+        const radius = parseInt(block.getAttribute('data-places-radius')) || 1500;
+        const minRating = parseFloat(block.getAttribute('data-places-min-rating')) || 4.3;
+        const minReviews = parseInt(block.getAttribute('data-places-min-reviews')) || 50;
+        const keyword = block.getAttribute('data-places-keyword') || '';
+        
+        // Get exclude types (JSON array)
+        let excludeTypes = ['lodging']; // Default
+        const excludeTypesAttr = block.getAttribute('data-places-exclude-types');
+        if (excludeTypesAttr) {
+            try {
+                excludeTypes = JSON.parse(excludeTypesAttr);
+            } catch (e) {
+                console.warn('Failed to parse exclude types:', e);
+            }
+        }
+        
+        // Collect Google Place IDs from existing POIs in this chapter to exclude them
+        const excludePlaceIds = [];
+        const poiItems = chapter.querySelectorAll('[data-google-place-id]');
+        poiItems.forEach(function(poiItem) {
+            const placeId = poiItem.getAttribute('data-google-place-id');
+            if (placeId && placeId.trim()) {
+                excludePlaceIds.push(placeId.trim());
+            }
+        });
+        
+        // Generate unique cache key for this block
+        const blockId = chapterId + '-' + category + '-' + keyword;
+        
+        // Fetch places
+        const apiData = await fetchNearbyPlaces(blockId, lat, lng, category, radius, minRating, minReviews, keyword, excludeTypes, excludePlaceIds);
+        
+        if (!apiData.success || apiData.places.length === 0) {
+            console.warn('No places found for dynamic block:', block);
+            return null;
+        }
+        
+        return apiData;
+    }
+
+    /**
+     * Display API results for a dynamic POI block
+     * @param {HTMLElement} block - The poi-list-dynamic block element
+     * @param {string} chapterId - Chapter ID for map integration
+     * @param {Object} apiData - API data with places
+     */
+    function displayDynamicBlockResults(block, chapterId, apiData) {
+        // Get chapter map
+        const mapContainer = document.querySelector('.chapter-map[data-chapter-id="' + chapterId + '"]');
+        if (!mapContainer) return;
+        
+        const mapInstance = mapContainer._mapboxInstance;
+        if (!mapInstance) return;
+        
+        // Get configuration for disclaimer
+        const category = block.getAttribute('data-places-category') || 'restaurant';
+        const keyword = block.getAttribute('data-places-keyword') || '';
+        
+        // Map category to Norwegian plural
+        const categoryMap = {
+            'restaurant': 'restauranter',
+            'cafe': 'kafeer',
+            'bar': 'barer',
+            'bakery': 'bakerier',
+            'meal_takeaway': 'takeaway-steder',
+            'food': 'spisesteder',
+            'pharmacy': 'apotek',
+            'dentist': 'tannleger',
+            'doctor': 'leger',
+            'hospital': 'sykehus',
+            'physiotherapist': 'fysioterapeuter',
+            'store': 'butikker',
+            'supermarket': 'supermarkeder',
+            'gym': 'treningssentre',
+            'spa': 'spa-steder',
+            'beauty_salon': 'skjønnhetssalonger',
+            'hair_care': 'frisører',
+            'museum': 'museer',
+            'art_gallery': 'kunstgallerier',
+            'performing_arts_theater': 'teatre',
+            'movie_theater': 'kinoer',
+            'park': 'parker',
+            'tourist_attraction': 'turistattraksjoner'
+        };
+        const categoryNorwegian = categoryMap[category] || 'steder';
+        
+        // Find placeholder in this block
+        const placeholder = block.querySelector('.poi-list-dynamic-placeholder');
+        if (!placeholder) return;
+        
+        // Create container for API results
+        const apiContainer = document.createElement('div');
+        apiContainer.className = 'places-api-results';
+        apiContainer.style.marginTop = '24px';
+        apiContainer.style.paddingTop = '0';
+        
+        // Add disclaimer header
+        const disclaimerHeader = document.createElement('div');
+        disclaimerHeader.className = 'google-places-disclaimer';
+        disclaimerHeader.style.marginBottom = '16px';
+        disclaimerHeader.style.padding = '12px 16px';
+        disclaimerHeader.style.backgroundColor = '#F3F4F6';
+        disclaimerHeader.style.borderLeft = '4px solid #9CA3AF';
+        disclaimerHeader.style.borderRadius = '4px';
+        
+        let disclaimerText = '<p style="margin: 0; font-size: 14px; color: #4B5563; line-height: 1.5;">';
+        disclaimerText += '<strong style="color: #1F2937;">Google-søk:</strong> ';
+        
+        if (keyword && keyword.trim()) {
+            disclaimerText += 'Viser lignende <strong>' + categoryNorwegian + '</strong> tagget med <em>"' + keyword.trim() + '"</em>';
+        } else {
+            disclaimerText += 'Viser lignende <strong>' + categoryNorwegian + '</strong> i området';
+        }
+        
+        disclaimerText += ' <span style="color: #6B7280;">— hentet fra Google Places</span>';
+        disclaimerText += '</p>';
+        
+        disclaimerHeader.innerHTML = disclaimerText;
+        apiContainer.appendChild(disclaimerHeader);
+        
+        // Add place cards
+        apiData.places.forEach(function(place) {
+            const card = createPlaceListCard(place);
+            apiContainer.appendChild(card);
+        });
+        
+        placeholder.appendChild(apiContainer);
+        
+        // Add markers to chapter map (shared map for all blocks in chapter)
+        addPlacesMarkersToMap(mapInstance, chapterId, apiData.places);
+        
+        // Adjust map bounds to include new markers
+        adjustMapBounds(mapInstance, apiData.places);
     }
 
     /**

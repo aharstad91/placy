@@ -1,0 +1,46 @@
+/* Only load Tailwind utilities, not base (which resets WordPress styles) */
+@tailwind components;
+@tailwind utilities;
+
+/* Custom block styles */
+.poi-list-container {
+    margin: 2rem 0;
+}
+
+.poi-list-card {
+    margin-bottom: 2rem;
+    background: white;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.2s;
+}
+
+/* Force images to respect Tailwind sizes */
+.poi-list-card img {
+    width: 6rem !important;
+    height: 6rem !important;
+    object-fit: cover !important;
+    max-width: none !important;
+    max-height: none !important;
+}
+
+.poi-list-card:hover {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.poi-list-card-content {
+    padding: 1.5rem;
+}
+
+/* Editor styles */
+.block-editor-block-list__block .poi-list-container {
+    margin: 1.5rem 0;
+    padding: 1rem;
+    background: #f9fafb;
+    border-radius: 0.5rem;
+}
+
+.acf-block-preview .poi-list-card button {
+    pointer-events: none;
+}
