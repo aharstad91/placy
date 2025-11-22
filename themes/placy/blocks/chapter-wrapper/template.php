@@ -26,6 +26,15 @@ if ( empty( $chapter_anchor ) ) {
     $chapter_anchor = $chapter_id;
 }
 
+// Get Google Places settings
+$places_enabled = isset( $attributes['placesEnabled'] ) ? $attributes['placesEnabled'] : true;
+$places_category = isset( $attributes['placesCategory'] ) ? $attributes['placesCategory'] : 'restaurant';
+$places_keyword = isset( $attributes['placesKeyword'] ) ? $attributes['placesKeyword'] : '';
+$places_radius = isset( $attributes['placesRadius'] ) ? $attributes['placesRadius'] : 1500;
+$places_min_rating = isset( $attributes['placesMinRating'] ) ? $attributes['placesMinRating'] : 4.3;
+$places_min_reviews = isset( $attributes['placesMinReviews'] ) ? $attributes['placesMinReviews'] : 50;
+$places_exclude_types = isset( $attributes['placesExcludeTypes'] ) ? $attributes['placesExcludeTypes'] : array( 'lodging' );
+
 // Get block wrapper attributes
 $wrapper_attributes = get_block_wrapper_attributes( array(
     'class'                => 'chapter chapter-with-map',
@@ -33,6 +42,13 @@ $wrapper_attributes = get_block_wrapper_attributes( array(
     'data-chapter-id'      => esc_attr( $chapter_id ),
     'data-chapter-anchor'  => esc_attr( $chapter_anchor ),
     'data-chapter-title'   => esc_attr( $chapter_title ),
+    'data-places-enabled'  => $places_enabled ? 'true' : 'false',
+    'data-places-category' => esc_attr( $places_category ),
+    'data-places-keyword'  => esc_attr( $places_keyword ),
+    'data-places-radius'   => esc_attr( $places_radius ),
+    'data-places-min-rating' => esc_attr( $places_min_rating ),
+    'data-places-min-reviews' => esc_attr( $places_min_reviews ),
+    'data-places-exclude-types' => esc_attr( json_encode( $places_exclude_types ) ),
 ) );
 
 ?>

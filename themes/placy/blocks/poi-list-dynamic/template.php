@@ -18,7 +18,7 @@ $places_category = isset( $attributes['placesCategory'] ) ? $attributes['placesC
 $places_keyword = isset( $attributes['placesKeyword'] ) ? $attributes['placesKeyword'] : '';
 $places_radius = isset( $attributes['placesRadius'] ) ? $attributes['placesRadius'] : 1500;
 $places_min_rating = isset( $attributes['placesMinRating'] ) ? $attributes['placesMinRating'] : 4.3;
-$places_min_reviews = isset( $attributes['placesMinReviews'] ) ? $attributes['placesMinReviews'] : 50;
+$places_min_reviews = isset( $attributes['placesMinReviews'] ) ? $attributes['placesMinReviews'] : 20;
 $places_exclude_types = isset( $attributes['placesExcludeTypes'] ) ? $attributes['placesExcludeTypes'] : array( 'lodging' );
 
 // Build data attributes

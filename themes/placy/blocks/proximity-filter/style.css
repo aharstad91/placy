@@ -1,0 +1,109 @@
+/**
+ * Proximity Filter Block Styles
+ *
+ * @package Placy
+ * @since 1.0.0
+ */
+
+.proximity-filter-block {
+    max-width: 100%;
+}
+
+.proximity-filter-container {
+    border: 1px solid #e5e7eb;
+}
+
+/* Button Base Styles */
+.proximity-time-btn,
+.proximity-mode-btn {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border: 2px solid #e5e7eb;
+    border-radius: 0.5rem;
+    background-color: #ffffff;
+    color: #374151;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    white-space: nowrap;
+}
+
+.proximity-time-btn:hover,
+.proximity-mode-btn:hover {
+    border-color: #2563eb;
+    background-color: #eff6ff;
+    transform: translateY(-1px);
+}
+
+.proximity-time-btn.active,
+.proximity-mode-btn.active {
+    border-color: #2563eb;
+    background-color: #2563eb;
+    color: #ffffff;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
+}
+
+.proximity-time-btn:active,
+.proximity-mode-btn:active {
+    transform: translateY(0);
+}
+
+/* Loading State */
+.proximity-filter-block .loading-state {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.proximity-filter-block .loading-state::before {
+    content: "";
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid #e5e7eb;
+    border-top-color: #2563eb;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Result Counter */
+.proximity-result-counter {
+    padding: 0.75rem;
+    background-color: #f9fafb;
+    border-radius: 0.375rem;
+    margin-top: 1rem;
+}
+
+.proximity-result-counter strong {
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.proximity-result-counter .empty-state {
+    display: block;
+    font-weight: 500;
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+    .proximity-time-btn,
+    .proximity-mode-btn {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.8125rem;
+    }
+    
+    .proximity-filter-container {
+        padding: 1rem;
+    }
+}
+
+/* Hide/Show States */
+.hidden {
+    display: none !important;
+}

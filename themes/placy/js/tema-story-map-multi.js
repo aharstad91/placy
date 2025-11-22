@@ -49,6 +49,33 @@
     
     // Google Places API state
     let placesApiResults = new Map(); // Store API results per chapter
+    
+    /**
+     * Get photo URL from Google Places API
+     * @param {string} photoReference - Photo reference from Places API
+     * @param {number} maxWidth - Maximum width in pixels
+     * @returns {string} Photo URL
+     */
+    function getPhotoUrl(photoReference, maxWidth) {
+        if (!photoReference) {
+            return null;
+        }
+        
+        // Build photo URL using Places Photo API
+        const apiKey = typeof placyMapConfig !== 'undefined' && placyMapConfig.googlePlacesApiKey ? placyMapConfig.googlePlacesApiKey : '';
+        if (!apiKey) {
+            console.warn('Google Places API key not configured');
+            return null;
+        }
+        
+        const params = new URLSearchParams({
+            maxwidth: maxWidth.toString(),
+            photo_reference: photoReference,
+            key: apiKey
+        });
+        
+        return 'https://maps.googleapis.com/maps/api/place/photo?' + params.toString();
+    }
     let placesMarkers = []; // Store Google Places markers separately
     let showingApiResults = new Map(); // Track which chapters are showing API results
 
@@ -1105,7 +1132,7 @@
      * @param {number} minReviews - Minimum reviews filter
      * @returns {Promise<Object>} API response
      */
-    async function fetchNearbyPlaces(chapterId, lat, lng, category = 'restaurant', radius = 1500, minRating = 4.3, minReviews = 50, keyword = '', excludeTypes = ['lodging'], excludePlaceIds = []) {
+    async function fetchNearbyPlaces(chapterId, lat, lng, category = 'restaurant', radius = 1500, minRating = 4.3, minReviews = 20, keyword = '', excludeTypes = ['lodging'], excludePlaceIds = []) {
         // Check if we already have results for this chapter
         if (placesApiResults.has(chapterId)) {
             return placesApiResults.get(chapterId);
@@ -1215,8 +1242,17 @@
             circleContainer.style.boxShadow = '0 2px 6px rgba(0,0,0,0.2)';
             circleContainer.style.transition = 'transform 0.3s ease, box-shadow 0.3s ease';
             
-            // Add simple icon
-            circleContainer.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;color:white;font-size:14px;">📍</div>';
+            // Add photo or icon
+            if (place.photoReference) {
+                const photoUrl = getPhotoUrl(place.photoReference, 100);
+                if (photoUrl) {
+                    circleContainer.innerHTML = '<img src="' + photoUrl + '" alt="' + place.name + '" style="width:100%;height:100%;object-fit:cover;">';
+                } else {
+                    circleContainer.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;color:white;font-size:14px;">📍</div>';
+                }
+            } else {
+                circleContainer.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;color:white;font-size:14px;">📍</div>';
+            }
             
             // Create label
             const labelContainer = document.createElement('div');
@@ -1227,7 +1263,7 @@
             labelContainer.style.gap = '2px';
             labelContainer.style.maxWidth = '140px';
             labelContainer.style.textAlign = 'center';
-            labelContainer.style.transition = 'opacity 0.3s ease';
+            labelContainer.style.transition = 'opacity 0.3s ease, visibility 0.3s ease';
             
             const currentZoom = mapInstance.getZoom();
             if (currentZoom < 15) {
@@ -1311,10 +1347,21 @@
                 }
             });
             
-            // Click handler - show popup with details
+            // Click handler - same behavior as WP POIs, scroll card into view
             wrapper.addEventListener('click', function(e) {
                 e.stopPropagation();
-                showPlacePopup(mapInstance, place, wrapper);
+                
+                // Find corresponding card and scroll to it
+                const card = document.querySelector('[data-place-id="' + place.placeId + '"]');
+                if (card) {
+                    card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    
+                    // Highlight the card briefly
+                    card.style.boxShadow = '0 0 0 3px #10B981';
+                    setTimeout(function() {
+                        card.style.boxShadow = '';
+                    }, 2000);
+                }
             });
             
             // Create Mapbox marker
@@ -1522,6 +1569,20 @@
         // Now display the results after 2 seconds
         if (apiData && apiData.success && apiData.places.length > 0) {
             displayApiResults(chapterId, apiData);
+            
+            // Dispatch event to notify proximity filter that new POIs are loaded
+            const chapter = document.querySelector('[data-chapter-id="' + chapterId + '"]');
+            if (chapter) {
+                const event = new CustomEvent('placesLoaded', {
+                    detail: {
+                        chapterId: chapterId,
+                        placesCount: apiData.places.length
+                    },
+                    bubbles: true
+                });
+                chapter.dispatchEvent(event);
+                console.log('[Google Places] Dispatched placesLoaded event for chapter:', chapterId, 'places:', apiData.places.length);
+            }
         }
         
         showingApiResults.set(chapterId, true);
@@ -1700,6 +1761,11 @@
         });
         
         listContainer.appendChild(apiContainer);
+        
+        // Re-initialize hover tracking for newly added cards
+        setTimeout(function() {
+            initPOIHoverTracking();
+        }, 500);
     }
     
     /**
@@ -1712,32 +1778,36 @@
         card.className = 'poi-list-card bg-white border border-gray-200 rounded-lg overflow-hidden transition-all duration-300 hover:border-gray-300';
         card.style.backgroundColor = '#F9FAFB'; // Light gray background
         card.setAttribute('data-place-id', place.placeId);
+        card.setAttribute('data-poi-id', 'gplace-' + place.placeId); // Unique ID for proximity filter
+        card.setAttribute('data-google-place-id', place.placeId);
         card.setAttribute('data-marker-type', 'places-api');
+        // Store coords as [lat, lng] to match POI format (proximity filter expects this)
+        card.setAttribute('data-poi-coords', '[' + place.coordinates.lat + ',' + place.coordinates.lng + ']');
         
         let html = '<div class="poi-card-content flex gap-4 p-4">';
         
-        // Image placeholder or actual image
-        html += '<div class="flex-shrink-0">';
-        html += '<div class="w-24 h-24 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400">';
-        html += '<span style="font-size: 32px;">📍</span>';
-        html += '</div>';
-        html += '</div>';
+        // Image - use photo from API if available
+        if (place.photoReference) {
+            html += '<div class="flex-shrink-0">';
+            const photoUrl = getPhotoUrl(place.photoReference, 200);
+            html += '<img src="' + photoUrl + '" alt="' + place.name + '" class="w-24 h-24 rounded-lg object-cover">';
+            html += '</div>';
+        }
         
         html += '<div class="flex-1 min-w-0 flex flex-col">';
         html += '<div class="flex items-start justify-between">';
-        html += '<div class="flex flex-col mb-2">';
         
-        // Title
+        // Left column: Title, badge, rating
+        html += '<div class="flex flex-col mb-2">';
         html += '<h3 class="text-lg font-semibold text-gray-900">' + place.name + '</h3>';
         
         // Google badge
         html += '<div class="flex items-center gap-2 mt-1 mb-2">';
-        html += '<span class="inline-block px-2 py-1 text-xs font-medium text-gray-600 bg-gray-200 rounded">Fra Google</span>';
+        html += '<span class="inline-block px-2 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded">Fra Google</span>';
         html += '</div>';
         
-        // Rating and status
+        // Rating row (including travel time placeholder)
         html += '<div class="flex items-center gap-4">';
-        
         if (place.rating) {
             html += '<div class="poi-rating flex items-center gap-2">';
             html += '<span class="flex items-center gap-1 text-sm font-medium text-gray-900">';
@@ -1750,29 +1820,31 @@
             html += '</div>';
         }
         
-        if (place.openNow !== null) {
-            const statusText = place.openNow ? 'Åpent nå' : 'Stengt';
-            const statusColor = place.openNow ? 'text-green-600' : 'text-red-600';
-            html += '<span class="text-sm font-medium ' + statusColor + '">' + statusText + '</span>';
-        }
+        // Add travel time placeholder (will be populated by proximity-filter.js)
+        html += '<div class="poi-travel-time flex items-center gap-2 text-gray-600" style="display: none;">';
+        html += '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">';
+        html += '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>';
+        html += '</svg>';
+        html += '<span class="poi-travel-time-text text-sm font-medium"></span>';
+        html += '</div>';
         
         html += '</div>'; // End rating row
         html += '</div>'; // End left column
         
-        // Button
-        html += '<div class="flex-shrink-0">';
-        html += '<a href="https://www.google.com/maps/place/?q=place_id:' + place.placeId + '" ';
-        html += 'target="_blank" rel="noopener" ';
-        html += 'class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm rounded-lg transition-colors duration-200 whitespace-nowrap inline-block">';
-        html += 'Se på Google Maps';
-        html += '</a>';
-        html += '</div>';
+        // Right column: Button (aligned with title)
+        html += '<div class="poi-button-container flex-shrink-0">';
+        html += '<button onclick="showPlaceOnMap(this)" ';
+        html += 'class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium text-sm rounded-lg transition-colors duration-200 whitespace-nowrap" ';
+        html += 'data-place-coords="[' + place.coordinates.lng + ',' + place.coordinates.lat + ']">';
+        html += 'Se på kart';
+        html += '</button>';
+        html += '</div>'; // End button container
         
-        html += '</div>'; // End flex container
+        html += '</div>'; // End flex container (title row)
         
-        // Description
+        // Description at bottom
         if (place.vicinity) {
-            html += '<div class="text-sm text-gray-600 mt-2">' + place.vicinity + '</div>';
+            html += '<div class="text-sm text-gray-600 line-clamp-2">' + place.vicinity + '</div>';
         }
         
         html += '</div>'; // End content column
@@ -2240,6 +2312,104 @@
     };
 
     /**
+     * Show a Google Places API place on map (similar to showPOIOnMap)
+     * @param {HTMLElement} button - The button element that was clicked
+     */
+    window.showPlaceOnMap = function(button) {
+        const poiItem = button.closest('.poi-list-card');
+        if (!poiItem) return;
+
+        const coordsAttr = button.getAttribute('data-place-coords');
+        if (!coordsAttr) return;
+
+        // Find which chapter this place belongs to
+        const chapterElement = button.closest('.chapter');
+        if (!chapterElement) {
+            console.warn('Could not find parent .chapter element for Place');
+            return;
+        }
+
+        const chapterId = chapterElement.getAttribute('data-chapter-id');
+        if (!chapterId) {
+            console.warn('Chapter element missing data-chapter-id attribute');
+            return;
+        }
+
+        // Find the map container by chapter ID
+        const mapContainer = document.querySelector('.chapter-map[data-chapter-id="' + chapterId + '"]');
+        if (!mapContainer) {
+            console.warn('Could not find map container for chapter:', chapterId);
+            return;
+        }
+
+        // Get the Mapbox instance for this map
+        const mapInstance = mapContainer._mapboxInstance;
+        if (!mapInstance) {
+            console.warn('Map not initialized for chapter:', chapterId);
+            return;
+        }
+
+        try {
+            const coords = JSON.parse(coordsAttr);
+            if (Array.isArray(coords) && coords.length === 2) {
+                const lngLat = [parseFloat(coords[0]), parseFloat(coords[1])]; // [lng, lat] for Mapbox
+                
+                // Get Place ID for marker activation
+                const placeId = poiItem.getAttribute('data-place-id');
+                
+                // Fit bounds to show both start location and place
+                if (startLocation) {
+                    const bounds = new mapboxgl.LngLatBounds();
+                    bounds.extend(startLocation);
+                    bounds.extend(lngLat);
+                    
+                    mapInstance.fitBounds(bounds, {
+                        padding: 120,
+                        duration: 1200,
+                        maxZoom: 16
+                    });
+                } else {
+                    // Fallback: just fly to place if no start location
+                    mapInstance.flyTo({
+                        center: lngLat,
+                        zoom: 16,
+                        duration: 1200,
+                        essential: true
+                    });
+                }
+                
+                // Draw route on this map if we have start location
+                if (startLocation) {
+                    getWalkingDistance(lngLat).then(function(walking) {
+                        if (walking && walking.geometry) {
+                            setTimeout(function() {
+                                drawRouteOnMap(mapInstance, walking.geometry, walking.duration);
+                            }, 400);
+                        }
+                    });
+                }
+                
+                // Activate the marker (highlight it)
+                if (placeId) {
+                    setTimeout(function() {
+                        // Find the marker wrapper for this place
+                        const markerWrapper = mapContainer.querySelector('.marker-wrapper-places[data-place-id="' + placeId + '"]');
+                        if (markerWrapper) {
+                            // Pulse animation
+                            markerWrapper.style.animation = 'marker-pulse 1s ease-in-out 3';
+                            setTimeout(function() {
+                                markerWrapper.style.animation = '';
+                            }, 3000);
+                        }
+                    }, 1200);
+                }
+            }
+        } catch (e) {
+            console.warn('Error showing Place on map:', e);
+        }
+    };
+
+    /**
      * Initialize Intersection Observer for scroll tracking
      * NOTE: With per-chapter maps, scroll tracking is not needed since each map
      * is independent and always shows its chapter's markers. This is kept for
@@ -2457,14 +2627,20 @@
      */
     function highlightActivePOI(poiElement) {
         const poiId = poiElement.getAttribute('data-poi-id');
+        const placeId = poiElement.getAttribute('data-place-id');
         
-        if (!poiId) return;
+        // Support both native POIs (data-poi-id) and Google Places (data-place-id)
+        if (!poiId && !placeId) return;
 
         // Add visual highlight to card
         poiElement.classList.add('poi-active-hover');
         
-        // Highlight corresponding marker on map using POI ID
-        highlightMarkerOnMap(poiId);
+        // Highlight corresponding marker on map
+        if (poiId) {
+            highlightMarkerOnMap(poiId);
+        } else if (placeId) {
+            highlightPlacesMarkerOnMap(placeId);
+        }
     }
 
     /**
@@ -2503,7 +2679,8 @@
             }
             
             // TASK 3: Reset label visibility based on zoom (unless force visible)
-            const label = wrapper.querySelector('.marker-label-poi');
+            // Support both native POI labels (.marker-label-poi) and Google Places labels (.marker-label-container)
+            const label = wrapper.querySelector('.marker-label-poi, .marker-label-container');
             if (label && !label.hasAttribute('data-force-visible')) {
                 // Find the map instance to get current zoom
                 const mapContainer = wrapper.closest('.chapter-map');
@@ -2552,6 +2729,48 @@
                 
                 // TASK 3: Show label on hover regardless of zoom
                 const label = wrapper.querySelector('.marker-label-poi');
+                if (label) {
+                    label.style.opacity = '1';
+                    label.style.visibility = 'visible';
+                    label.style.pointerEvents = 'auto';
+                    label.setAttribute('data-force-visible', 'true');
+                }
+            }
+        });
+    }
+
+    /**
+     * Highlight Google Places marker on map (hover effect)
+     * @param {string} placeId - The Google Places ID to highlight
+     */
+    function highlightPlacesMarkerOnMap(placeId) {
+        // Reset all POI markers first (not property markers)
+        resetAllMarkers();
+        
+        // Find and highlight the specific Google Places marker
+        markers.forEach(function(marker) {
+            const wrapper = marker.getElement();
+            if (!wrapper) return;
+            
+            // Skip property markers
+            if (wrapper.getAttribute('data-marker-type') === 'property') return;
+            
+            // Get place ID from data attribute
+            const markerPlaceId = wrapper.getAttribute('data-place-id');
+            const isActive = markerPlaceId === placeId;
+            
+            if (isActive) {
+                // Increase z-index for layering
+                wrapper.style.zIndex = '50';
+                
+                const circle = wrapper.querySelector('.marker-circle-container');
+                if (circle) {
+                    circle.style.transform = 'scale(1.15)';
+                    circle.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+                }
+                
+                // Show label on hover regardless of zoom
+                const label = wrapper.querySelector('.marker-label-container');
                 if (label) {
                     label.style.opacity = '1';
                     label.style.visibility = 'visible';
@@ -3057,13 +3276,20 @@
         
         // Now display the results after 2 seconds
         if (apiData && apiData.success && apiData.places.length > 0) {
+            console.log('[Google Places] Successfully fetched ' + apiData.places.length + ' places');
             displayDynamicBlockResults(block, chapterId, apiData);
+            
+            // Only set results-shown and hide button if display was successful
+            button.setAttribute('data-results-shown', 'true');
+            button.style.display = 'none';
+        } else {
+            // No results found - reset button to original state
+            console.warn('[Google Places] No places found, resetting button');
+            button.innerHTML = '';
+            button.textContent = 'Se flere ' + categoryNorwegian + ' i området';
+            button.disabled = false;
+            button.style.opacity = '1';
         }
-        
-        button.setAttribute('data-results-shown', 'true');
-        
-        // Hide button after results are shown
-        button.style.display = 'none';
     }
 
     /**
@@ -3127,10 +3353,13 @@
         const blockId = chapterId + '-' + category + '-' + keyword;
         
         // Fetch places
+        console.log('[fetchDynamicBlockData] Fetching places:', { blockId, lat, lng, category, radius, minRating, minReviews, keyword });
         const apiData = await fetchNearbyPlaces(blockId, lat, lng, category, radius, minRating, minReviews, keyword, excludeTypes, excludePlaceIds);
         
+        console.log('[fetchDynamicBlockData] API Response:', { success: apiData.success, count: apiData.places?.length || 0 });
+        
         if (!apiData.success || apiData.places.length === 0) {
-            console.warn('No places found for dynamic block:', block);
+            console.warn('[fetchDynamicBlockData] No places found for dynamic block');
             return null;
         }
         
@@ -3144,9 +3373,14 @@
      * @param {Object} apiData - API data with places
      */
     function displayDynamicBlockResults(block, chapterId, apiData) {
+        console.log('[displayDynamicBlockResults] Starting display with ' + apiData.places.length + ' places');
+        
         // Get chapter map
         const mapContainer = document.querySelector('.chapter-map[data-chapter-id="' + chapterId + '"]');
-        if (!mapContainer) return;
+        if (!mapContainer) {
+            console.error('[displayDynamicBlockResults] No map container found for chapter:', chapterId);
+            return;
+        }
         
         const mapInstance = mapContainer._mapboxInstance;
         if (!mapInstance) return;

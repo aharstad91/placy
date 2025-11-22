@@ -38,6 +38,10 @@ if ( ! $pois || empty( $pois ) ) {
         $entur_quay_id = get_field( 'entur_quay_id', $poi_id );
         $entur_transport_mode = get_field( 'entur_transport_mode', $poi_id );
         $show_live_departures = get_field( 'show_live_departures', $poi_id );
+        
+        // Get Bysykkel integration data
+        $bysykkel_station_id = get_field( 'bysykkel_station_id', $poi_id );
+        $show_bike_availability = get_field( 'show_bike_availability', $poi_id );
     ?>
     
     <article class="poi-list-item poi-gallery-item overflow-hidden border-gray-200 border rounded-lg" 

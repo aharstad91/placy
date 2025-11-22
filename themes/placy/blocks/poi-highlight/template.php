@@ -134,14 +134,12 @@ $show_bike_availability = get_field( 'show_bike_availability', $poi_id );
             </div>
         <?php endif; ?>
         
-        <?php if ( $walking_time ) : ?>
-            <div class="flex items-center gap-2 mb-4 text-gray-600">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-                <span class="text-sm font-medium"><?php echo esc_html( $walking_time ); ?> min gange</span>
-            </div>
-        <?php endif; ?>
+        <div class="poi-travel-time flex items-center gap-2 mb-4 text-gray-600" style="display: none;" data-default-time="<?php echo esc_attr( $walking_time ); ?>">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+            <span class="poi-travel-time-text text-sm font-medium"></span>
+        </div>
         
         <div class="poi-highlight-text prose prose-lg max-w-none">
             <?php echo wp_kses_post( $content ); ?>

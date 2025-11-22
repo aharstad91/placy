@@ -81,12 +81,13 @@ function placy_enqueue_scripts() {
     if ( is_singular( 'theme-story' ) ) {
         wp_enqueue_style( 'placy-tema-story', get_template_directory_uri() . '/css/tema-story.css', array(), '1.0.0' );
         wp_enqueue_style( 'placy-chapter-wrapper', get_template_directory_uri() . '/blocks/chapter-wrapper/style.css', array(), '1.0.0' );
-        wp_enqueue_script( 'placy-tema-story-map', get_template_directory_uri() . '/js/tema-story-map-multi.js', array( 'mapbox-gl-js' ), '2.3.0', true );
+        wp_enqueue_script( 'placy-tema-story-map', get_template_directory_uri() . '/js/tema-story-map-multi.js', array( 'mapbox-gl-js' ), '2.3.2', true );
         wp_enqueue_script( 'placy-chapter-nav', get_template_directory_uri() . '/js/chapter-nav.js', array(), '1.0.0', true );
         wp_enqueue_script( 'placy-chapter-header', get_template_directory_uri() . '/js/chapter-header.js', array(), '1.0.0', true );
         wp_enqueue_script( 'placy-intro-parallax', get_template_directory_uri() . '/js/intro-parallax.js', array(), '1.0.0', true );
         wp_enqueue_script( 'placy-container-gradient', get_template_directory_uri() . '/js/container-gradient.js', array(), '1.0.0', true );
         wp_enqueue_script( 'placy-scroll-indicator', get_template_directory_uri() . '/js/scroll-indicator.js', array(), '1.0.0', true );
+        wp_enqueue_script( 'placy-proximity-filter', get_template_directory_uri() . '/js/proximity-filter.js', array(), '2.0.0', true );
         wp_enqueue_script( 'placy-entur-live-departures', get_template_directory_uri() . '/js/entur-live-departures.js', array(), '1.0.0', true );
         wp_enqueue_script( 'placy-bysykkel-live-availability', get_template_directory_uri() . '/js/bysykkel-live-availability.js', array(), '1.0.0', true );
         
@@ -128,6 +129,7 @@ function placy_enqueue_scripts() {
         // Pass Mapbox token and start location to the script
         wp_localize_script( 'placy-tema-story-map', 'placyMapConfig', array(
             'mapboxToken' => placy_get_mapbox_token(),
+            'googlePlacesApiKey' => defined( 'GOOGLE_PLACES_API_KEY' ) ? GOOGLE_PLACES_API_KEY : '',
             'startLocation' => $start_location,
             'propertyLogo' => $property_logo,
             'propertyBackground' => $property_background,
@@ -230,6 +232,7 @@ function placy_enqueue_block_assets() {
         'poi-highlight'     => '/blocks/poi-highlight/style.css',
         'poi-gallery'       => '/blocks/poi-gallery/style.css',
         'image-column'      => '/blocks/image-column/style.css',
+        'proximity-filter'  => '/blocks/proximity-filter/style.css',
     );
     
     // Enqueue all block styles
@@ -334,6 +337,22 @@ function placy_register_acf_blocks() {
                 'anchor' => true,
             ),
         ) );
+        
+        // Register Proximity Filter block
+        acf_register_block_type( array(
+            'name'              => 'proximity-filter',
+            'title'             => __( 'Proximity Filter', 'placy' ),
+            'description'       => __( 'Filter POIs based on travel time and mode', 'placy' ),
+            'render_template'   => get_template_directory() . '/blocks/proximity-filter/template.php',
+            'category'          => 'placy-content',
+            'icon'              => 'location',
+            'keywords'          => array( 'proximity', 'filter', 'time', 'distance' ),
+            'mode'              => 'preview',
+            'supports'          => array(
+                'align' => false,
+                'anchor' => true,
+            ),
+        ) );
     }
 }
 add_action( 'acf/init', 'placy_register_acf_blocks' );
@@ -386,7 +405,8 @@ function placy_block_editor_styles() {
         'poi-list-dynamic',
         'poi-highlight',
         'poi-gallery',
-        'image-column'
+        'image-column',
+        'proximity-filter'
     );
     
     foreach ( $blocks as $block ) {

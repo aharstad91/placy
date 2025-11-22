@@ -87,6 +87,24 @@ if ( function_exists( 'acf_add_local_field_group' ) ) {
                 'required' => 0,
                 'placeholder' => 'Eiendommens navn',
             ),
+            array(
+                'key' => 'field_project_address',
+                'label' => 'Prosjektadresse',
+                'name' => 'project_address',
+                'type' => 'text',
+                'instructions' => 'Full adresse til prosjektet (brukes for proximity filter)',
+                'required' => 0,
+                'placeholder' => 'Kongens gate 1, 7011 Trondheim',
+            ),
+            array(
+                'key' => 'field_project_coordinates',
+                'label' => 'Prosjektkoordinater',
+                'name' => 'project_coordinates',
+                'type' => 'text',
+                'instructions' => 'Koordinater i lat,lng format (f.eks. 63.4305,10.3951). Brukes for proximity filter.',
+                'required' => 0,
+                'placeholder' => '63.4305,10.3951',
+            ),
         ),
         'location' => array(
             array(
@@ -204,6 +222,53 @@ if ( function_exists( 'acf_add_local_field_group' ) ) {
                 'instructions' => 'Google Place ID for dette stedet (f.eks. ChIJN1t_tDeuEmsRUsoyG83frY4). Brukes til å hente rating og anmeldelser fra Google. Finn Place ID på: https://developers.google.com/maps/documentation/places/web-service/place-id',
                 'required' => 0,
                 'placeholder' => 'ChIJN1t_tDeuEmsRUsoyG83frY4',
+            ),
+            array(
+                'key' => 'field_point_cached_walk_time',
+                'label' => 'Cached Walk Time',
+                'name' => 'cached_walk_time',
+                'type' => 'number',
+                'instructions' => 'Cached walking time in minutes (auto-filled by proximity filter)',
+                'required' => 0,
+                'readonly' => 1,
+            ),
+            array(
+                'key' => 'field_point_cached_bike_time',
+                'label' => 'Cached Bike Time',
+                'name' => 'cached_bike_time',
+                'type' => 'number',
+                'instructions' => 'Cached biking time in minutes (auto-filled by proximity filter)',
+                'required' => 0,
+                'readonly' => 1,
+            ),
+            array(
+                'key' => 'field_point_cached_drive_time',
+                'label' => 'Cached Drive Time',
+                'name' => 'cached_drive_time',
+                'type' => 'number',
+                'instructions' => 'Cached driving time in minutes (auto-filled by proximity filter)',
+                'required' => 0,
+                'readonly' => 1,
+            ),
+            array(
+                'key' => 'field_point_cache_timestamp',
+                'label' => 'Cache Timestamp',
+                'name' => 'cache_timestamp',
+                'type' => 'date_time_picker',
+                'instructions' => 'Last updated timestamp for cached times',
+                'required' => 0,
+                'readonly' => 1,
+                'display_format' => 'd/m/Y H:i',
+                'return_format' => 'Y-m-d H:i:s',
+            ),
+            array(
+                'key' => 'field_point_cache_from_coordinates',
+                'label' => 'Cache From Coordinates',
+                'name' => 'cache_from_coordinates',
+                'type' => 'text',
+                'instructions' => 'Coordinates cache was calculated from (for validation)',
+                'required' => 0,
+                'readonly' => 1,
             ),
         ),
         'location' => array(
@@ -734,6 +799,66 @@ if ( function_exists( 'acf_add_local_field_group' ) ) {
                     'param' => 'block',
                     'operator' => '==',
                     'value' => 'acf/poi-gallery',
+                ),
+            ),
+        ),
+        'menu_order' => 0,
+        'position' => 'normal',
+        'style' => 'default',
+        'label_placement' => 'top',
+        'instruction_placement' => 'label',
+    ) );
+}
+
+/**
+ * Register Proximity Filter Block Fields
+ */
+if ( function_exists( 'acf_add_local_field_group' ) ) {
+    acf_add_local_field_group( array(
+        'key' => 'group_proximity_filter_block',
+        'title' => 'Proximity Filter Block Fields',
+        'fields' => array(
+            array(
+                'key' => 'field_proximity_default_time',
+                'label' => 'Default Time',
+                'name' => 'default_time',
+                'type' => 'select',
+                'instructions' => 'Default reisetid ved lasting',
+                'required' => 1,
+                'choices' => array(
+                    '10' => '10 minutter',
+                    '20' => '20 minutter',
+                    '30' => '30 minutter',
+                ),
+                'default_value' => '10',
+                'allow_null' => 0,
+                'ui' => 1,
+                'return_format' => 'value',
+            ),
+            array(
+                'key' => 'field_proximity_default_mode',
+                'label' => 'Default Mode',
+                'name' => 'default_mode',
+                'type' => 'select',
+                'instructions' => 'Default transportmiddel ved lasting',
+                'required' => 1,
+                'choices' => array(
+                    'walk' => 'Gange',
+                    'bike' => 'Sykkel',
+                    'drive' => 'Bil',
+                ),
+                'default_value' => 'walk',
+                'allow_null' => 0,
+                'ui' => 1,
+                'return_format' => 'value',
+            ),
+        ),
+        'location' => array(
+            array(
+                array(
+                    'param' => 'block',
+                    'operator' => '==',
+                    'value' => 'acf/proximity-filter',
                 ),
             ),
         ),

@@ -241,7 +241,7 @@ function placy_register_places_api_endpoints() {
                 'required' => false,
                 'type' => 'integer',
                 'description' => 'Minimum number of reviews',
-                'default' => 50,
+                'default' => 20,
             ),
             'excludeTypes' => array(
                 'required' => false,

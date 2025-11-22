@@ -21,6 +21,7 @@
         'acf/poi-highlight',
         'acf/poi-gallery',
         'acf/image-column',
+        'acf/proximity-filter',
     ];
 
     // Template for new chapters
@@ -105,7 +106,14 @@
             const { 
                 chapterId, 
                 chapterAnchor, 
-                chapterTitle
+                chapterTitle,
+                placesEnabled,
+                placesCategory,
+                placesKeyword,
+                placesRadius,
+                placesMinRating,
+                placesMinReviews,
+                placesExcludeTypes
             } = attributes;
             
             // Auto-generate chapter ID on first render if not set
@@ -187,6 +195,72 @@
                                     setAttributes({ chapterTitle: value });
                                 },
                                 placeholder: 'Michelin & Fine Dining',
+                            })
+                        ),
+                        el(
+                            PanelBody,
+                            { title: 'Google Places API Innstillinger', initialOpen: false },
+                            el(ToggleControl, {
+                                label: 'Aktiver Google Places API',
+                                help: 'Vis dynamiske steder fra Google Places API',
+                                checked: placesEnabled,
+                                onChange: function (value) {
+                                    setAttributes({ placesEnabled: value });
+                                }
+                            }),
+                            placesEnabled && el(SelectControl, {
+                                label: 'Kategori',
+                                value: placesCategory,
+                                options: [
+                                    { label: 'Restaurant', value: 'restaurant' },
+                                    { label: 'Cafe', value: 'cafe' },
+                                    { label: 'Bar', value: 'bar' },
+                                    { label: 'Bakery', value: 'bakery' },
+                                    { label: 'Museum', value: 'museum' },
+                                    { label: 'Tourist Attraction', value: 'tourist_attraction' },
+                                ],
+                                onChange: function (value) {
+                                    setAttributes({ placesCategory: value });
+                                }
+                            }),
+                            placesEnabled && el(TextControl, {
+                                label: 'Søkeord (keyword)',
+                                help: 'F.eks. "fine dining", "seafood", "michelin" - forbedrer søkeresultatene',
+                                value: placesKeyword,
+                                onChange: function (value) {
+                                    setAttributes({ placesKeyword: value });
+                                },
+                                placeholder: 'fine dining'
+                            }),
+                            placesEnabled && el(RangeControl, {
+                                label: 'Søkeradius (meter)',
+                                value: placesRadius,
+                                onChange: function (value) {
+                                    setAttributes({ placesRadius: value });
+                                },
+                                min: 500,
+                                max: 5000,
+                                step: 100
+                            }),
+                            placesEnabled && el(RangeControl, {
+                                label: 'Minimum Rating',
+                                value: placesMinRating,
+                                onChange: function (value) {
+                                    setAttributes({ placesMinRating: value });
+                                },
+                                min: 0,
+                                max: 5,
+                                step: 0.1
+                            }),
+                            placesEnabled && el(RangeControl, {
+                                label: 'Minimum Antall Anmeldelser',
+                                value: placesMinReviews,
+                                onChange: function (value) {
+                                    setAttributes({ placesMinReviews: value });
+                                },
+                                min: 0,
+                                max: 500,
+                                step: 10
                             })
                         )
                     ),
