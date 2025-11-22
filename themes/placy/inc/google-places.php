@@ -449,12 +449,19 @@ function placy_places_nearby_search( $request ) {
         // Get price level
         $price_level = isset( $place['price_level'] ) ? intval( $place['price_level'] ) : null;
         
+        // Build Google Maps URL
+        $google_maps_url = '';
+        if ( ! empty( $place_id ) ) {
+            $google_maps_url = 'https://www.google.com/maps/place/?q=place_id:' . $place_id;
+        }
+        
         // Transform to structured format
         $places[] = array(
             'name' => isset( $place['name'] ) ? $place['name'] : '',
             'placeId' => isset( $place['place_id'] ) ? $place['place_id'] : '',
             'rating' => $rating,
             'userRatingsTotal' => $review_count,
+            'url' => $google_maps_url,
             'vicinity' => isset( $place['vicinity'] ) ? $place['vicinity'] : '',
             'coordinates' => array(
                 'lat' => isset( $place['geometry']['location']['lat'] ) ? $place['geometry']['location']['lat'] : 0,
