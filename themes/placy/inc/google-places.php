@@ -44,7 +44,7 @@ function placy_get_place_details( $place_id ) {
     $response = wp_remote_get( $url, array(
         'headers' => array(
             'X-Goog-Api-Key' => $api_key,
-            'X-Goog-FieldMask' => 'displayName,rating,userRatingCount,googleMapsUri',
+            'X-Goog-FieldMask' => 'displayName,rating,userRatingCount,googleMapsUri,photos',
         ),
         'timeout' => 10,
     ) );
@@ -70,12 +70,22 @@ function placy_get_place_details( $place_id ) {
         return null;
     }
 
+    // Extract photo reference if available
+    $photo_reference = null;
+    if ( isset( $data['photos'] ) && is_array( $data['photos'] ) && ! empty( $data['photos'] ) ) {
+        $first_photo = $data['photos'][0];
+        if ( isset( $first_photo['name'] ) ) {
+            $photo_reference = $first_photo['name'];
+        }
+    }
+    
     // Extract relevant data
     $place_data = array(
         'name' => isset( $data['displayName']['text'] ) ? $data['displayName']['text'] : '',
         'rating' => isset( $data['rating'] ) ? floatval( $data['rating'] ) : null,
         'review_count' => isset( $data['userRatingCount'] ) ? intval( $data['userRatingCount'] ) : null,
         'google_maps_url' => isset( $data['googleMapsUri'] ) ? $data['googleMapsUri'] : '',
+        'photo_reference' => $photo_reference,
     );
 
     // Cache for 24 hours

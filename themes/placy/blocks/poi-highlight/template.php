@@ -3,30 +3,93 @@
  * POI Highlight Block Template
  * 
  * Displays a single POI with prominent hero-style layout
+ *
+ * @param array $block The block settings and attributes.
+ * @param string $content The block inner HTML (empty).
+ * @param bool $is_preview True during AJAX preview.
+ * @param int|string $post_id The post ID this block is saved to.
  */
 
 // Get the selected POI
 $poi = get_field('poi_item');
 
+// Debug: log what we get
+if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+    error_log( 'POI Highlight Block - POI Data: ' . print_r( $poi, true ) );
+}
+
 if ( ! $poi ) {
-    echo '<p style="padding: 20px; background: #f0f0f0; text-align: center;">Please select a POI in block settings</p>';
+    if ( is_admin() ) {
+        echo '<p style="padding: 20px; background: #f0f0f0; text-align: center;">Please select a POI in block settings</p>';
+    } else {
+        echo '<!-- POI Highlight: No POI selected -->';
+    }
     return;
 }
 
 // Get POI data
 $poi_id = $poi->ID;
 $title = get_the_title( $poi_id );
-$content = apply_filters( 'the_content', get_post_field( 'post_content', $poi_id ) );
+
+// Get editorial text if available, otherwise use post content
+$editorial_text = get_field( 'editorial_text', $poi_id );
+$content = $editorial_text ? $editorial_text : apply_filters( 'the_content', get_post_field( 'post_content', $poi_id ) );
+
 $featured_image = get_the_post_thumbnail_url( $poi_id, 'large' );
 $secondary_image = get_field( 'secondary_image', $poi_id );
 
-// Get coordinates for map syncing
-$lat = get_field( 'latitude', $poi_id );
-$lng = get_field( 'longitude', $poi_id );
+// Get coordinates for map syncing (works for both Native and Google Points)
 $coords = '';
+$lat = null;
+$lng = null;
+$post_type = get_post_type( $poi_id );
 
-if ( $lat && $lng ) {
-    $coords = sprintf( '[%s,%s]', esc_attr( $lat ), esc_attr( $lng ) );
+// Google Points: get from cached nearby_search data
+if ( $post_type === 'placy_google_point' ) {
+    // Use get_post_meta to avoid ACF double-escaping
+    $cache = get_post_meta( $poi_id, 'nearby_search_cache', true );
+    
+    if ( is_array( $cache ) ) {
+        $data = $cache;
+    } else if ( ! empty( $cache ) ) {
+        // Clean up: remove HTML entities, escaped slashes, and trailing garbage
+        $cache = html_entity_decode( $cache, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+        $cache = stripslashes( $cache );
+        $cache = rtrim( $cache, "%\x00\x1F" ); // Remove trailing % and control characters
+        $data = json_decode( $cache, true );
+    } else {
+        $data = null;
+    }
+    
+    // Try geometry.lat/lng first (from Nearby Search API)
+    if ( isset( $data['geometry']['lat'], $data['geometry']['lng'] ) ) {
+        $lat = $data['geometry']['lat'];
+        $lng = $data['geometry']['lng'];
+        $coords = sprintf( '[%s,%s]', esc_attr( $lat ), esc_attr( $lng ) );
+    }
+    // Fallback: try location.lat/lng
+    elseif ( isset( $data['location']['lat'], $data['location']['lng'] ) ) {
+        $lat = $data['location']['lat'];
+        $lng = $data['location']['lng'];
+        $coords = sprintf( '[%s,%s]', esc_attr( $lat ), esc_attr( $lng ) );
+    }
+} elseif ( $post_type === 'placy_native_point' ) {
+    // Native Point: coordinates field or separate lat/lng
+    $coords_field = get_field( 'coordinates', $poi_id );
+    
+    if ( $coords_field && isset( $coords_field['latitude'], $coords_field['longitude'] ) ) {
+        $lat = $coords_field['latitude'];
+        $lng = $coords_field['longitude'];
+        $coords = sprintf( '[%s,%s]', esc_attr( $lat ), esc_attr( $lng ) );
+    } else {
+        // Fallback: separate fields
+        $lat = get_field( 'latitude', $poi_id );
+        $lng = get_field( 'longitude', $poi_id );
+        
+        if ( $lat && $lng ) {
+            $coords = sprintf( '[%s,%s]', esc_attr( $lat ), esc_attr( $lng ) );
+        }
+    }
 }
 
 // Get walking time if available
@@ -51,7 +114,16 @@ $show_bike_availability = get_field( 'show_bike_availability', $poi_id );
             if ( $google_place_id ) : 
          ?>
             data-google-place-id="<?php echo esc_attr( $google_place_id ); ?>"
-         <?php endif; ?>
+         <?php 
+                // Get photo reference for Google Points
+                $place_data_for_photo_hl = placy_get_poi_place_data( $poi_id );
+                if ( $place_data_for_photo_hl && ! empty( $place_data_for_photo_hl['photo_reference'] ) ) :
+         ?>
+            data-google-photo-reference="<?php echo esc_attr( $place_data_for_photo_hl['photo_reference'] ); ?>"
+         <?php 
+                endif;
+            endif; 
+         ?>
          <?php if ( $coords ) : ?>
             data-poi-coords="<?php echo $coords; ?>"
          <?php endif; ?>
@@ -91,6 +163,16 @@ $show_bike_availability = get_field( 'show_bike_availability', $poi_id );
         <!-- Single featured image (full width) -->
         <div class="poi-highlight-image mb-6 rounded-lg overflow-hidden">
             <img src="<?php echo esc_url( $featured_image ); ?>" 
+                 alt="<?php echo esc_attr( $title ); ?>"
+                 class="w-full h-64 object-cover">
+        </div>
+    <?php elseif ( isset( $place_data_for_photo_hl ) && ! empty( $place_data_for_photo_hl['photo_reference'] ) ) : ?>
+        <!-- Google Places photo if no featured image -->
+        <?php 
+            $photo_url_hl = 'https://places.googleapis.com/v1/' . $place_data_for_photo_hl['photo_reference'] . '/media?maxWidthPx=1200&key=' . ( defined( 'GOOGLE_PLACES_API_KEY' ) ? GOOGLE_PLACES_API_KEY : '' );
+        ?>
+        <div class="poi-highlight-image mb-6 rounded-lg overflow-hidden">
+            <img src="<?php echo esc_url( $photo_url_hl ); ?>" 
                  alt="<?php echo esc_attr( $title ); ?>"
                  class="w-full h-64 object-cover">
         </div>
@@ -160,8 +242,8 @@ $show_bike_availability = get_field( 'show_bike_availability', $poi_id );
         
         <div class="poi-button-container mt-6 flex items-center gap-2">
             <button onclick="showPOIOnMap(this)" 
-                    class="inline-flex items-center gap-2 px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    class="inline-flex items-center gap-2 px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>

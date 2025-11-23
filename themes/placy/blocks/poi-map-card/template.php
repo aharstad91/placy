@@ -24,11 +24,15 @@ $point_data = array();
 if ( $selected_points ) {
     foreach ( $selected_points as $point_post ) {
         $point_id = $point_post->ID;
-        $lat = get_field('latitude', $point_id);
-        $lng = get_field('longitude', $point_id);
+        
+        // Get coordinates (works for both Native and Google Points)
+        $poi_coords = placy_get_poi_coordinates( $point_id );
         $thumbnail = get_the_post_thumbnail_url($point_id, 'medium');
         
-        if ( $lat && $lng ) {
+        if ( $poi_coords ) {
+            $lat = $poi_coords['lat'];
+            $lng = $poi_coords['lng'];
+            
             $point_data[] = array(
                 'id' => $point_id,
                 'slug' => $point_post->post_name,

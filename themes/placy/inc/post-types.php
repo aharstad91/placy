@@ -129,43 +129,170 @@ function placy_register_story_post_type() {
 add_action( 'init', 'placy_register_story_post_type' );
 
 /**
- * Register Point Post Type
+ * Register Native Point Post Type
  */
-function placy_register_point_post_type() {
+function placy_register_native_point_post_type() {
     $labels = array(
-        'name'                  => 'Points',
-        'singular_name'         => 'Point',
-        'menu_name'             => 'Points',
-        'add_new'               => 'Legg til ny',
-        'add_new_item'          => 'Legg til ny Point',
-        'edit_item'             => 'Rediger Point',
-        'new_item'              => 'Ny Point',
-        'view_item'             => 'Vis Point',
-        'search_items'          => 'Søk Points',
-        'not_found'             => 'Ingen Points funnet',
-        'not_found_in_trash'    => 'Ingen Points funnet i papirkurv',
+        'name'                  => 'Native Points',
+        'singular_name'         => 'Native Point',
+        'menu_name'             => 'Native Points',
+        'add_new'               => 'Add Native Point',
+        'add_new_item'          => 'Add New Native Point',
+        'edit_item'             => 'Edit Native Point',
+        'new_item'              => 'New Native Point',
+        'view_item'             => 'View Native Point',
+        'search_items'          => 'Search Native Points',
+        'not_found'             => 'No native points found',
+        'not_found_in_trash'    => 'No native points found in trash',
     );
 
     $args = array(
         'labels'                => $labels,
         'public'                => true,
-        'has_archive'           => true,
+        'has_archive'           => false,
         'publicly_queryable'    => true,
         'show_ui'               => true,
         'show_in_menu'          => true,
         'query_var'             => true,
-        'rewrite'               => array( 'slug' => 'point' ),
+        'rewrite'               => array( 'slug' => 'native-points' ),
         'capability_type'       => 'post',
         'hierarchical'          => false,
         'menu_position'         => 23,
         'menu_icon'             => 'dashicons-location-alt',
-        'supports'              => array( 'title', 'editor', 'thumbnail', 'excerpt' ),
+        'supports'              => array( 'title', 'editor', 'thumbnail' ),
         'show_in_rest'          => true,
+        'show_in_graphql'       => true,
+        'graphql_single_name'   => 'NativePoint',
+        'graphql_plural_name'   => 'NativePoints',
     );
 
-    register_post_type( 'point', $args );
+    register_post_type( 'placy_native_point', $args );
 }
-add_action( 'init', 'placy_register_point_post_type' );
+add_action( 'init', 'placy_register_native_point_post_type' );
+
+/**
+ * Register Google Point Post Type
+ */
+function placy_register_google_point_post_type() {
+    $labels = array(
+        'name'                  => 'Google Points',
+        'singular_name'         => 'Google Point',
+        'menu_name'             => 'Google Points',
+        'add_new'               => 'Add Google Point',
+        'add_new_item'          => 'Add New Google Point',
+        'edit_item'             => 'Edit Google Point',
+        'new_item'              => 'New Google Point',
+        'view_item'             => 'View Google Point',
+        'search_items'          => 'Search Google Points',
+        'not_found'             => 'No google points found',
+        'not_found_in_trash'    => 'No google points found in trash',
+    );
+
+    $args = array(
+        'labels'                => $labels,
+        'public'                => true,
+        'has_archive'           => false,
+        'publicly_queryable'    => true,
+        'show_ui'               => true,
+        'show_in_menu'          => true,
+        'query_var'             => true,
+        'rewrite'               => array( 'slug' => 'google-points' ),
+        'capability_type'       => 'post',
+        'hierarchical'          => false,
+        'menu_position'         => 24,
+        'menu_icon'             => 'dashicons-location',
+        'supports'              => array( 'title' ),
+        'show_in_rest'          => true,
+        'show_in_graphql'       => true,
+        'graphql_single_name'   => 'GooglePoint',
+        'graphql_plural_name'   => 'GooglePoints',
+    );
+
+    register_post_type( 'placy_google_point', $args );
+}
+add_action( 'init', 'placy_register_google_point_post_type' );
+
+/**
+ * Optimize Google Points admin list performance
+ */
+function placy_optimize_google_points_admin( $query ) {
+    if ( ! is_admin() || ! $query->is_main_query() ) {
+        return;
+    }
+    
+    // Limit posts per page for Google Points admin screen
+    if ( $query->get('post_type') === 'placy_google_point' ) {
+        $query->set( 'posts_per_page', 50 ); // Limit to 50 per page
+        $query->set( 'no_found_rows', false ); // Enable pagination
+    }
+}
+add_action( 'pre_get_posts', 'placy_optimize_google_points_admin' );
+
+/**
+ * Add custom columns to Google Points admin list
+ */
+function placy_google_point_custom_columns( $columns ) {
+    $new_columns = array();
+    $new_columns['cb'] = $columns['cb'];
+    $new_columns['title'] = $columns['title'];
+    $new_columns['rating'] = 'Rating';
+    $new_columns['project'] = 'Project';
+    $new_columns['date'] = $columns['date'];
+    return $new_columns;
+}
+add_filter( 'manage_placy_google_point_posts_columns', 'placy_google_point_custom_columns' );
+
+/**
+ * Populate custom columns
+ */
+function placy_google_point_custom_column_content( $column, $post_id ) {
+    switch ( $column ) {
+        case 'rating':
+            $rating = get_field( 'google_rating', $post_id );
+            $reviews = get_field( 'google_user_ratings_total', $post_id );
+            if ( $rating ) {
+                echo '⭐ ' . esc_html( $rating );
+                if ( $reviews ) {
+                    echo ' (' . esc_html( $reviews ) . ')';
+                }
+            } else {
+                echo '—';
+            }
+            break;
+        
+        case 'project':
+            $project = get_field( 'project', $post_id );
+            if ( $project ) {
+                echo '<a href="' . get_edit_post_link( $project->ID ) . '">' . esc_html( $project->post_title ) . '</a>';
+            } else {
+                echo '—';
+            }
+            break;
+    }
+}
+add_action( 'manage_placy_google_point_posts_custom_column', 'placy_google_point_custom_column_content', 10, 2 );
+
+/**
+ * Add database index for google_place_id for faster duplicate checking
+ * Run once on theme activation
+ */
+function placy_add_google_place_id_index() {
+    global $wpdb;
+    
+    // Check if index already exists
+    $index_exists = $wpdb->get_var(
+        "SHOW INDEX FROM {$wpdb->postmeta} WHERE Key_name = 'google_place_id_index'"
+    );
+    
+    if ( ! $index_exists ) {
+        // Add index on meta_key and meta_value for google_place_id lookups
+        $wpdb->query(
+            "ALTER TABLE {$wpdb->postmeta} 
+            ADD INDEX google_place_id_index (meta_key(50), meta_value(100))"
+        );
+    }
+}
+add_action( 'after_switch_theme', 'placy_add_google_place_id_index' );
 
 /**
  * Register Detail Post Type
@@ -285,50 +412,96 @@ function placy_register_theme_story_post_type() {
 add_action( 'init', 'placy_register_theme_story_post_type' );
 
 /**
- * Register Point Type Taxonomy
+ * Register Placy Taxonomies
  */
-function placy_register_point_type_taxonomy() {
-    $labels = array(
-        'name'                       => 'Point Typer',
-        'singular_name'              => 'Point Type',
-        'menu_name'                  => 'Point Typer',
-        'all_items'                  => 'Alle Point Typer',
-        'edit_item'                  => 'Rediger Point Type',
-        'view_item'                  => 'Vis Point Type',
-        'update_item'                => 'Oppdater Point Type',
-        'add_new_item'               => 'Legg til ny Point Type',
-        'new_item_name'              => 'Ny Point Type Navn',
-        'parent_item'                => 'Forelder Point Type',
-        'parent_item_colon'          => 'Forelder Point Type:',
-        'search_items'               => 'Søk Point Typer',
-        'popular_items'              => 'Populære Point Typer',
-        'separate_items_with_commas' => 'Separer Point Typer med komma',
-        'add_or_remove_items'        => 'Legg til eller fjern Point Typer',
-        'choose_from_most_used'      => 'Velg fra mest brukte Point Typer',
-        'not_found'                  => 'Ingen Point Typer funnet',
+function placy_register_point_taxonomies() {
+    $point_types = array( 'placy_native_point', 'placy_google_point' );
+    
+    // Categories
+    $cat_labels = array(
+        'name'                       => 'Categories',
+        'singular_name'              => 'Category',
+        'menu_name'                  => 'Categories',
+        'all_items'                  => 'All Categories',
+        'edit_item'                  => 'Edit Category',
+        'view_item'                  => 'View Category',
+        'update_item'                => 'Update Category',
+        'add_new_item'               => 'Add New Category',
+        'new_item_name'              => 'New Category Name',
+        'search_items'               => 'Search Categories',
+        'parent_item'                => 'Parent Category',
+        'parent_item_colon'          => 'Parent Category:',
+        'not_found'                  => 'No categories found',
     );
 
-    $args = array(
-        'labels'                => $labels,
-        'public'                => true,
-        'publicly_queryable'    => true,
-        'show_ui'               => true,
-        'show_in_menu'          => true,
-        'show_in_nav_menus'     => true,
-        'show_in_rest'          => true,
-        'show_tagcloud'         => true,
-        'show_in_quick_edit'    => true,
-        'show_admin_column'     => true,
+    register_taxonomy( 'placy_categories', $point_types, array(
+        'labels'                => $cat_labels,
         'hierarchical'          => true,
-        'query_var'             => true,
-        'rewrite'               => array( 
-            'slug' => 'point-type',
-            'with_front' => false,
-            'hierarchical' => true,
-        ),
+        'public'                => true,
+        'show_ui'               => true,
+        'show_admin_column'     => true,
+        'show_in_rest'          => true,
+        'show_in_graphql'       => true,
+        'graphql_single_name'   => 'PlacyCategory',
+        'graphql_plural_name'   => 'PlacyCategories',
+        'rewrite'               => array( 'slug' => 'poi-category' ),
+    ) );
+    
+    // Tags
+    $tag_labels = array(
+        'name'                       => 'Tags',
+        'singular_name'              => 'Tag',
+        'menu_name'                  => 'Tags',
+        'all_items'                  => 'All Tags',
+        'edit_item'                  => 'Edit Tag',
+        'view_item'                  => 'View Tag',
+        'update_item'                => 'Update Tag',
+        'add_new_item'               => 'Add New Tag',
+        'new_item_name'              => 'New Tag Name',
+        'search_items'               => 'Search Tags',
+        'not_found'                  => 'No tags found',
     );
 
-    register_taxonomy( 'point_type', array( 'point' ), $args );
+    register_taxonomy( 'placy_tags', $point_types, array(
+        'labels'                => $tag_labels,
+        'hierarchical'          => false,
+        'public'                => true,
+        'show_ui'               => true,
+        'show_admin_column'     => true,
+        'show_in_rest'          => true,
+        'show_in_graphql'       => true,
+        'graphql_single_name'   => 'PlacyTag',
+        'graphql_plural_name'   => 'PlacyTags',
+        'rewrite'               => array( 'slug' => 'poi-tag' ),
+    ) );
+    
+    // Lifestyle Segments
+    $lifestyle_labels = array(
+        'name'                       => 'Lifestyle Segments',
+        'singular_name'              => 'Lifestyle Segment',
+        'menu_name'                  => 'Lifestyle Segments',
+        'all_items'                  => 'All Lifestyle Segments',
+        'edit_item'                  => 'Edit Lifestyle Segment',
+        'view_item'                  => 'View Lifestyle Segment',
+        'update_item'                => 'Update Lifestyle Segment',
+        'add_new_item'               => 'Add New Lifestyle Segment',
+        'new_item_name'              => 'New Lifestyle Segment Name',
+        'search_items'               => 'Search Lifestyle Segments',
+        'not_found'                  => 'No lifestyle segments found',
+    );
+
+    register_taxonomy( 'lifestyle_segments', $point_types, array(
+        'labels'                => $lifestyle_labels,
+        'hierarchical'          => false,
+        'public'                => true,
+        'show_ui'               => true,
+        'show_admin_column'     => true,
+        'show_in_rest'          => true,
+        'show_in_graphql'       => true,
+        'graphql_single_name'   => 'LifestyleSegment',
+        'graphql_plural_name'   => 'LifestyleSegments',
+        'rewrite'               => array( 'slug' => 'lifestyle' ),
+    ) );
 }
-add_action( 'init', 'placy_register_point_type_taxonomy' );
+add_action( 'init', 'placy_register_point_taxonomies' );
 

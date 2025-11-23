@@ -501,7 +501,8 @@ if ( function_exists( 'acf_add_local_field_group' ) ) {
                 'instructions' => 'Velg hvilke Points som skal vises på kartet',
                 'required' => 1,
                 'post_type' => array(
-                    0 => 'point',
+                    0 => 'placy_native_point',
+                    1 => 'placy_google_point',
                 ),
                 'filters' => array(
                     0 => 'search',
@@ -549,7 +550,8 @@ if ( function_exists( 'acf_add_local_field_group' ) ) {
                 'instructions' => 'Velg hvilke POIs (Points) som skal vises i listen',
                 'required' => 1,
                 'post_type' => array(
-                    0 => 'point',
+                    0 => 'placy_native_point',
+                    1 => 'placy_google_point',
                 ),
                 'filters' => array(
                     0 => 'search',
@@ -739,7 +741,8 @@ if ( function_exists( 'acf_add_local_field_group' ) ) {
                 'instructions' => 'Velg ett POI som skal fremheves med stor layout',
                 'required' => 1,
                 'post_type' => array(
-                    0 => 'point',
+                    0 => 'placy_native_point',
+                    1 => 'placy_google_point',
                 ),
                 'allow_null' => 0,
                 'multiple' => 0,
@@ -772,6 +775,21 @@ if ( function_exists( 'acf_add_local_field_group' ) ) {
         'title' => 'POI Gallery Block Fields',
         'fields' => array(
             array(
+                'key' => 'field_poi_gallery_filter_category',
+                'label' => 'Filter by Category',
+                'name' => 'filter_category',
+                'type' => 'select',
+                'instructions' => 'Filtrer POIs på kategori (valgfritt)',
+                'required' => 0,
+                'choices' => array(),
+                'allow_null' => 1,
+                'multiple' => 0,
+                'ui' => 1,
+                'ajax' => 0,
+                'return_format' => 'value',
+                'placeholder' => 'Alle kategorier',
+            ),
+            array(
                 'key' => 'field_poi_gallery_pois',
                 'label' => 'Velg POIs',
                 'name' => 'poi_items',
@@ -779,12 +797,15 @@ if ( function_exists( 'acf_add_local_field_group' ) ) {
                 'instructions' => 'Velg POIs som skal vises i galleriet',
                 'required' => 1,
                 'post_type' => array(
-                    0 => 'point',
+                    0 => 'placy_native_point',
+                    1 => 'placy_google_point',
                 ),
                 'filters' => array(
                     0 => 'search',
                     1 => 'post_type',
+                    2 => 'taxonomy',
                 ),
+                'taxonomy' => 'placy_categories',
                 'return_format' => 'object',
                 'min' => 1,
                 'max' => '',
@@ -868,4 +889,27 @@ if ( function_exists( 'acf_add_local_field_group' ) ) {
         'label_placement' => 'top',
         'instruction_placement' => 'label',
     ) );
+}
+
+/**
+ * Populate POI Gallery category filter with actual categories
+ */
+add_filter( 'acf/load_field/name=filter_category', 'placy_populate_poi_gallery_categories' );
+function placy_populate_poi_gallery_categories( $field ) {
+    // Reset choices
+    $field['choices'] = array();
+    
+    // Get all terms
+    $terms = get_terms( array(
+        'taxonomy' => 'placy_categories',
+        'hide_empty' => false,
+    ) );
+    
+    if ( ! empty( $terms ) && ! is_wp_error( $terms ) ) {
+        foreach ( $terms as $term ) {
+            $field['choices'][ $term->term_id ] = $term->name;
+        }
+    }
+    
+    return $field;
 }

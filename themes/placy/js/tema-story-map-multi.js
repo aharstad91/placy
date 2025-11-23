@@ -28,7 +28,7 @@
             MEDIUM: { size: 48, minZoom: 15, maxZoom: 22 }
         },
         // Label collision detection - dynamic based on zoom
-        LABEL_COLLISION_ZOOM_START: 16,  // Start applying collision detection
+        LABEL_COLLISION_ZOOM_START: 15,  // Start applying collision detection (synced with marker size change)
         LABEL_COLLISION_ZOOM_END: 18,    // Full visibility at this zoom
         LABEL_MIN_DISTANCE: 140,         // Minimum pixel distance between labels
         LABEL_PRIORITY_DISTANCE: 100,    // Distance to check for nearby labels
@@ -52,7 +52,7 @@
     
     /**
      * Get photo URL from Google Places API
-     * @param {string} photoReference - Photo reference from Places API
+     * @param {string} photoReference - Photo reference from Places API (old or new format)
      * @param {number} maxWidth - Maximum width in pixels
      * @returns {string} Photo URL
      */
@@ -68,13 +68,20 @@
             return null;
         }
         
-        const params = new URLSearchParams({
-            maxwidth: maxWidth.toString(),
-            photo_reference: photoReference,
-            key: apiKey
-        });
-        
-        return 'https://maps.googleapis.com/maps/api/place/photo?' + params.toString();
+        // Check if this is the new API format (starts with "places/")
+        if (photoReference.startsWith('places/')) {
+            // New Places API (New) format: use the resource name directly
+            return `https://places.googleapis.com/v1/${photoReference}/media?maxWidthPx=${maxWidth}&key=${apiKey}`;
+        } else {
+            // Old API format: use photo_reference parameter
+            const params = new URLSearchParams({
+                maxwidth: maxWidth.toString(),
+                photo_reference: photoReference,
+                key: apiKey
+            });
+            
+            return 'https://maps.googleapis.com/maps/api/place/photo?' + params.toString();
+        }
     }
     let placesMarkers = []; // Store Google Places markers separately
     let showingApiResults = new Map(); // Track which chapters are showing API results
@@ -101,22 +108,22 @@
         const size = getMarkerSize(zoom);
         console.log('Current zoom level:', zoom, '| Marker size:', size + 'px');
         
-        // Update all POI markers
-        const allMarkers = document.querySelectorAll('.marker-circle-container');
-        allMarkers.forEach(function(circle) {
+        // Update all marker images (both old circular and new horizontal markers)
+        const allMarkers = document.querySelectorAll('.marker-circle-container, .marker-image-container');
+        allMarkers.forEach(function(imageEl) {
             // Only update if not currently scaled by hover/active
-            const wrapper = circle.closest('.tema-story-marker-wrapper');
+            const wrapper = imageEl.closest('.tema-story-marker-wrapper');
             const isActive = wrapper && wrapper.classList.contains('marker-active');
-            const currentTransform = circle.style.transform;
+            const currentTransform = imageEl.style.transform;
             
-            circle.style.width = size + 'px';
-            circle.style.height = size + 'px';
+            imageEl.style.width = size + 'px';
+            imageEl.style.height = size + 'px';
             
             // Preserve any scale transform
             if (currentTransform && currentTransform.includes('scale')) {
                 // Keep existing scale
             } else {
-                circle.style.transform = 'scale(1)';
+                imageEl.style.transform = 'scale(1)';
             }
         });
         
@@ -132,8 +139,8 @@
      * @param {number} zoom - Current zoom level
      */
     function updateLabelVisibility(zoom) {
-        // Get all POI labels (not Property labels)
-        const poiLabels = document.querySelectorAll('.marker-label-poi');
+        // Get all POI info cards (not Property labels)
+        const poiLabels = document.querySelectorAll('.marker-info-card, .marker-label-poi');
         
         // Calculate collision detection intensity based on zoom
         // Lower zoom = stricter spacing, higher zoom = more relaxed
@@ -451,10 +458,26 @@
         let markerIndex = 0;
 
         for (const item of poiItems) {
+            // Skip POI cards that are inside hidden dynamic results containers
+            const parentResults = item.closest('.poi-list-dynamic-results');
+            if (parentResults && parentResults.style.display === 'none') {
+                continue;
+            }
+            
             const coordsAttr = item.getAttribute('data-poi-coords');
             const poiId = item.getAttribute('data-poi-id');
             const title = item.getAttribute('data-poi-title');
-            const image = item.getAttribute('data-poi-image');
+            let image = item.getAttribute('data-poi-image');
+            
+            // Check if this is a Google Point and get photo from photo reference
+            const googlePlaceId = item.getAttribute('data-google-place-id');
+            if (googlePlaceId && !image) {
+                // Get photo reference directly from the item element
+                const photoRef = item.getAttribute('data-google-photo-reference');
+                if (photoRef) {
+                    image = getPhotoUrl(photoRef, 200);
+                }
+            }
 
             if (!coordsAttr) continue;
 
@@ -526,152 +549,156 @@
     
     /**
      * Add a marker for a POI to a specific map
-     * Snapchat-style circular marker with image + label
+     * Google Maps-style marker with image + info card
      */
     function addMarkerForPOI(mapInstance, poi, chapterId) {
-        // Create wrapper container (needed for proper Mapbox positioning)
+        // Create wrapper container - horizontal layout like Google Maps
         const wrapper = document.createElement('div');
         wrapper.className = 'tema-story-marker-wrapper';
         wrapper.style.display = 'flex';
-        wrapper.style.flexDirection = 'column';
+        wrapper.style.flexDirection = 'row';
         wrapper.style.alignItems = 'center';
-        wrapper.style.gap = '8px';
+        wrapper.style.gap = '10px';
         wrapper.style.cursor = 'pointer';
-        wrapper.style.zIndex = '10'; // TASK 2: Default POI z-index
+        wrapper.style.zIndex = '10';
+        wrapper.style.filter = 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))';
+        wrapper.style.transition = 'filter 0.2s ease';
         
         // Create circular image container with dynamic size
-        const initialSize = getMarkerSize(mapInstance.getZoom());
-        const circleContainer = document.createElement('div');
-        circleContainer.className = 'marker-circle-container';
-        circleContainer.style.width = initialSize + 'px';
-        circleContainer.style.height = initialSize + 'px';
-        circleContainer.style.borderRadius = '50%';
-        circleContainer.style.border = '3px solid white';
-        circleContainer.style.overflow = 'hidden';
-        circleContainer.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
-        circleContainer.style.transition = 'transform 0.3s ease, box-shadow 0.3s ease, width 0.3s ease, height 0.3s ease';
-        circleContainer.style.transformOrigin = 'center center';
+        const imageSize = getMarkerSize(mapInstance.getZoom());
+        const imageContainer = document.createElement('div');
+        imageContainer.className = 'marker-image-container';
+        imageContainer.style.width = imageSize + 'px';
+        imageContainer.style.height = imageSize + 'px';
+        imageContainer.style.borderRadius = '50%';
+        imageContainer.style.overflow = 'hidden';
+        imageContainer.style.border = '2px solid white';
+        imageContainer.style.flexShrink = '0';
+        imageContainer.style.transition = 'transform 0.2s ease, width 0.3s ease, height 0.3s ease';
+        imageContainer.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
         
         // Set image or gray background
         if (poi.image) {
-            circleContainer.style.backgroundImage = `url(${poi.image})`;
-            circleContainer.style.backgroundSize = 'cover';
-            circleContainer.style.backgroundPosition = 'center';
+            imageContainer.style.backgroundImage = `url(${poi.image})`;
+            imageContainer.style.backgroundSize = 'cover';
+            imageContainer.style.backgroundPosition = 'center';
         } else {
-            circleContainer.style.backgroundColor = '#9CA3AF'; // Gray background for missing images
+            imageContainer.style.backgroundColor = '#9CA3AF';
         }
         
-        // Create label container under circle
-        // TASK 3: POI labels with zoom-based visibility
-        const labelContainer = document.createElement('div');
-        labelContainer.className = 'marker-label-container marker-label-poi';
-        labelContainer.style.display = 'flex';
-        labelContainer.style.flexDirection = 'column';
-        labelContainer.style.alignItems = 'center';
-        labelContainer.style.gap = '2px';
-        labelContainer.style.maxWidth = '120px';
-        labelContainer.style.textAlign = 'center';
-        labelContainer.style.transition = 'opacity 0.3s ease, visibility 0.3s ease';
-        // Initial state based on zoom level (will be updated by updateLabelVisibility)
+        // Create info card (transparent background, two rows)
+        const infoCard = document.createElement('div');
+        infoCard.className = 'marker-info-card';
+        infoCard.style.display = 'flex';
+        infoCard.style.flexDirection = 'column';
+        infoCard.style.minWidth = '0';
+        infoCard.style.maxWidth = '140px';
+        infoCard.style.transition = 'opacity 0.4s ease, visibility 0.4s ease, transform 0.3s ease';
+        
+        // Initial state based on zoom level
         const currentZoom = mapInstance.getZoom();
         if (currentZoom < 15) {
-            labelContainer.style.opacity = '0';
-            labelContainer.style.visibility = 'hidden';
-            labelContainer.style.pointerEvents = 'none';
+            infoCard.style.opacity = '0';
+            infoCard.style.visibility = 'hidden';
+            infoCard.style.pointerEvents = 'none';
         } else {
-            labelContainer.style.opacity = '1';
-            labelContainer.style.visibility = 'visible';
-            labelContainer.style.pointerEvents = 'auto';
+            infoCard.style.opacity = '1';
+            infoCard.style.visibility = 'visible';
+            infoCard.style.pointerEvents = 'auto';
         }
         
-        // POI name
-        const nameLabel = document.createElement('div');
-        nameLabel.className = 'marker-name-label';
-        nameLabel.textContent = poi.title;
-        nameLabel.style.fontSize = '12px';
-        nameLabel.style.fontWeight = '600';
-        nameLabel.style.color = '#1a202c';
-        nameLabel.style.lineHeight = '1.2';
-        nameLabel.style.textShadow = '0 1px 2px rgba(255,255,255,0.8)';
-        nameLabel.style.whiteSpace = 'nowrap';
-        nameLabel.style.overflow = 'hidden';
-        nameLabel.style.textOverflow = 'ellipsis';
-        nameLabel.style.width = '100%';
-        labelContainer.appendChild(nameLabel);
+        // Row 1: POI name
+        const nameRow = document.createElement('div');
+        nameRow.className = 'marker-name-label';
+        nameRow.textContent = poi.title;
+        nameRow.style.fontSize = '13px';
+        nameRow.style.fontWeight = '600';
+        nameRow.style.color = '#1a202c';
+        nameRow.style.lineHeight = '1.3';
+        nameRow.style.whiteSpace = 'nowrap';
+        nameRow.style.overflow = 'hidden';
+        nameRow.style.textOverflow = 'ellipsis';
+        nameRow.style.marginBottom = '2px';
+        nameRow.style.textShadow = 'rgba(255, 255, 255, 0.9) 1px 1px 1px, rgba(255, 255, 255, 0.8) 0px 0px 8px';
+        infoCard.appendChild(nameRow);
         
-        // Rating row (if available)
+        // Row 2: Rating + Distance
+        const metaRow = document.createElement('div');
+        metaRow.style.display = 'flex';
+        metaRow.style.alignItems = 'center';
+        metaRow.style.gap = '10px';
+        metaRow.style.fontSize = '11px';
+        metaRow.style.color = '#6B7280';
+        
+        // Rating (if available)
         if (poi.rating) {
-            const ratingRow = document.createElement('div');
-            ratingRow.style.display = 'flex';
-            ratingRow.style.alignItems = 'center';
-            ratingRow.style.gap = '3px';
-            ratingRow.style.fontSize = '10px';
+            const ratingSpan = document.createElement('span');
+            ratingSpan.style.display = 'flex';
+            ratingSpan.style.alignItems = 'center';
+            ratingSpan.style.gap = '2px';
             
-            // Star
             const starSpan = document.createElement('span');
             starSpan.textContent = '★';
             starSpan.style.color = '#FBBC05';
-            starSpan.style.fontSize = '11px';
-            ratingRow.appendChild(starSpan);
+            starSpan.style.fontSize = '12px';
+            ratingSpan.appendChild(starSpan);
             
-            // Rating value
             const ratingValue = document.createElement('span');
             ratingValue.textContent = poi.rating.value.toFixed(1);
             ratingValue.style.fontWeight = '500';
             ratingValue.style.color = '#374151';
-            ratingValue.style.textShadow = '0 1px 2px rgba(255,255,255,0.8)';
-            ratingRow.appendChild(ratingValue);
+            ratingValue.style.textShadow = '0 1px 3px rgba(255,255,255,0.9), 0 0 8px rgba(255,255,255,0.8)';
+            ratingSpan.appendChild(ratingValue);
             
-            labelContainer.appendChild(ratingRow);
+            metaRow.appendChild(ratingSpan);
         }
         
-        // Walking time (if available)
+        // Distance (if available)
         if (poi.walking) {
-            const walkTimeLabel = document.createElement('div');
-            walkTimeLabel.textContent = formatDuration(poi.walking.duration);
-            walkTimeLabel.style.fontSize = '10px';
-            walkTimeLabel.style.fontWeight = '500';
-            walkTimeLabel.style.color = '#6B7280';
-            walkTimeLabel.style.textShadow = '0 1px 2px rgba(255,255,255,0.8)';
-            labelContainer.appendChild(walkTimeLabel);
+            const distanceSpan = document.createElement('span');
+            distanceSpan.textContent = formatDuration(poi.walking.duration);
+            distanceSpan.style.fontWeight = '500';
+            distanceSpan.style.textShadow = '0 1px 3px rgba(255,255,255,0.9), 0 0 8px rgba(255,255,255,0.8)';
+            metaRow.appendChild(distanceSpan);
         }
         
-        // Append elements to wrapper
-        wrapper.appendChild(circleContainer);
-        wrapper.appendChild(labelContainer);
+        infoCard.appendChild(metaRow);
+        
+        // Append image and info card to wrapper
+        wrapper.appendChild(imageContainer);
+        wrapper.appendChild(infoCard);
 
         // Store POI ID on wrapper
         wrapper.setAttribute('data-poi-id', poi.id);
         wrapper.setAttribute('data-chapter-id', chapterId);
-        wrapper.setAttribute('data-marker-type', 'poi'); // Not the property marker
+        wrapper.setAttribute('data-marker-type', 'poi');
 
-        // Hover effect - scale circle only, not wrapper
-        // TASK 3: Show label on hover even at low zoom
+        // Hover effect - scale image and show info card
         wrapper.addEventListener('mouseenter', function() {
             if (!wrapper.classList.contains('marker-active')) {
-                circleContainer.style.transform = 'scale(1.15)';
-                circleContainer.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
-                wrapper.style.zIndex = '50'; // TASK 2: Hover POI z-index
-                // Show label on hover regardless of zoom
-                labelContainer.style.opacity = '1';
-                labelContainer.style.visibility = 'visible';
-                labelContainer.style.pointerEvents = 'auto';
-                labelContainer.setAttribute('data-force-visible', 'true');
+                imageContainer.style.transform = 'scale(1.1)';
+                wrapper.style.zIndex = '50';
+                wrapper.style.filter = 'drop-shadow(0 4px 8px rgba(0,0,0,0.4))';
+                // Show info card on hover regardless of zoom
+                infoCard.style.opacity = '1';
+                infoCard.style.visibility = 'visible';
+                infoCard.style.pointerEvents = 'auto';
+                infoCard.setAttribute('data-force-visible', 'true');
             }
         });
         
         wrapper.addEventListener('mouseleave', function() {
             if (!wrapper.classList.contains('marker-active')) {
-                circleContainer.style.transform = 'scale(1)';
-                circleContainer.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
-                wrapper.style.zIndex = '10'; // TASK 2: Default POI z-index
-                // Hide label if zoom < 15 and not force visible
-                labelContainer.removeAttribute('data-force-visible');
+                imageContainer.style.transform = 'scale(1)';
+                wrapper.style.zIndex = '10';
+                wrapper.style.filter = 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))';
+                // Hide info card if zoom < 15 and not force visible
+                infoCard.removeAttribute('data-force-visible');
                 const currentZoom = mapInstance.getZoom();
                 if (currentZoom < 15) {
-                    labelContainer.style.opacity = '0';
-                    labelContainer.style.visibility = 'hidden';
-                    labelContainer.style.pointerEvents = 'none';
+                    infoCard.style.opacity = '0';
+                    infoCard.style.visibility = 'hidden';
+                    infoCard.style.pointerEvents = 'none';
                 }
             }
         });
@@ -683,35 +710,45 @@
             // Remove active state from all markers
             document.querySelectorAll('.tema-story-marker-wrapper[data-marker-type="poi"]').forEach(function(m) {
                 m.classList.remove('marker-active');
-                m.style.zIndex = '10'; // TASK 2: Default POI z-index
-                const circle = m.querySelector('.marker-circle-container');
-                if (circle) {
-                    circle.style.transform = 'scale(1)';
-                    circle.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
+                m.style.zIndex = '10';
+                m.style.filter = 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))';
+                const img = m.querySelector('.marker-image-container');
+                if (img) {
+                    img.style.transform = 'scale(1)';
                 }
-                // Hide label if zoom < 15 when deactivating
-                const label = m.querySelector('.marker-label-poi');
-                if (label && !label.hasAttribute('data-force-visible')) {
+                // Reset image container style if present
+                const imgContainer = m.querySelector('.marker-image-container');
+                if (imgContainer) {
+                    imgContainer.style.transform = 'scale(1)';
+                }
+                
+                // Reset filter for new style markers
+                if (m.querySelector('.marker-info-card')) {
+                    m.style.filter = 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))';
+                }
+                
+                // Hide info card if zoom < 15 when deactivating
+                const info = m.querySelector('.marker-info-card');
+                if (info && !info.hasAttribute('data-force-visible')) {
                     const currentZoom = mapInstance.getZoom();
                     if (currentZoom < 15) {
-                        label.style.opacity = '0';
-                        label.style.visibility = 'hidden';
-                        label.style.pointerEvents = 'none';
+                        info.style.opacity = '0';
+                        info.style.visibility = 'hidden';
+                        info.style.pointerEvents = 'none';
                     }
                 }
             });
             
             // Set this marker as active
-            // TASK 3: Active marker shows label and gets high z-index
             wrapper.classList.add('marker-active');
-            wrapper.style.zIndex = '100'; // TASK 2: Active POI z-index
-            circleContainer.style.transform = 'scale(1.25)';
-            circleContainer.style.boxShadow = '0 6px 16px rgba(0,0,0,0.4)';
-            // Force label visible when active
-            labelContainer.style.opacity = '1';
-            labelContainer.style.visibility = 'visible';
-            labelContainer.style.pointerEvents = 'auto';
-            labelContainer.setAttribute('data-force-visible', 'true');
+            wrapper.style.zIndex = '100';
+            wrapper.style.filter = 'drop-shadow(0 6px 16px rgba(0,0,0,0.5))';
+            imageContainer.style.transform = 'scale(1.15)';
+            // Force info card visible when active
+            infoCard.style.opacity = '1';
+            infoCard.style.visibility = 'visible';
+            infoCard.style.pointerEvents = 'auto';
+            infoCard.setAttribute('data-force-visible', 'true');
 
             // Fit bounds to show both start and POI
             if (startLocation) {
@@ -745,11 +782,11 @@
             }, 800);
         });
 
-        // Create Mapbox marker with center anchor (marker centers on coordinate)
+        // Create Mapbox marker with left anchor (image left edge on coordinate)
         const marker = new mapboxgl.Marker({
             element: wrapper,
-            anchor: 'center',
-            offset: [0, -10] // Offset up slightly so label doesn't overlap coordinate
+            anchor: 'left',
+            offset: [0, -25] // Offset up to center vertically on coordinate
         })
             .setLngLat(poi.coords)
             .addTo(mapInstance);
@@ -1122,7 +1159,8 @@
     }
 
     /**
-     * Fetch nearby places from Google Places API
+     * Fetch nearby places from Google Points CPT via WordPress REST endpoint
+     * Uses CPT query instead of live Google Places API for better performance and control
      * @param {string} chapterId - Chapter ID
      * @param {number} lat - Latitude
      * @param {number} lng - Longitude
@@ -1141,7 +1179,9 @@
         try {
             // Get WordPress REST API root from the link tag
             const restApiRoot = document.querySelector('link[rel="https://api.w.org/"]')?.href || '/wp-json/';
-            const url = new URL(restApiRoot + 'placy/v1/places/search', window.location.origin);
+            
+            // Use new CPT-based endpoint instead of live API
+            const url = new URL(restApiRoot + 'placy/v1/google-points/query', window.location.origin);
             url.searchParams.append('lat', lat);
             url.searchParams.append('lng', lng);
             url.searchParams.append('category', category);
@@ -1164,6 +1204,8 @@
                 url.searchParams.append('excludePlaceIds', JSON.stringify(excludePlaceIds));
             }
             
+            console.log('[fetchNearbyPlaces] Querying Google Points CPT:', url.toString());
+            
             const response = await fetch(url.toString());
             
             if (!response.ok) {
@@ -1172,12 +1214,18 @@
             
             const data = await response.json();
             
+            console.log('[fetchNearbyPlaces] CPT Query result:', {
+                success: data.success,
+                count: data.count,
+                source: data.source
+            });
+            
             // Cache the results
             placesApiResults.set(chapterId, data);
             
             return data;
         } catch (error) {
-            console.error('Error fetching nearby places:', error);
+            console.error('Error fetching nearby places from CPT:', error);
             return { success: false, count: 0, places: [] };
         }
     }
@@ -1216,134 +1264,145 @@
      */
     function addPlacesMarkersToMap(mapInstance, chapterId, places) {
         places.forEach(function(place) {
-            // Create marker wrapper
+            // Create marker wrapper - horizontal layout
             const wrapper = document.createElement('div');
             wrapper.className = 'tema-story-marker-wrapper places-api-marker';
             wrapper.style.display = 'flex';
-            wrapper.style.flexDirection = 'column';
+            wrapper.style.flexDirection = 'row';
             wrapper.style.alignItems = 'center';
-            wrapper.style.gap = '8px';
+            wrapper.style.gap = '10px';
             wrapper.style.cursor = 'pointer';
-            wrapper.style.zIndex = '5'; // Lower than POI markers
+            wrapper.style.zIndex = '5';
+            wrapper.style.filter = 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))';
+            wrapper.style.transition = 'filter 0.2s ease';
             wrapper.setAttribute('data-marker-type', 'places-api');
             wrapper.setAttribute('data-chapter-id', chapterId);
             wrapper.setAttribute('data-place-id', place.placeId);
             
-            // Create circular marker (smaller and red)
-            const initialSize = Math.max(24, getMarkerSize(mapInstance.getZoom()) * 0.6);
-            const circleContainer = document.createElement('div');
-            circleContainer.className = 'marker-circle-container';
-            circleContainer.style.width = initialSize + 'px';
-            circleContainer.style.height = initialSize + 'px';
-            circleContainer.style.borderRadius = '50%';
-            circleContainer.style.border = '2px solid white';
-            circleContainer.style.backgroundColor = '#EF4444'; // Red color
-            circleContainer.style.overflow = 'hidden';
-            circleContainer.style.boxShadow = '0 2px 6px rgba(0,0,0,0.2)';
-            circleContainer.style.transition = 'transform 0.3s ease, box-shadow 0.3s ease';
+            // Create circular image container with dynamic size (slightly smaller for Google Places)
+            const imageSize = Math.max(30, getMarkerSize(mapInstance.getZoom()) * 0.85);
+            const imageContainer = document.createElement('div');
+            imageContainer.className = 'marker-image-container';
+            imageContainer.style.width = imageSize + 'px';
+            imageContainer.style.height = imageSize + 'px';
+            imageContainer.style.borderRadius = '50%';
+            imageContainer.style.overflow = 'hidden';
+            imageContainer.style.border = '2px solid white';
+            imageContainer.style.flexShrink = '0';
+            imageContainer.style.transition = 'transform 0.2s ease, width 0.3s ease, height 0.3s ease';
+            imageContainer.style.backgroundColor = '#EF4444';
+            imageContainer.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
             
             // Add photo or icon
             if (place.photoReference) {
                 const photoUrl = getPhotoUrl(place.photoReference, 100);
                 if (photoUrl) {
-                    circleContainer.innerHTML = '<img src="' + photoUrl + '" alt="' + place.name + '" style="width:100%;height:100%;object-fit:cover;">';
+                    imageContainer.style.backgroundImage = 'url(' + photoUrl + ')';
+                    imageContainer.style.backgroundSize = 'cover';
+                    imageContainer.style.backgroundPosition = 'center';
                 } else {
-                    circleContainer.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;color:white;font-size:14px;">📍</div>';
+                    imageContainer.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;color:white;font-size:16px;">📍</div>';
                 }
             } else {
-                circleContainer.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;color:white;font-size:14px;">📍</div>';
+                imageContainer.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;color:white;font-size:16px;">📍</div>';
             }
             
-            // Create label
-            const labelContainer = document.createElement('div');
-            labelContainer.className = 'marker-label-container marker-label-poi';
-            labelContainer.style.display = 'flex';
-            labelContainer.style.flexDirection = 'column';
-            labelContainer.style.alignItems = 'center';
-            labelContainer.style.gap = '2px';
-            labelContainer.style.maxWidth = '140px';
-            labelContainer.style.textAlign = 'center';
-            labelContainer.style.transition = 'opacity 0.3s ease, visibility 0.3s ease';
+            // Create info card
+            const infoCard = document.createElement('div');
+            infoCard.className = 'marker-info-card';
+            infoCard.style.display = 'flex';
+            infoCard.style.flexDirection = 'column';
+            infoCard.style.minWidth = '0';
+            infoCard.style.maxWidth = '140px';
+            infoCard.style.transition = 'opacity 0.4s ease, visibility 0.4s ease, transform 0.3s ease';
             
             const currentZoom = mapInstance.getZoom();
             if (currentZoom < 15) {
-                labelContainer.style.opacity = '0';
-                labelContainer.style.visibility = 'hidden';
-                labelContainer.style.pointerEvents = 'none';
+                infoCard.style.opacity = '0';
+                infoCard.style.visibility = 'hidden';
+                infoCard.style.pointerEvents = 'none';
             }
             
-            // Name label
-            const nameLabel = document.createElement('div');
-            nameLabel.className = 'marker-name-label';
-            nameLabel.textContent = place.name;
-            nameLabel.style.fontSize = '11px';
-            nameLabel.style.fontWeight = '600';
-            nameLabel.style.color = '#1a202c';
-            nameLabel.style.lineHeight = '1.2';
-            nameLabel.style.textShadow = '0 1px 2px rgba(255,255,255,0.8)';
-            nameLabel.style.whiteSpace = 'nowrap';
-            nameLabel.style.overflow = 'hidden';
-            nameLabel.style.textOverflow = 'ellipsis';
-            nameLabel.style.width = '100%';
-            labelContainer.appendChild(nameLabel);
+            // Row 1: Name
+            const nameRow = document.createElement('div');
+            nameRow.className = 'marker-name-label';
+            nameRow.textContent = place.name;
+            nameRow.style.fontSize = '12px';
+            nameRow.style.fontWeight = '600';
+            nameRow.style.color = '#1a202c';
+            nameRow.style.lineHeight = '1.3';
+            nameRow.style.whiteSpace = 'nowrap';
+            nameRow.style.overflow = 'hidden';
+            nameRow.style.textOverflow = 'ellipsis';
+            nameRow.style.marginBottom = '2px';
+            nameRow.style.textShadow = 'rgba(255, 255, 255, 0.9) 1px 1px 1px, rgba(255, 255, 255, 0.8) 0px 0px 8px';
+            infoCard.appendChild(nameRow);
+            
+            // Row 2: Rating + Google badge
+            const metaRow = document.createElement('div');
+            metaRow.style.display = 'flex';
+            metaRow.style.alignItems = 'center';
+            metaRow.style.gap = '10px';
+            metaRow.style.fontSize = '10px';
+            metaRow.style.color = '#6B7280';
             
             // Rating
             if (place.rating) {
-                const ratingRow = document.createElement('div');
-                ratingRow.style.display = 'flex';
-                ratingRow.style.alignItems = 'center';
-                ratingRow.style.gap = '3px';
-                ratingRow.style.fontSize = '10px';
+                const ratingSpan = document.createElement('span');
+                ratingSpan.style.display = 'flex';
+                ratingSpan.style.alignItems = 'center';
+                ratingSpan.style.gap = '2px';
                 
                 const starSpan = document.createElement('span');
                 starSpan.textContent = '★';
                 starSpan.style.color = '#FBBC05';
-                starSpan.style.fontSize = '10px';
-                ratingRow.appendChild(starSpan);
+                starSpan.style.fontSize = '11px';
+                ratingSpan.appendChild(starSpan);
                 
                 const ratingValue = document.createElement('span');
                 ratingValue.textContent = place.rating.toFixed(1);
                 ratingValue.style.fontWeight = '500';
                 ratingValue.style.color = '#374151';
-                ratingValue.style.textShadow = '0 1px 2px rgba(255,255,255,0.8)';
-                ratingRow.appendChild(ratingValue);
+                ratingValue.style.textShadow = '0 1px 3px rgba(255,255,255,0.9), 0 0 8px rgba(255,255,255,0.8)';
+                ratingSpan.appendChild(ratingValue);
                 
-                labelContainer.appendChild(ratingRow);
+                metaRow.appendChild(ratingSpan);
             }
             
-            // "Fra Google" badge
-            const googleBadge = document.createElement('div');
+            // "Google" badge
+            const googleBadge = document.createElement('span');
             googleBadge.textContent = 'Google';
-            googleBadge.style.fontSize = '9px';
             googleBadge.style.fontWeight = '500';
             googleBadge.style.color = '#9CA3AF';
-            googleBadge.style.textShadow = '0 1px 2px rgba(255,255,255,0.8)';
-            labelContainer.appendChild(googleBadge);
+            googleBadge.style.textShadow = '0 1px 3px rgba(255,255,255,0.9), 0 0 8px rgba(255,255,255,0.8)';
+            metaRow.appendChild(googleBadge);
             
-            wrapper.appendChild(circleContainer);
-            wrapper.appendChild(labelContainer);
+            infoCard.appendChild(metaRow);
+            
+            wrapper.appendChild(imageContainer);
+            wrapper.appendChild(infoCard);
             
             // Hover effects
             wrapper.addEventListener('mouseenter', function() {
-                circleContainer.style.transform = 'scale(1.15)';
-                circleContainer.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+                imageContainer.style.transform = 'scale(1.1)';
                 wrapper.style.zIndex = '45';
-                labelContainer.style.opacity = '1';
-                labelContainer.style.visibility = 'visible';
-                labelContainer.style.pointerEvents = 'auto';
-                labelContainer.setAttribute('data-force-visible', 'true');
+                wrapper.style.filter = 'drop-shadow(0 4px 8px rgba(0,0,0,0.4))';
+                infoCard.style.opacity = '1';
+                infoCard.style.visibility = 'visible';
+                infoCard.style.pointerEvents = 'auto';
+                infoCard.setAttribute('data-force-visible', 'true');
             });
             
             wrapper.addEventListener('mouseleave', function() {
-                circleContainer.style.transform = 'scale(1)';
-                circleContainer.style.boxShadow = '0 2px 6px rgba(0,0,0,0.2)';
+                imageContainer.style.transform = 'scale(1)';
                 wrapper.style.zIndex = '5';
-                labelContainer.removeAttribute('data-force-visible');
+                wrapper.style.filter = 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))';
+                infoCard.removeAttribute('data-force-visible');
                 const currentZoom = mapInstance.getZoom();
                 if (currentZoom < 15) {
-                    labelContainer.style.opacity = '0';
-                    labelContainer.style.visibility = 'hidden';
-                    labelContainer.style.pointerEvents = 'none';
+                    infoCard.style.opacity = '0';
+                    infoCard.style.visibility = 'hidden';
+                    infoCard.style.pointerEvents = 'none';
                 }
             });
             
@@ -1368,8 +1427,8 @@
             const lngLat = [place.coordinates.lng, place.coordinates.lat];
             const marker = new mapboxgl.Marker({
                 element: wrapper,
-                anchor: 'center',
-                offset: [0, -10]
+                anchor: 'left',
+                offset: [0, -22]
             })
                 .setLngLat(lngLat)
                 .addTo(mapInstance);
@@ -1637,15 +1696,19 @@
             }
         }
         
-        // Collect Google Place IDs from existing POIs in this chapter to exclude them
+        // Collect Google Place IDs from existing POIs in the chapter-wrapper to exclude them
         const excludePlaceIds = [];
-        const poiItems = chapter.querySelectorAll('[data-google-place-id]');
-        poiItems.forEach(function(poiItem) {
-            const placeId = poiItem.getAttribute('data-google-place-id');
-            if (placeId && placeId.trim()) {
-                excludePlaceIds.push(placeId.trim());
-            }
-        });
+        const chapterWrapper = chapter.closest('.wp-block-placy-chapter-wrapper');
+        if (chapterWrapper) {
+            const poiItems = chapterWrapper.querySelectorAll('[data-google-place-id]');
+            poiItems.forEach(function(poiItem) {
+                const placeId = poiItem.getAttribute('data-google-place-id');
+                if (placeId && placeId.trim()) {
+                    excludePlaceIds.push(placeId.trim());
+                }
+            });
+            console.log('[fetchApiData] Excluding ' + excludePlaceIds.length + ' manually curated POIs from API search');
+        }
         
         // Fetch places
         const apiData = await fetchNearbyPlaces(chapterId, lat, lng, category, radius, minRating, minReviews, keyword, excludeTypes, excludePlaceIds);
@@ -2655,6 +2718,9 @@
         // Support both native POIs (data-poi-id) and Google Places (data-place-id)
         if (!poiId && !placeId) return;
 
+        // First clear any existing hover effects to ensure only one label is visible
+        clearActivePOI();
+
         // Add visual highlight to card
         poiElement.classList.add('poi-active-hover');
         
@@ -2695,16 +2761,27 @@
             wrapper.classList.remove('marker-active');
             wrapper.style.zIndex = '10'; // TASK 2: Default POI z-index
             
+            // Reset old marker style (circular)
             const circle = wrapper.querySelector('.marker-circle-container');
             if (circle) {
                 circle.style.transform = 'scale(1)';
                 circle.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
             }
             
-            // TASK 3: Reset label visibility based on zoom (unless force visible)
+            // Reset new marker style (image)
+            const imageContainer = wrapper.querySelector('.marker-image-container');
+            if (imageContainer) {
+                imageContainer.style.transform = 'scale(1)';
+                wrapper.style.filter = 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))';
+            }
+            
+            // TASK 3: Reset label visibility based on zoom
             // Support both native POI labels (.marker-label-poi) and Google Places labels (.marker-label-container)
             const label = wrapper.querySelector('.marker-label-poi, .marker-label-container');
-            if (label && !label.hasAttribute('data-force-visible')) {
+            if (label) {
+                // Remove force visible attribute first
+                label.removeAttribute('data-force-visible');
+                
                 // Find the map instance to get current zoom
                 const mapContainer = wrapper.closest('.chapter-map');
                 if (mapContainer && mapContainer._mapboxInstance) {
@@ -2713,6 +2790,23 @@
                         label.style.opacity = '0';
                         label.style.visibility = 'hidden';
                         label.style.pointerEvents = 'none';
+                    }
+                }
+            }
+            
+            // Reset info card visibility based on zoom (new style markers)
+            const infoCard = wrapper.querySelector('.marker-info-card');
+            if (infoCard) {
+                // Remove force visible attribute first
+                infoCard.removeAttribute('data-force-visible');
+                
+                const mapContainer = wrapper.closest('.chapter-map');
+                if (mapContainer && mapContainer._mapboxInstance) {
+                    const currentZoom = mapContainer._mapboxInstance.getZoom();
+                    if (currentZoom < 15) {
+                        infoCard.style.opacity = '0';
+                        infoCard.style.visibility = 'hidden';
+                        infoCard.style.pointerEvents = 'none';
                     }
                 }
             }
@@ -2744,19 +2838,36 @@
                 // TASK 2: Increase z-index for layering (but below property marker)
                 wrapper.style.zIndex = '50'; // Hover POI z-index
                 
+                // Handle old marker style (circular)
                 const circle = wrapper.querySelector('.marker-circle-container');
                 if (circle) {
                     circle.style.transform = 'scale(1.15)';
                     circle.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
                 }
                 
-                // TASK 3: Show label on hover regardless of zoom
+                // Handle new marker style (image)
+                const imageContainer = wrapper.querySelector('.marker-image-container');
+                if (imageContainer) {
+                    imageContainer.style.transform = 'scale(1.1)';
+                    wrapper.style.filter = 'drop-shadow(0 4px 8px rgba(0,0,0,0.4))';
+                }
+                
+                // TASK 3: Show label on hover regardless of zoom (old style)
                 const label = wrapper.querySelector('.marker-label-poi');
                 if (label) {
                     label.style.opacity = '1';
                     label.style.visibility = 'visible';
                     label.style.pointerEvents = 'auto';
                     label.setAttribute('data-force-visible', 'true');
+                }
+                
+                // Show info card on hover regardless of zoom (new style)
+                const infoCard = wrapper.querySelector('.marker-info-card');
+                if (infoCard) {
+                    infoCard.style.opacity = '1';
+                    infoCard.style.visibility = 'visible';
+                    infoCard.style.pointerEvents = 'auto';
+                    infoCard.setAttribute('data-force-visible', 'true');
                 }
             }
         });
@@ -2786,19 +2897,36 @@
                 // Increase z-index for layering
                 wrapper.style.zIndex = '50';
                 
+                // Handle old marker style (circular)
                 const circle = wrapper.querySelector('.marker-circle-container');
                 if (circle) {
                     circle.style.transform = 'scale(1.15)';
                     circle.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
                 }
                 
-                // Show label on hover regardless of zoom
+                // Handle new marker style (image)
+                const imageContainer = wrapper.querySelector('.marker-image-container');
+                if (imageContainer) {
+                    imageContainer.style.transform = 'scale(1.1)';
+                    wrapper.style.filter = 'drop-shadow(0 4px 8px rgba(0,0,0,0.4))';
+                }
+                
+                // Show label on hover regardless of zoom (old style)
                 const label = wrapper.querySelector('.marker-label-container');
                 if (label) {
                     label.style.opacity = '1';
                     label.style.visibility = 'visible';
                     label.style.pointerEvents = 'auto';
                     label.setAttribute('data-force-visible', 'true');
+                }
+                
+                // Show info card on hover regardless of zoom (new style)
+                const infoCard = wrapper.querySelector('.marker-info-card');
+                if (infoCard) {
+                    infoCard.style.opacity = '1';
+                    infoCard.style.visibility = 'visible';
+                    infoCard.style.pointerEvents = 'auto';
+                    infoCard.setAttribute('data-force-visible', 'true');
                 }
             }
         });
@@ -3362,15 +3490,19 @@
             }
         }
         
-        // Collect Google Place IDs from existing POIs in this chapter to exclude them
+        // Collect Google Place IDs from existing POIs in the chapter-wrapper to exclude them
         const excludePlaceIds = [];
-        const poiItems = chapter.querySelectorAll('[data-google-place-id]');
-        poiItems.forEach(function(poiItem) {
-            const placeId = poiItem.getAttribute('data-google-place-id');
-            if (placeId && placeId.trim()) {
-                excludePlaceIds.push(placeId.trim());
-            }
-        });
+        const chapterWrapper = chapter.closest('.wp-block-placy-chapter-wrapper');
+        if (chapterWrapper) {
+            const poiItems = chapterWrapper.querySelectorAll('[data-google-place-id]');
+            poiItems.forEach(function(poiItem) {
+                const placeId = poiItem.getAttribute('data-google-place-id');
+                if (placeId && placeId.trim()) {
+                    excludePlaceIds.push(placeId.trim());
+                }
+            });
+            console.log('[fetchDynamicBlockData] Excluding ' + excludePlaceIds.length + ' manually curated POIs from API search');
+        }
         
         // Generate unique cache key for this block
         const blockId = chapterId + '-' + category + '-' + keyword;
@@ -3490,11 +3622,189 @@
     }
 
     /**
+     * Reveal serverside-rendered POI results with loading animation
+     * @param {HTMLElement} button - The button element
+     */
+    async function revealServersideResults(button) {
+        // Get the block container
+        const block = button.closest('.poi-list-dynamic-block');
+        if (!block) return;
+        
+        // Get the results container
+        const resultsContainer = block.querySelector('.poi-list-dynamic-results');
+        if (!resultsContainer) return;
+        
+        // Get category text from button
+        const categoryNorwegian = button.getAttribute('data-category-norwegian') || 'steder';
+        
+        // Create spinner element
+        const spinner = document.createElement('span');
+        spinner.style.display = 'inline-block';
+        spinner.style.width = '14px';
+        spinner.style.height = '14px';
+        spinner.style.border = '2px solid rgba(255, 255, 255, 0.3)';
+        spinner.style.borderTopColor = '#fff';
+        spinner.style.borderRadius = '50%';
+        spinner.style.marginRight = '8px';
+        spinner.style.animation = 'spin 0.8s linear infinite';
+        
+        // Add keyframes for spinner if not already added
+        if (!document.getElementById('spinner-keyframes')) {
+            const style = document.createElement('style');
+            style.id = 'spinner-keyframes';
+            style.textContent = `
+                @keyframes spin {
+                    to { transform: rotate(360deg); }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        // Show loading state
+        button.innerHTML = '';
+        button.appendChild(spinner);
+        button.appendChild(document.createTextNode('Henter lignende ' + categoryNorwegian + ' fra Google...'));
+        button.disabled = true;
+        button.style.opacity = '0.9';
+        
+        // Wait for 2 seconds to simulate loading
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Reveal the results
+        resultsContainer.style.display = 'flex';
+        
+        // Find the chapter and map for this block
+        const chapter = block.closest('.chapter');
+        const chapterId = chapter ? chapter.getAttribute('data-chapter-id') : null;
+        
+        if (chapterId) {
+            const mapContainer = document.querySelector(`.chapter-map[data-chapter-id="${chapterId}"]`);
+            const mapInstance = mapContainer ? mapContainer._mapboxInstance : null;
+            
+            if (mapInstance) {
+                // Add markers for the newly revealed POI cards
+                const newPoiCards = resultsContainer.querySelectorAll('.poi-list-card[data-poi-coords]');
+                
+                for (const item of newPoiCards) {
+                    const coordsAttr = item.getAttribute('data-poi-coords');
+                    const poiId = item.getAttribute('data-poi-id');
+                    const title = item.getAttribute('data-poi-title');
+                    let image = item.getAttribute('data-poi-image');
+                    
+                    // Check if this is a Google Point and get photo from photo reference
+                    const googlePlaceId = item.getAttribute('data-google-place-id');
+                    if (googlePlaceId && !image) {
+                        const photoRef = item.getAttribute('data-google-photo-reference');
+                        if (photoRef) {
+                            image = getPhotoUrl(photoRef, 200);
+                        }
+                    }
+                    
+                    if (!coordsAttr) continue;
+                    
+                    try {
+                        const coords = JSON.parse(coordsAttr);
+                        if (Array.isArray(coords) && coords.length === 2) {
+                            const lngLat = [parseFloat(coords[1]), parseFloat(coords[0])];
+                            
+                            // Get walking distance if start location exists
+                            let walking = null;
+                            if (startLocation) {
+                                walking = await getWalkingDistance(lngLat);
+                                
+                                if (walking) {
+                                    const walkTimeEl = item.querySelector('.poi-walking-time');
+                                    if (walkTimeEl) {
+                                        walkTimeEl.textContent = formatDuration(walking.duration) + ' gange';
+                                    }
+                                }
+                            }
+                            
+                            // Get rating from DOM
+                            const ratingEl = item.querySelector('.poi-rating-value');
+                            const ratingCountEl = item.querySelector('.poi-rating-count');
+                            let rating = null;
+                            
+                            if (ratingEl) {
+                                const ratingText = ratingEl.textContent.replace(/\s+/g, ' ').trim();
+                                const ratingMatch = ratingText.match(/(\d+\.?\d*)/);
+                                if (ratingMatch) {
+                                    rating = {
+                                        value: parseFloat(ratingMatch[1]),
+                                        count: ratingCountEl ? ratingCountEl.textContent.trim() : null
+                                    };
+                                }
+                            }
+                            
+                            const poi = {
+                                id: poiId,
+                                title: title || 'POI',
+                                coords: lngLat,
+                                image: image,
+                                element: item,
+                                walking: walking,
+                                rating: rating
+                            };
+                            
+                            // Add marker to map
+                            addMarkerForPOI(mapInstance, poi, chapterId);
+                        }
+                    } catch (e) {
+                        console.warn('Error parsing revealed POI coords:', e);
+                    }
+                }
+            }
+        }
+        
+        // Hide the button
+        const buttonContainer = button.closest('.places-api-button-container');
+        if (buttonContainer) {
+            buttonContainer.style.display = 'none';
+        }
+        
+        // Re-initialize POI hover tracking for the newly revealed cards
+        initPOIHoverTracking();
+    }
+
+    /**
+     * Initialize serverside POI reveal buttons
+     */
+    function initServersidePoiButtons() {
+        // Find all POI list dynamic blocks with serverside-rendered results
+        const buttons = document.querySelectorAll('.poi-list-dynamic-block .places-api-show-all-button');
+        
+        buttons.forEach(function(button) {
+            // Remove any existing event listeners by cloning
+            const newButton = button.cloneNode(true);
+            button.parentNode.replaceChild(newButton, button);
+            
+            // Add hover effects
+            newButton.addEventListener('mouseenter', function() {
+                if (!newButton.disabled) {
+                    newButton.style.backgroundColor = '#DC2626';
+                }
+            });
+            
+            newButton.addEventListener('mouseleave', function() {
+                if (!newButton.disabled) {
+                    newButton.style.backgroundColor = '#EF4444';
+                }
+            });
+            
+            // Add click handler
+            newButton.addEventListener('click', function() {
+                revealServersideResults(newButton);
+            });
+        });
+    }
+
+    /**
      * Initialize on DOM ready
      */
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', function() {
             initMap();
+            initServersidePoiButtons();
             // Initialize Places API integration after a short delay
             setTimeout(function() {
                 initPlacesApiIntegration();
@@ -3502,6 +3812,7 @@
         });
     } else {
         initMap();
+        initServersidePoiButtons();
         // Initialize Places API integration after a short delay
         setTimeout(function() {
             initPlacesApiIntegration();

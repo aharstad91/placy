@@ -36,20 +36,24 @@ $is_in_chapter = strpos( $parent_classes, 'chapter' ) !== false;
     <?php if ( $poi_items && is_array( $poi_items ) ) : ?>
         <div class="flex flex-col" <?php if ( $is_in_chapter ) echo 'data-chapter-poi-list="true"'; ?>>
             <?php foreach ( $poi_items as $poi ) : 
-                // Get POI coordinates
-                $lat = get_field( 'latitude', $poi->ID );
-                $lng = get_field( 'longitude', $poi->ID );
+                // Get POI coordinates (works for both Native and Google Points)
+                $poi_coords = placy_get_poi_coordinates( $poi->ID );
                 $coords = '';
+                $lat = null;
+                $lng = null;
                 
-                if ( $lat && $lng ) {
+                if ( $poi_coords ) {
+                    $lat = $poi_coords['lat'];
+                    $lng = $poi_coords['lng'];
                     $coords = sprintf( '[%s,%s]', esc_attr( $lat ), esc_attr( $lng ) );
                 }
                 
                 // Get featured image URL - landscape format for card top
                 $featured_image = get_the_post_thumbnail_url( $poi->ID, 'large' );
                 
-                // Get POI content
-                $content = apply_filters( 'the_content', get_post_field( 'post_content', $poi->ID ) );
+                // Get editorial text if available, otherwise use post content
+                $editorial_text = get_field( 'editorial_text', $poi->ID );
+                $content = $editorial_text ? $editorial_text : apply_filters( 'the_content', get_post_field( 'post_content', $poi->ID ) );
                 $excerpt = get_the_excerpt( $poi->ID );
                 
                 // Get Entur integration data
@@ -71,7 +75,16 @@ $is_in_chapter = strpos( $parent_classes, 'chapter' ) !== false;
                         if ( $google_place_id ) : 
                     ?>
                         data-google-place-id="<?php echo esc_attr( $google_place_id ); ?>"
-                    <?php endif; ?>
+                    <?php 
+                            // Get photo reference for Google Points
+                            $place_data_for_photo = placy_get_poi_place_data( $poi->ID );
+                            if ( $place_data_for_photo && ! empty( $place_data_for_photo['photo_reference'] ) ) :
+                    ?>
+                        data-google-photo-reference="<?php echo esc_attr( $place_data_for_photo['photo_reference'] ); ?>"
+                    <?php 
+                            endif;
+                        endif; 
+                    ?>
                     <?php if ( $coords ) : ?>
                         data-poi-coords="<?php echo $coords; ?>"
                     <?php endif; ?>
@@ -97,6 +110,16 @@ $is_in_chapter = strpos( $parent_classes, 'chapter' ) !== false;
                         <?php if ( $featured_image ) : ?>
                             <div class="flex-shrink-0">
                                 <img src="<?php echo esc_url( $featured_image ); ?>" 
+                                     alt="<?php echo esc_attr( get_the_title( $poi->ID ) ); ?>"
+                                     class="w-24 h-24 object-cover rounded-lg">
+                            </div>
+                        <?php elseif ( isset( $place_data_for_photo ) && ! empty( $place_data_for_photo['photo_reference'] ) ) : ?>
+                            <?php 
+                                // Show Google Places photo if no featured image
+                                $photo_url_list = 'https://places.googleapis.com/v1/' . $place_data_for_photo['photo_reference'] . '/media?maxWidthPx=400&key=' . ( defined( 'GOOGLE_PLACES_API_KEY' ) ? GOOGLE_PLACES_API_KEY : '' );
+                            ?>
+                            <div class="flex-shrink-0">
+                                <img src="<?php echo esc_url( $photo_url_list ); ?>" 
                                      alt="<?php echo esc_attr( get_the_title( $poi->ID ) ); ?>"
                                      class="w-24 h-24 object-cover rounded-lg">
                             </div>
@@ -183,9 +206,13 @@ $is_in_chapter = strpos( $parent_classes, 'chapter' ) !== false;
                                 
                                 <div class="poi-button-container flex-shrink-0">
                                     <button 
-                                        class="poi-show-on-map px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium text-sm rounded-lg transition-colors duration-200 whitespace-nowrap"
+                                        class="poi-show-on-map inline-flex items-center gap-2 px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition-colors whitespace-nowrap"
                                         onclick="showPOIOnMap(this)"
                                     >
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        </svg>
                                         Se på kart
                                     </button>
                                 </div>

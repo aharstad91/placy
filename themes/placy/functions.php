@@ -77,11 +77,11 @@ function placy_enqueue_scripts() {
     // POI Map Modal script
     wp_enqueue_script( 'placy-poi-map-modal', get_template_directory_uri() . '/js/poi-map-modal.js', array(), '1.0.0', true );
     
-    // Tema Story styles and scripts (only on theme-story post type)
+    // Tema Story styles and scripts (only on theme-story post type) - v2.3.3
     if ( is_singular( 'theme-story' ) ) {
         wp_enqueue_style( 'placy-tema-story', get_template_directory_uri() . '/css/tema-story.css', array(), '1.0.0' );
         wp_enqueue_style( 'placy-chapter-wrapper', get_template_directory_uri() . '/blocks/chapter-wrapper/style.css', array(), '1.0.0' );
-        wp_enqueue_script( 'placy-tema-story-map', get_template_directory_uri() . '/js/tema-story-map-multi.js', array( 'mapbox-gl-js' ), '2.3.2', true );
+        wp_enqueue_script( 'placy-tema-story-map', get_template_directory_uri() . '/js/tema-story-map-multi.js', array( 'mapbox-gl-js' ), '2.3.3', true );
         wp_enqueue_script( 'placy-chapter-nav', get_template_directory_uri() . '/js/chapter-nav.js', array(), '1.0.0', true );
         wp_enqueue_script( 'placy-chapter-header', get_template_directory_uri() . '/js/chapter-header.js', array(), '1.0.0', true );
         wp_enqueue_script( 'placy-intro-parallax', get_template_directory_uri() . '/js/intro-parallax.js', array(), '1.0.0', true );
@@ -183,10 +183,25 @@ require_once get_template_directory() . '/inc/rewrites.php';
 require_once get_template_directory() . '/inc/mapbox-config.php';
 
 /**
- * Include Google Places API integration
+ * Include Google Places API integration (Legacy)
  */
 require_once get_template_directory() . '/inc/google-places.php';
 require_once get_template_directory() . '/inc/test-google-places.php';
+
+/**
+ * Include Google Points CPT Query API
+ */
+require_once get_template_directory() . '/inc/google-points-query.php';
+
+/**
+ * Include Placy Point System (New)
+ */
+require_once get_template_directory() . '/inc/placy-acf-fields.php';
+require_once get_template_directory() . '/inc/placy-google-api.php';
+require_once get_template_directory() . '/inc/placy-graphql.php';
+require_once get_template_directory() . '/inc/placy-cron.php';
+require_once get_template_directory() . '/inc/placy-admin.php';
+require_once get_template_directory() . '/inc/placy-bulk-import.php';
 
 /**
  * Include Entur API integration
