@@ -20,6 +20,7 @@ $places_radius = isset( $attributes['placesRadius'] ) ? $attributes['placesRadiu
 $places_min_rating = isset( $attributes['placesMinRating'] ) ? $attributes['placesMinRating'] : 4.3;
 $places_min_reviews = isset( $attributes['placesMinReviews'] ) ? $attributes['placesMinReviews'] : 20;
 $places_exclude_types = isset( $attributes['placesExcludeTypes'] ) ? $attributes['placesExcludeTypes'] : array( 'lodging' );
+$max_results = isset( $attributes['maxResults'] ) ? intval( $attributes['maxResults'] ) : 10;
 
 // Generate unique block ID
 $block_id = 'poi-list-dynamic-' . wp_unique_id( 'block-' );
@@ -153,6 +154,11 @@ if ( $places_enabled ) {
             
             // Add to results
             $poi_items[] = get_post( $post_id );
+            
+            // Check if we've reached the max results limit
+            if ( count( $poi_items ) >= $max_results ) {
+                break;
+            }
         }
         wp_reset_postdata();
     }
@@ -309,6 +315,33 @@ if ( $places_enabled ) {
                                             </div>
                                         </div>
                                     </div>
+                                    
+                                    <?php
+                                    // Get contact info from place_details_cache
+                                    $place_details_cache_dyn = get_field( 'place_details_cache', $poi->ID );
+                                    $place_details_dyn = ! empty( $place_details_cache_dyn ) ? json_decode( $place_details_cache_dyn, true ) : array();
+                                    $has_contact_info_dyn = ! empty( $place_details_dyn['website'] ) || ! empty( $place_details_dyn['phone'] );
+                                    
+                                    if ( $has_contact_info_dyn ) : ?>
+                                        <div class="poi-contact-info flex items-center gap-4 mt-2 text-xs text-gray-600">
+                                            <?php if ( ! empty( $place_details_dyn['website'] ) ) : ?>
+                                                <a href="<?php echo esc_url( $place_details_dyn['website'] ); ?>" target="_blank" rel="noopener" class="flex items-center gap-1 hover:text-blue-600 transition-colors">
+                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
+                                                    </svg>
+                                                    <span>Nettside</span>
+                                                </a>
+                                            <?php endif; ?>
+                                            <?php if ( ! empty( $place_details_dyn['phone'] ) ) : ?>
+                                                <a href="tel:<?php echo esc_attr( str_replace( ' ', '', $place_details_dyn['phone'] ) ); ?>" class="flex items-center gap-1 hover:text-blue-600 transition-colors">
+                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                                                    </svg>
+                                                    <span><?php echo esc_html( $place_details_dyn['phone'] ); ?></span>
+                                                </a>
+                                            <?php endif; ?>
+                                        </div>
+                                    <?php endif; ?>
                                     
                                     <div class="poi-button-container flex-shrink-0">
                                         <button 

@@ -41,6 +41,10 @@
     "placesExcludeTypes": {
       "type": "array",
       "default": ["lodging"]
+    },
+    "maxResults": {
+      "type": "number",
+      "default": 10
     }
   },
   "render": "file:./template.php"

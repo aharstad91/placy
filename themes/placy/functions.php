@@ -194,6 +194,11 @@ require_once get_template_directory() . '/inc/test-google-places.php';
 require_once get_template_directory() . '/inc/google-points-query.php';
 
 /**
+ * Include Google Points Descriptions API
+ */
+require_once get_template_directory() . '/inc/google-points-descriptions-api.php';
+
+/**
  * Include Placy Point System (New)
  */
 require_once get_template_directory() . '/inc/placy-acf-fields.php';

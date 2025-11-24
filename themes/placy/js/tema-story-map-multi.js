@@ -2101,6 +2101,8 @@
                 style: 'mapbox://styles/mapbox/light-v11',
                 center: CONFIG.DEFAULT_CENTER,
                 zoom: CONFIG.DEFAULT_ZOOM,
+                minZoom: 11,
+                maxZoom: 16,
             });
 
             // Add navigation controls
@@ -3682,13 +3684,30 @@
             const mapInstance = mapContainer ? mapContainer._mapboxInstance : null;
             
             if (mapInstance) {
-                // Add markers for the newly revealed POI cards
+                // Add markers for the newly revealed POI cards from THIS block only
                 const newPoiCards = resultsContainer.querySelectorAll('.poi-list-card[data-poi-coords]');
+                
+                // Filter to only POI cards that don't already have markers
+                const existingMarkerIds = new Set();
+                if (mapInstance._poiMarkers) {
+                    mapInstance._poiMarkers.forEach(marker => {
+                        const element = marker.getElement();
+                        if (element) {
+                            const poiId = element.getAttribute('data-poi-id');
+                            if (poiId) existingMarkerIds.add(poiId);
+                        }
+                    });
+                }
                 
                 for (const item of newPoiCards) {
                     const coordsAttr = item.getAttribute('data-poi-coords');
                     const poiId = item.getAttribute('data-poi-id');
                     const title = item.getAttribute('data-poi-title');
+                    
+                    // Skip if marker already exists for this POI
+                    if (existingMarkerIds.has(poiId)) {
+                        continue;
+                    }
                     let image = item.getAttribute('data-poi-image');
                     
                     // Check if this is a Google Point and get photo from photo reference

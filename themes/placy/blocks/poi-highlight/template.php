@@ -236,6 +236,46 @@ $show_bike_availability = get_field( 'show_bike_availability', $poi_id );
             <span class="poi-travel-time-text text-sm font-medium"></span>
         </div>
         
+        <?php
+        // Get contact info from place_details_cache
+        $place_details_cache_hl = get_field( 'place_details_cache', $poi_id );
+        $place_details_hl = ! empty( $place_details_cache_hl ) ? json_decode( $place_details_cache_hl, true ) : array();
+        $has_contact_info_hl = ! empty( $place_details_hl['website'] ) || ! empty( $place_details_hl['phone'] ) || ! empty( $place_details_hl['opening_hours'] );
+        
+        if ( $has_contact_info_hl ) : ?>
+            <div class="poi-contact-info flex flex-col gap-3 mb-6 p-4 bg-gray-50 rounded-lg">
+                <?php if ( ! empty( $place_details_hl['website'] ) ) : ?>
+                    <a href="<?php echo esc_url( $place_details_hl['website'] ); ?>" target="_blank" rel="noopener" class="flex items-center gap-2 text-sm text-gray-700 hover:text-blue-600 transition-colors">
+                        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
+                        </svg>
+                        <span class="font-medium">Besøk nettside</span>
+                    </a>
+                <?php endif; ?>
+                <?php if ( ! empty( $place_details_hl['phone'] ) ) : ?>
+                    <a href="tel:<?php echo esc_attr( str_replace( ' ', '', $place_details_hl['phone'] ) ); ?>" class="flex items-center gap-2 text-sm text-gray-700 hover:text-blue-600 transition-colors">
+                        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                        </svg>
+                        <span class="font-medium"><?php echo esc_html( $place_details_hl['phone'] ); ?></span>
+                    </a>
+                <?php endif; ?>
+                <?php if ( ! empty( $place_details_hl['opening_hours']['weekdayDescriptions'] ) ) : ?>
+                    <div class="flex items-start gap-2 text-sm text-gray-700">
+                        <svg class="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <div class="flex-1">
+                            <span class="font-medium block mb-1">Åpningstider:</span>
+                            <?php foreach ( array_slice( $place_details_hl['opening_hours']['weekdayDescriptions'], 0, 3 ) as $day ) : ?>
+                                <div class="text-xs text-gray-600"><?php echo esc_html( $day ); ?></div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
+        
         <div class="poi-highlight-text prose prose-lg max-w-none">
             <?php echo wp_kses_post( $content ); ?>
         </div>

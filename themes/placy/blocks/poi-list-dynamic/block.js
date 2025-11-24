@@ -17,7 +17,8 @@
                 placesRadius,
                 placesMinRating,
                 placesMinReviews,
-                placesExcludeTypes
+                placesExcludeTypes,
+                maxResults
             } = attributes;
 
             const blockProps = useBlockProps();
@@ -134,6 +135,18 @@
                                     min: 0,
                                     max: 200,
                                     step: 10,
+                                }),
+                                el(RangeControl, {
+                                    key: 'maxResults',
+                                    label: 'Maks antall resultater',
+                                    help: 'Begrens antall POI-er som vises',
+                                    value: maxResults,
+                                    onChange: function (value) {
+                                        setAttributes({ maxResults: value });
+                                    },
+                                    min: 3,
+                                    max: 50,
+                                    step: 1,
                                 }),
                                 el('hr', { key: 'divider', style: { margin: '16px 0' } }),
                                 el('p', { key: 'exclude-title', style: { fontWeight: 'bold', marginBottom: '4px' } }, 'Ekskluder typer (valgfritt)'),
