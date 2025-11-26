@@ -1,9 +1,9 @@
 /**
  * Trondheim Bysykkel Live Availability - Frontend Integration
- * 
+ *
  * Fetches and displays real-time bike availability from GBFS API
  * Loads all availability data on page load and displays immediately.
- * 
+ *
  * @package Placy
  * @since 1.0.0
  */
@@ -13,12 +13,12 @@
 
     // Configuration
     const CONFIG = {
-        API_ENDPOINT: (typeof bysykkelSettings !== 'undefined' && bysykkelSettings.restUrl) 
-            ? bysykkelSettings.restUrl 
+        API_ENDPOINT: (typeof bysykkelSettings !== 'undefined' && bysykkelSettings.restUrl)
+            ? bysykkelSettings.restUrl
             : window.location.origin + '/placy/wp-json/placy/v1/bysykkel/availability',
         REFRESH_INTERVAL: 60000, // 60 seconds
         MAX_RETRIES: 2,
-        RETRY_DELAY: 1000,
+        RETRY_DELAY: 1000
     };
 
     // Cache for availability data
@@ -29,10 +29,10 @@
      */
     function init() {
         console.log('Trondheim Bysykkel: Initializing...');
-        
+
         // Load all availability data on page load
         loadAllAvailability();
-        
+
         // Refresh every minute
         setInterval(loadAllAvailability, CONFIG.REFRESH_INTERVAL);
     }
@@ -43,7 +43,7 @@
     async function loadAllAvailability() {
         // Find all POI cards with Bysykkel data
         const poiCards = document.querySelectorAll('[data-bysykkel-station-id][data-show-bike-availability="1"]');
-        
+
         if (poiCards.length === 0) {
             console.log('Bysykkel: No POIs with bike availability enabled');
             return;
@@ -57,7 +57,7 @@
 
         poiCards.forEach(function(poiCard) {
             const stationId = poiCard.getAttribute('data-bysykkel-station-id');
-            
+
             if (!uniqueStations.has(stationId)) {
                 uniqueStations.set(stationId, true);
                 poisByStation.set(stationId, []);
@@ -71,7 +71,7 @@
         const fetchPromises = Array.from(uniqueStations.keys()).map(async function(stationId) {
             try {
                 const result = await fetchAvailability(stationId);
-                
+
                 if (result && result.bikes_available !== undefined) {
                     // Display availability on all POI cards that use this station
                     const cards = poisByStation.get(stationId);
@@ -100,7 +100,7 @@
     async function fetchAvailability(stationId) {
         // Check cache first
         const cached = availabilityCache.get(stationId);
-        
+
         if (cached && (Date.now() - cached.timestamp) < CONFIG.REFRESH_INTERVAL) {
             console.log('Bysykkel: Using cached data for station', stationId);
             return cached.data;
@@ -118,20 +118,20 @@
                 const response = await fetch(url, {
                     method: 'GET',
                     headers: {
-                        'Content-Type': 'application/json',
+                        'Content-Type': 'application/json'
                     },
-                    signal: controller.signal,
+                    signal: controller.signal
                 });
 
                 clearTimeout(timeoutId);
 
                 if (!response.ok) {
                     console.warn(`Bysykkel API returned status: ${response.status}`);
-                    
+
                     if (response.status >= 400 && response.status < 500) {
                         return { bikes_available: 0, docks_available: 0 };
                     }
-                    
+
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
@@ -140,18 +140,18 @@
                 // Cache the result
                 availabilityCache.set(stationId, {
                     data: data,
-                    timestamp: Date.now(),
+                    timestamp: Date.now()
                 });
 
                 return data;
-                
+
             } catch (error) {
                 if (error.name === 'AbortError') {
                     console.warn(`Bysykkel: Request timeout on attempt ${attempt + 1}`);
                 } else {
                     console.error(`Bysykkel: Fetch attempt ${attempt + 1} failed:`, error);
                 }
-                
+
                 if (attempt < CONFIG.MAX_RETRIES) {
                     await new Promise(resolve => setTimeout(resolve, CONFIG.RETRY_DELAY));
                 } else {
@@ -200,7 +200,7 @@
         const statusIcon = bikesAvailable > 0 ? '●' : '○';
 
         // Build HTML
-        let html = `
+        const html = `
             <div class="mb-3 flex items-center justify-between">
                 <h4 class="text-sm font-semibold text-gray-900 flex items-center gap-2">
                     <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

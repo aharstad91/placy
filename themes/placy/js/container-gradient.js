@@ -1,9 +1,9 @@
 /**
  * Container Background Gradient Transition
- * 
+ *
  * Creates a smooth gradient transition from custom color to white
  * as the tema-story-container comes into view
- * 
+ *
  * @package Placy
  * @since 1.0.0
  */
@@ -19,12 +19,12 @@
     function hexToRgb(hex) {
         // Remove # if present
         hex = hex.replace('#', '');
-        
+
         // Parse RGB values
         const r = parseInt(hex.substring(0, 2), 16);
         const g = parseInt(hex.substring(2, 4), 16);
         const b = parseInt(hex.substring(4, 6), 16);
-        
+
         return { r, g, b };
     }
 
@@ -54,7 +54,7 @@
         const r = color1.r + (color2.r - color1.r) * factor;
         const g = color1.g + (color2.g - color1.g) * factor;
         const b = color1.b + (color2.b - color1.b) * factor;
-        
+
         return rgbToHex(r, g, b);
     }
 
@@ -64,14 +64,14 @@
     function initGradientTransition() {
         const container = document.querySelector('.tema-story-container');
         const mainWrapper = document.querySelector('.main-content-wrapper');
-        
+
         if (!container) {
             return;
         }
 
         // Get custom background color from data attribute
         let customColor = container.getAttribute('data-bg-color') || '#f5f5f5';
-        
+
         // Ensure color is in hex format
         if (customColor.startsWith('rgb')) {
             // Convert rgb(r, g, b) to hex
@@ -80,13 +80,13 @@
                 customColor = rgbToHex(parseInt(rgbMatch[0]), parseInt(rgbMatch[1]), parseInt(rgbMatch[2]));
             }
         }
-        
+
         const targetColor = '#F7F5EF'; // Warm beige background
-        
+
         // Convert to RGB for interpolation
         const startRgb = hexToRgb(customColor);
         const endRgb = hexToRgb(targetColor);
-        
+
         // Set initial background to custom color (hex format)
         container.style.backgroundColor = customColor;
 
@@ -97,29 +97,29 @@
             const rect = container.getBoundingClientRect();
             const containerHeight = container.offsetHeight;
             const viewportHeight = window.innerHeight;
-            
+
             // Calculate how much of the container is visible
             const containerTop = rect.top;
-            
+
             // Start transition earlier - when container is about to enter viewport
             // Transition distance: from when top of container is at bottom of viewport
             // to when container has scrolled up by 50% of viewport height
             const transitionStart = viewportHeight;
             const transitionEnd = viewportHeight * 0.5;
-            
+
             // Calculate scroll progress
             // When containerTop >= transitionStart (not yet visible), progress = 0
             // When containerTop <= transitionEnd (50% of viewport scrolled), progress = 1
             const scrollDistance = transitionStart - containerTop;
             const transitionDistance = transitionStart - transitionEnd;
             const progress = Math.min(Math.max(scrollDistance / transitionDistance, 0), 1);
-            
+
             // Interpolate between custom color and white (returns hex)
             const currentColor = interpolateColor(startRgb, endRgb, progress);
-            
+
             // Apply the color using backgroundColor (hex format)
             container.style.backgroundColor = currentColor;
-            
+
             // Morph padding from "0 6rem" to "0 0" on wrapper
             if (mainWrapper) {
                 // Start at 6rem (96px), end at 0
@@ -131,7 +131,7 @@
 
         // Use requestAnimationFrame for smooth performance
         let ticking = false;
-        
+
         window.addEventListener('scroll', function() {
             if (!ticking) {
                 window.requestAnimationFrame(function() {
@@ -144,7 +144,7 @@
 
         // Initial call
         updateGradient();
-        
+
     }
 
     // Initialize on DOM ready

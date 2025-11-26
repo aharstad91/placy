@@ -1,12 +1,12 @@
 /**
  * Chapter Navigation - Sticky sidebar navigation for Tema Story
- * 
+ *
  * Features:
  * - Auto-generates navigation from chapter-wrapper blocks
  * - Smooth scroll to anchors
  * - Active state based on scroll position
  * - Intersection Observer for active tracking
- * 
+ *
  * @package Placy
  * @since 1.0.0
  */
@@ -17,7 +17,7 @@
     // Configuration
     const CONFIG = {
         NAV_THRESHOLD: 0.3,  // 30% visibility triggers active state
-        SCROLL_OFFSET: 32,    // Offset for scroll positioning (px)
+        SCROLL_OFFSET: 32    // Offset for scroll positioning (px)
     };
 
     // Guard against multiple initializations
@@ -31,21 +31,21 @@
         if (isInitialized) {
             return;
         }
-        
+
         const navContainer = document.getElementById('chapter-nav');
         const introNavContainer = document.getElementById('intro-chapter-nav');
-        
+
         if (!navContainer && !introNavContainer) {
             return;
         }
 
         // Find all chapter sections
         const chapters = document.querySelectorAll('.chapter');
-        
+
         if (chapters.length === 0) {
             return;
         }
-        
+
         isInitialized = true;
 
         // Build navigation menu for both locations
@@ -54,13 +54,13 @@
             // Initialize scroll tracking
             initScrollTracking(chapters, navContainer);
         }
-        
+
         if (introNavContainer) {
             buildNavMenu(chapters, introNavContainer);
             // Initialize scroll tracking for intro nav too
             initScrollTracking(chapters, introNavContainer);
         }
-        
+
     }
 
     /**
@@ -71,11 +71,11 @@
     function buildNavMenu(chapters, navContainer) {
         navContainer.innerHTML = '';
         const isIntroNav = navContainer.id === 'intro-chapter-nav';
-        
+
         chapters.forEach(function(chapter, index) {
             // Try to get anchor from multiple sources
             let anchor = chapter.getAttribute('data-chapter-anchor') || chapter.id;
-            
+
             // If no anchor, try to get chapter-id and use that
             if (!anchor) {
                 const chapterId = chapter.getAttribute('data-chapter-id');
@@ -91,7 +91,7 @@
                     chapter.setAttribute('data-chapter-anchor', anchor);
                 }
             }
-            
+
             // Get title from data attribute, fallback to generic if empty or missing
             const titleAttr = chapter.getAttribute('data-chapter-title');
             const title = (titleAttr && titleAttr.trim() !== '') ? titleAttr : 'Kapittel ' + (index + 1);
@@ -105,13 +105,13 @@
             navItem.href = '#' + anchor;
             navItem.className = 'chapter-nav-item';
             navItem.setAttribute('data-chapter-anchor', anchor);
-            
+
             // For intro nav, add title and count as separate elements
             if (isIntroNav) {
                 const titleSpan = document.createElement('span');
                 titleSpan.textContent = title;
                 navItem.appendChild(titleSpan);
-                
+
                 if (poiCount > 0) {
                     const countSpan = document.createElement('span');
                     countSpan.className = 'poi-count';
@@ -122,13 +122,13 @@
                 // For sidebar nav, keep simple text
                 navItem.textContent = title;
             }
-            
+
             // Smooth scroll on click
             navItem.addEventListener('click', function(e) {
                 e.preventDefault();
                 scrollToChapter(anchor);
             });
-            
+
             navContainer.appendChild(navItem);
         });
     }
@@ -139,14 +139,14 @@
      */
     function scrollToChapter(anchor) {
         const chapter = document.getElementById(anchor);
-        
+
         if (!chapter) {
             return;
         }
 
         // Get chapter position relative to page top
         const chapterTop = chapter.getBoundingClientRect().top + window.pageYOffset;
-        
+
         // Scroll window to chapter with offset
         window.scrollTo({
             top: chapterTop - CONFIG.SCROLL_OFFSET,
@@ -187,7 +187,7 @@
      * @param {HTMLElement} navContainer - Navigation container
      */
     function setActiveNavItem(anchor, navContainer) {
-        
+
         // Remove active class from all items
         const navItems = navContainer.querySelectorAll('.chapter-nav-item');
         navItems.forEach(function(item) {
@@ -196,7 +196,7 @@
 
         // Add active class to current item
         const activeItem = navContainer.querySelector('[data-chapter-anchor="' + anchor + '"]');
-        
+
         if (activeItem) {
             activeItem.classList.add('active');
         } else {

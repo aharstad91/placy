@@ -1,8 +1,8 @@
 /**
  * Intro Section Parallax Effect
- * 
+ *
  * Creates a smooth parallax scroll effect for the intro section text
- * 
+ *
  * @package Placy
  * @since 1.0.0
  */
@@ -16,7 +16,7 @@
     function initParallax() {
         const introSection = document.querySelector('.intro-section');
         const introContent = document.querySelector('.intro-content');
-        
+
         if (!introSection || !introContent) {
             return;
         }
@@ -27,13 +27,13 @@
         function updateParallax() {
             const scrollY = window.pageYOffset || window.scrollY;
             const sectionHeight = introSection.offsetHeight;
-            
+
             // Only apply parallax while intro section is visible
             if (scrollY <= sectionHeight) {
                 // Text parallax - moves slower than scroll (negative = moves up)
                 const textOffset = scrollY * -0.3;
                 introContent.style.transform = `translateY(${textOffset}px)`;
-                
+
                 // Background parallax - moves slower upward (positive = background moves up slower)
                 // This creates the effect where background moves slower than scroll
                 const bgOffset = scrollY * 0.5;
@@ -43,7 +43,7 @@
 
         // Use requestAnimationFrame for smooth performance
         let ticking = false;
-        
+
         window.addEventListener('scroll', function() {
             if (!ticking) {
                 window.requestAnimationFrame(function() {
@@ -56,7 +56,7 @@
 
         // Initial call
         updateParallax();
-        
+
     }
 
     // Initialize on DOM ready

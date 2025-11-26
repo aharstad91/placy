@@ -1,6 +1,6 @@
 /**
  * POI Map Modal Functionality
- * 
+ *
  * @package Placy
  * @since 1.0.0
  */
@@ -15,11 +15,11 @@ window.placyMapboxInstance = null;
 document.addEventListener('DOMContentLoaded', function() {
     // Find all POI map data blocks
     const mapDataElements = document.querySelectorAll('.poi-map-data');
-    
+
     mapDataElements.forEach(function(element) {
         const data = JSON.parse(element.textContent);
         window.placyPOIMaps[data.blockId] = data;
-        
+
         // Only initialize if there are points
         if (data.points && data.points.length > 0) {
             // Auto-initialize inline maps on desktop
@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
-    
+
     // Set Mapbox access token
     if (typeof mapboxgl !== 'undefined' && typeof placyMapbox !== 'undefined') {
         mapboxgl.accessToken = placyMapbox.accessToken;
@@ -37,21 +37,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
 /**
  * Open POI Map Modal or Initialize Inline (Desktop vs Mobile)
- * 
+ *
  * @param {string} blockId - Unique block ID
  * @param {string} poiSlug - Optional Point slug to highlight
  */
 function openPOIMapModal(blockId, poiSlug) {
     const mapData = window.placyPOIMaps[blockId];
-    
+
     if (!mapData || !mapData.points || mapData.points.length === 0) {
         console.error('No Point data found for block:', blockId);
         return;
     }
-    
+
     // Check if desktop (≥1024px)
     const isDesktop = window.innerWidth >= 1024;
-    
+
     if (isDesktop) {
         // Desktop: Initialize inline map (but keep it blurred/inactive)
         initializeMapInline(blockId, mapData, poiSlug);
@@ -59,12 +59,12 @@ function openPOIMapModal(blockId, poiSlug) {
         // Mobile: Open fullscreen modal
         openMapModal(mapData, poiSlug);
     }
-    
+
 }
 
 /**
  * Initialize Map Inline (Desktop) - Show blurred map with CTA
- * 
+ *
  * @param {string} blockId - Unique block ID
  * @param {Object} mapData - Map data with Points
  * @param {string} poiSlug - Optional Point slug to highlight
@@ -76,23 +76,23 @@ function initializeMapInline(blockId, mapData, poiSlug) {
         console.error('Block element not found:', blockId);
         return;
     }
-    
+
     // Check if already initialized
     const existingContainer = blockElement.querySelector('.inline-map-container');
     if (existingContainer) {
         return; // Already initialized
     }
-    
+
     // Add active class (shows the map container)
     blockElement.classList.add('map-active');
-    
+
     // Get the preview element
     const previewElement = blockElement.querySelector('.poi-map-preview');
     if (!previewElement) {
         console.error('Preview element not found');
         return;
     }
-    
+
     // Create inline map container
     const mapContainer = document.createElement('div');
     mapContainer.className = 'inline-map-container';
@@ -110,7 +110,7 @@ function initializeMapInline(blockId, mapData, poiSlug) {
         </button>
     `;
     previewElement.parentNode.insertBefore(mapContainer, previewElement.nextSibling);
-    
+
     // Initialize map immediately but keep it blurred/disabled
     setTimeout(function() {
         initializeMapboxMapInline(mapData, poiSlug, true); // true = keep markers hidden initially
@@ -119,31 +119,31 @@ function initializeMapInline(blockId, mapData, poiSlug) {
 
 /**
  * Activate Inline Map (Remove blur, show markers, enable interaction)
- * 
+ *
  * @param {string} blockId - Unique block ID
  */
 function activateInlineMap(blockId) {
     const blockElement = document.querySelector(`[data-block-id="${blockId}"]`);
     if (!blockElement) return;
-    
+
     const mapContainer = blockElement.querySelector('.inline-map-container');
     if (!mapContainer) return;
-    
+
     // Show expansion overlay immediately to hide scaling artifacts
     const expansionOverlay = mapContainer.querySelector('.expansion-overlay');
     if (expansionOverlay) {
         expansionOverlay.classList.add('active');
     }
-    
+
     // Activate the map (starts expansion animation)
     mapContainer.classList.add('map-activated');
-    
+
     // Enable map interaction and resize after expansion completes
     if (window.placyMapboxInstance) {
         setTimeout(function() {
             // Resize map to fill expanded container
             window.placyMapboxInstance.resize();
-            
+
             // Enable all map interactions
             window.placyMapboxInstance.scrollZoom.enable();
             window.placyMapboxInstance.boxZoom.enable();
@@ -152,7 +152,7 @@ function activateInlineMap(blockId) {
             window.placyMapboxInstance.keyboard.enable();
             window.placyMapboxInstance.doubleClickZoom.enable();
             window.placyMapboxInstance.touchZoomRotate.enable();
-            
+
             // Hide expansion overlay after resize
             if (expansionOverlay) {
                 setTimeout(function() {
@@ -161,7 +161,7 @@ function activateInlineMap(blockId) {
             }
         }, 400); // Match the CSS transition duration
     }
-    
+
     // Show markers after blur transition and expansion
     setTimeout(function() {
         const markers = mapContainer.querySelectorAll('.mapbox-poi-marker');
@@ -169,32 +169,32 @@ function activateInlineMap(blockId) {
             marker.style.opacity = '1';
         });
     }, 300);
-    
+
 }
 
 /**
  * Close Inline Map (Desktop)
- * 
+ *
  * @param {string} blockId - Unique block ID
  */
 function closeInlineMap(blockId) {
     const blockElement = document.querySelector(`[data-block-id="${blockId}"]`);
     if (!blockElement) return;
-    
+
     // Remove active class
     blockElement.classList.remove('map-active');
-    
+
     // Destroy Mapbox instance
     if (window.placyMapboxInstance) {
         window.placyMapboxInstance.remove();
         window.placyMapboxInstance = null;
     }
-    
+
 }
 
 /**
  * Open Map Modal (Mobile)
- * 
+ *
  * @param {Object} mapData - Map data with Points
  * @param {string} poiSlug - Optional Point slug to highlight
  */
@@ -205,21 +205,21 @@ function openMapModal(mapData, poiSlug) {
         modal = createPOIMapModal();
         document.body.appendChild(modal);
     }
-    
+
     // Store current scroll position
     const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
-    
+
     // Clear previous content
     const mapCanvas = modal.querySelector('.poi-map-canvas');
     mapCanvas.innerHTML = '<div id="mapbox-container" style="width: 100%; height: 100%;"></div>';
-    
+
     // Disable body scroll
     document.body.classList.add('modal-open');
     document.body.style.top = `-${scrollPosition}px`;
-    
+
     // Show modal
     modal.classList.add('active');
-    
+
     // Initialize Mapbox map after modal is visible
     setTimeout(function() {
         initializeMapboxMap(mapData, poiSlug, 'mapbox-container');
@@ -228,7 +228,7 @@ function openMapModal(mapData, poiSlug) {
 
 /**
  * Initialize Mapbox Map (Generic)
- * 
+ *
  * @param {Object} mapData - Map data with Points
  * @param {string} poiSlug - Optional Point slug to highlight
  * @param {string} containerId - Container element ID
@@ -238,19 +238,19 @@ function initializeMapboxMap(mapData, poiSlug, containerId) {
         console.error('Mapbox GL JS is not loaded');
         return;
     }
-    
+
     // Destroy previous map instance if exists
     if (window.placyMapboxInstance) {
         window.placyMapboxInstance.remove();
         window.placyMapboxInstance = null;
     }
-    
+
     // Calculate bounds to fit all Points
     const bounds = new mapboxgl.LngLatBounds();
     mapData.points.forEach(function(poi) {
         bounds.extend([poi.longitude, poi.latitude]);
     });
-    
+
     // Create map
     const map = new mapboxgl.Map({
         container: containerId || 'mapbox-container',
@@ -261,18 +261,18 @@ function initializeMapboxMap(mapData, poiSlug, containerId) {
             maxZoom: 14
         }
     });
-    
+
     window.placyMapboxInstance = map;
-    
+
     // Add navigation controls
     map.addControl(new mapboxgl.NavigationControl(), 'top-right');
-    
+
     // Add Point markers after map loads
     map.on('load', function() {
         mapData.points.forEach(function(poi) {
             addMapboxMarker(map, poi);
         });
-        
+
         // If specific Point is requested, show it
         if (poiSlug) {
             const poi = mapData.points.find(p => p.slug === poiSlug);
@@ -287,7 +287,7 @@ function initializeMapboxMap(mapData, poiSlug, containerId) {
 
 /**
  * Initialize Mapbox Map Inline (Desktop)
- * 
+ *
  * @param {Object} mapData - Map data with Points
  * @param {string} poiSlug - Optional Point slug to highlight
  * @param {boolean} hideMarkers - Hide markers initially
@@ -297,19 +297,19 @@ function initializeMapboxMapInline(mapData, poiSlug, hideMarkers) {
         console.error('Mapbox GL JS is not loaded');
         return;
     }
-    
+
     // Validate points exist
     if (!mapData.points || mapData.points.length === 0) {
         console.error('No points to display on map');
         return;
     }
-    
+
     // Destroy previous map instance if exists
     if (window.placyMapboxInstance) {
         window.placyMapboxInstance.remove();
         window.placyMapboxInstance = null;
     }
-    
+
     // Calculate center from points
     let centerLat = 0, centerLng = 0;
     mapData.points.forEach(function(poi) {
@@ -318,13 +318,13 @@ function initializeMapboxMapInline(mapData, poiSlug, hideMarkers) {
     });
     centerLat /= mapData.points.length;
     centerLng /= mapData.points.length;
-    
+
     // Validate coordinates
     if (isNaN(centerLat) || isNaN(centerLng)) {
         console.error('Invalid coordinates calculated:', centerLat, centerLng);
         return;
     }
-    
+
     // Create map centered on points
     const map = new mapboxgl.Map({
         container: 'mapbox-container-inline',
@@ -333,7 +333,7 @@ function initializeMapboxMapInline(mapData, poiSlug, hideMarkers) {
         zoom: 13,
         interactive: true // Always interactive, but disable handlers if hideMarkers
     });
-    
+
     // Disable interaction initially if hideMarkers is true
     if (hideMarkers) {
         map.scrollZoom.disable();
@@ -344,12 +344,12 @@ function initializeMapboxMapInline(mapData, poiSlug, hideMarkers) {
         map.doubleClickZoom.disable();
         map.touchZoomRotate.disable();
     }
-    
+
     window.placyMapboxInstance = map;
-    
+
     // Add navigation controls
     map.addControl(new mapboxgl.NavigationControl(), 'top-right');
-    
+
     // Add Point markers after map loads
     map.on('load', function() {
         mapData.points.forEach(function(poi) {
@@ -359,7 +359,7 @@ function initializeMapboxMapInline(mapData, poiSlug, hideMarkers) {
                 markerEl.style.transition = 'opacity 0.3s ease';
             }
         });
-        
+
         // If specific Point is requested, show it (only if not hiding markers)
         if (poiSlug && !hideMarkers) {
             const poi = mapData.points.find(p => p.slug === poiSlug);
@@ -374,7 +374,7 @@ function initializeMapboxMapInline(mapData, poiSlug, hideMarkers) {
 
 /**
  * Add Mapbox Marker for POI
- * 
+ *
  * @param {Object} map - Mapbox map instance
  * @param {Object} poi - POI data
  * @returns {HTMLElement} The marker element
@@ -389,16 +389,16 @@ function addMapboxMarker(map, poi) {
         </svg>
         <div class="mapbox-poi-label">${poi.title}</div>
     `;
-    
+
     if (!poi.clickable) {
         el.classList.add('coming-soon');
     }
-    
+
     // Create marker
     const marker = new mapboxgl.Marker(el)
         .setLngLat([poi.longitude, poi.latitude])
         .addTo(map);
-    
+
     // Add click handler
     if (poi.clickable) {
         el.addEventListener('click', function(e) {
@@ -411,7 +411,7 @@ function addMapboxMarker(map, poi) {
             alert('Denne POI-en er ikke tilgjengelig ennå.');
         });
     }
-    
+
     return el;
 }
 
@@ -422,7 +422,7 @@ function createPOIMapModal() {
     const modal = document.createElement('div');
     modal.id = 'poi-map-modal';
     modal.className = 'poi-map-modal';
-    
+
     modal.innerHTML = `
         <div class="poi-modal-header">
             <button class="poi-modal-close" onclick="closePOIMapModal()">&times;</button>
@@ -444,30 +444,30 @@ function createPOIMapModal() {
             </div>
         </div>
     `;
-    
+
     // Close modal when clicking outside
     modal.addEventListener('click', function(e) {
         if (e.target === modal) {
             closePOIMapModal();
         }
     });
-    
+
     // Prevent clicks on map canvas from closing
     modal.querySelector('.poi-map-canvas').addEventListener('click', function(e) {
         e.stopPropagation();
     });
-    
+
     // Prevent clicks on POI sheet from closing
     modal.querySelector('#poi-sheet').addEventListener('click', function(e) {
         e.stopPropagation();
     });
-    
+
     return modal;
 }
 
 /**
  * Create POI Marker Element
- * 
+ *
  * @param {Object} poi - POI data object
  * @returns {HTMLElement}
  */
@@ -475,19 +475,19 @@ function createPOIMapModal() {
 
 /**
  * Show POI Bottom Sheet
- * 
+ *
  * @param {Object} poi - POI data object
  */
 function showPOISheet(poi) {
     const sheet = document.getElementById('poi-sheet');
     const title = document.getElementById('poiSheetTitle');
     const body = document.getElementById('poiSheetBody');
-    
+
     if (!sheet || !title || !body) return;
-    
+
     // Update content
     title.textContent = poi.title;
-    
+
     body.innerHTML = `
         <div class="poi-sheet-location">
             <svg class="w-4 h-4 inline mr-1" viewBox="0 0 24 24" fill="currentColor">
@@ -509,11 +509,11 @@ function showPOISheet(poi) {
             </button>
         </div>
     `;
-    
+
     // Show sheet
     sheet.classList.remove('closed');
     sheet.classList.add('peek');
-    
+
     // Expand to full after a moment
     setTimeout(function() {
         sheet.classList.remove('peek');
@@ -538,29 +538,29 @@ function hidePOISheet() {
 function closePOIMapModal() {
     const modal = document.getElementById('poi-map-modal');
     if (!modal) return;
-    
+
     // Hide sheet first
     hidePOISheet();
-    
+
     // Get stored scroll position
     const scrollPosition = Math.abs(parseInt(document.body.style.top || '0'));
-    
+
     // Enable body scroll
     document.body.classList.remove('modal-open');
     document.body.style.top = '';
-    
+
     // Restore scroll position
     window.scrollTo(0, scrollPosition);
-    
+
     // Hide modal
     modal.classList.remove('active');
-    
+
     // Destroy Mapbox instance
     if (window.placyMapboxInstance) {
         window.placyMapboxInstance.remove();
         window.placyMapboxInstance = null;
     }
-    
+
 }
 
 /**

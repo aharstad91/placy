@@ -1,9 +1,9 @@
 /**
  * Entur Live Departures - Frontend Integration
- * 
+ *
  * Fetches and displays real-time departure information from Entur API
  * Loads all departures on page load and displays them immediately.
- * 
+ *
  * @package Placy
  * @since 1.0.0
  */
@@ -13,12 +13,12 @@
 
     // Configuration
     const CONFIG = {
-        API_ENDPOINT: (typeof enturSettings !== 'undefined' && enturSettings.restUrl) 
-            ? enturSettings.restUrl 
+        API_ENDPOINT: (typeof enturSettings !== 'undefined' && enturSettings.restUrl)
+            ? enturSettings.restUrl
             : window.location.origin + '/wp-json/placy/v1/entur/departures',
         REFRESH_INTERVAL: 60000, // 60 seconds
         MAX_RETRIES: 2,
-        RETRY_DELAY: 1000,
+        RETRY_DELAY: 1000
     };
 
     // Cache for departure data
@@ -29,7 +29,7 @@
      */
     function init() {
         console.log('Entur Live Departures: Initializing...');
-        
+
         // Load all departures on page load
         loadAllDepartures();
     }
@@ -40,7 +40,7 @@
     async function loadAllDepartures() {
         // Find all POI cards with Entur data
         const poiCards = document.querySelectorAll('[data-entur-stopplace-id][data-show-live-departures="1"]');
-        
+
         if (poiCards.length === 0) {
             console.log('Entur: No POIs with live departures enabled');
             return;
@@ -56,7 +56,7 @@
             const stopplaceId = poiCard.getAttribute('data-entur-stopplace-id');
             const quayId = poiCard.getAttribute('data-entur-quay-id');
             const transportMode = poiCard.getAttribute('data-entur-transport-mode');
-            
+
             // Build cache key
             let cacheKey = stopplaceId;
             if (quayId) cacheKey += `-${quayId}`;
@@ -75,7 +75,7 @@
         const fetchPromises = Array.from(uniqueRequests.entries()).map(async function([cacheKey, params]) {
             try {
                 const result = await fetchDepartures(params.stopplaceId, params.quayId, params.transportMode);
-                
+
                 if (result && result.departures && result.departures.length > 0) {
                     // Display departures on all POI cards that use this request
                     const cards = poisByRequest.get(cacheKey);
@@ -144,7 +144,7 @@
         if (quayId) cacheKey += `-${quayId}`;
         if (transportMode) cacheKey += `-${transportMode}`;
         const cached = departureCache.get(cacheKey);
-        
+
         if (cached && (Date.now() - cached.timestamp) < CONFIG.REFRESH_INTERVAL) {
             console.log('Entur: Using cached data');
             return cached.data;
@@ -172,21 +172,21 @@
                 const response = await fetch(url, {
                     method: 'GET',
                     headers: {
-                        'Content-Type': 'application/json',
+                        'Content-Type': 'application/json'
                     },
-                    signal: controller.signal,
+                    signal: controller.signal
                 });
 
                 clearTimeout(timeoutId);
 
                 if (!response.ok) {
                     console.warn(`Entur API returned status: ${response.status}`);
-                    
+
                     // Don't retry on client errors (4xx)
                     if (response.status >= 400 && response.status < 500) {
                         return { success: false, departures: [] };
                     }
-                    
+
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
@@ -195,18 +195,18 @@
                 // Cache the result (even if empty)
                 departureCache.set(cacheKey, {
                     data: data,
-                    timestamp: Date.now(),
+                    timestamp: Date.now()
                 });
 
                 return data;
-                
+
             } catch (error) {
                 if (error.name === 'AbortError') {
                     console.warn(`Entur: Request timeout on attempt ${attempt + 1}`);
                 } else {
                     console.error(`Entur: Fetch attempt ${attempt + 1} failed:`, error);
                 }
-                
+
                 // Retry with delay if not last attempt
                 if (attempt < CONFIG.MAX_RETRIES) {
                     await new Promise(resolve => setTimeout(resolve, CONFIG.RETRY_DELAY));
@@ -258,10 +258,10 @@
         `;
 
         departures.forEach(function(departure) {
-            const realtimeIndicator = departure.realtime 
-                ? '<span class="text-emerald-600 text-xs ml-2">●</span>' 
+            const realtimeIndicator = departure.realtime
+                ? '<span class="text-emerald-600 text-xs ml-2">●</span>'
                 : '<span class="text-gray-400 text-xs ml-2" title="Rutetid (ikke sanntid)">?</span>';
-            
+
             const relativeTime = formatRelativeTime(departure.relative_time);
             const quayInfo = departure.quay_code ? `<span class="text-gray-400 text-xs ml-2">${departure.quay_code}</span>` : '';
 

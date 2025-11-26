@@ -125,7 +125,7 @@ $show_bike_availability = get_field( 'show_bike_availability', $poi_id );
             endif; 
          ?>
          <?php if ( $coords ) : ?>
-            data-poi-coords="<?php echo $coords; ?>"
+            data-poi-coords="<?php echo esc_attr( $coords ); ?>"
          <?php endif; ?>
          <?php if ( $featured_image ) : ?>
             data-poi-image="<?php echo esc_url( $featured_image ); ?>"
@@ -198,11 +198,11 @@ $show_bike_availability = get_field( 'show_bike_availability', $poi_id );
                        aria-label="Se anmeldelser på Google">
                         <span class="poi-rating-value flex items-center gap-1 text-lg font-semibold text-gray-900">
                             <span class="text-yellow-500">★</span>
-                            <?php echo number_format( $place_data['rating'], 1 ); ?>
+                            <?php echo esc_html( number_format( $place_data['rating'], 1 ) ); ?>
                         </span>
                         <?php if ( isset( $place_data['review_count'] ) && $place_data['review_count'] > 0 ) : ?>
                             <span class="poi-rating-count text-sm text-gray-600">
-                                (<?php echo number_format( $place_data['review_count'] ); ?>)
+                                (<?php echo esc_html( number_format( $place_data['review_count'] ) ); ?>)
                             </span>
                         <?php endif; ?>
                         <span class="flex items-center gap-1 text-xs text-gray-400 ml-1">
@@ -218,11 +218,11 @@ $show_bike_availability = get_field( 'show_bike_availability', $poi_id );
                 <?php else : ?>
                     <span class="poi-rating-value flex items-center gap-1 text-lg font-semibold text-gray-900">
                         <span class="text-yellow-500">★</span>
-                        <?php echo number_format( $place_data['rating'], 1 ); ?>
+                        <?php echo esc_html( number_format( $place_data['rating'], 1 ) ); ?>
                     </span>
                     <?php if ( isset( $place_data['review_count'] ) && $place_data['review_count'] > 0 ) : ?>
                         <span class="poi-rating-count text-sm text-gray-600">
-                            (<?php echo number_format( $place_data['review_count'] ); ?>)
+                            (<?php echo esc_html( number_format( $place_data['review_count'] ) ); ?>)
                         </span>
                     <?php endif; ?>
                 <?php endif; ?>

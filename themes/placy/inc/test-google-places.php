@@ -1,10 +1,15 @@
 <?php
 /**
  * Test Google Places API
- * Visit: /wp-admin/admin-ajax.php?action=test_google_places
+ * Admin-only endpoint: /wp-admin/admin-ajax.php?action=test_google_places
  */
 
 function placy_test_google_places_callback() {
+    // Security: Admin only, no public access
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_die( esc_html__( 'Unauthorized access', 'placy' ) );
+    }
+    
     $place_id = 'ChIJab_zEdAxbUYRiMCFnG3IS34'; // Speilsalen
     
     echo "<h2>Testing Google Places API</h2>";
@@ -53,5 +58,5 @@ function placy_test_google_places_callback() {
     wp_die();
 }
 
+// Admin-only AJAX handler (removed nopriv for security)
 add_action('wp_ajax_test_google_places', 'placy_test_google_places_callback');
-add_action('wp_ajax_nopriv_test_google_places', 'placy_test_google_places_callback');

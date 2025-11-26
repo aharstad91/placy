@@ -86,7 +86,7 @@ $is_in_chapter = strpos( $parent_classes, 'chapter' ) !== false;
                         endif; 
                     ?>
                     <?php if ( $coords ) : ?>
-                        data-poi-coords="<?php echo $coords; ?>"
+                        data-poi-coords="<?php echo esc_attr( $coords ); ?>"
                     <?php endif; ?>
                     <?php if ( $featured_image ) : ?>
                         data-poi-image="<?php echo esc_url( $featured_image ); ?>"
@@ -162,11 +162,11 @@ $is_in_chapter = strpos( $parent_classes, 'chapter' ) !== false;
                                                        aria-label="Se anmeldelser på Google">
                                                         <span class="poi-rating-value flex items-center gap-1 text-sm font-medium text-gray-900">
                                                             <span class="text-yellow-500">★</span>
-                                                            <?php echo number_format( $place_data['rating'], 1 ); ?>
+                                                            <?php echo esc_html( number_format( $place_data['rating'], 1 ) ); ?>
                                                         </span>
                                                         <?php if ( isset( $place_data['review_count'] ) && $place_data['review_count'] > 0 ) : ?>
                                                             <span class="poi-rating-count text-xs text-gray-500">
-                                                                (<?php echo number_format( $place_data['review_count'] ); ?>)
+                                                                (<?php echo esc_html( number_format( $place_data['review_count'] ) ); ?>)
                                                             </span>
                                                         <?php endif; ?>
                                                         <span class="flex items-center gap-1 text-xs text-gray-400">
@@ -182,11 +182,11 @@ $is_in_chapter = strpos( $parent_classes, 'chapter' ) !== false;
                                                 <?php else : ?>
                                                     <span class="poi-rating-value flex items-center gap-1 text-sm font-medium text-gray-900">
                                                         <span class="text-yellow-500">★</span>
-                                                        <?php echo number_format( $place_data['rating'], 1 ); ?>
+                                                        <?php echo esc_html( number_format( $place_data['rating'], 1 ) ); ?>
                                                     </span>
                                                     <?php if ( isset( $place_data['review_count'] ) && $place_data['review_count'] > 0 ) : ?>
                                                         <span class="poi-rating-count text-xs text-gray-500">
-                                                            (<?php echo number_format( $place_data['review_count'] ); ?>)
+                                                            (<?php echo esc_html( number_format( $place_data['review_count'] ) ); ?>)
                                                         </span>
                                                     <?php endif; ?>
                                                 <?php endif; ?>

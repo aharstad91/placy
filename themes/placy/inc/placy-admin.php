@@ -41,6 +41,9 @@ function placy_add_admin_menu() {
  * Placy settings page
  */
 function placy_settings_page() {
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_die( esc_html__( 'Unauthorized access', 'placy' ) );
+    }
     ?>
     <div class="wrap">
         <h1>Placy Settings</h1>
@@ -83,15 +86,15 @@ function placy_settings_page() {
             <h2>Quick Actions</h2>
             
             <p>
-                <a href="<?php echo admin_url( 'post-new.php?post_type=placy_native_point' ); ?>" class="button button-primary">
+                <a href="<?php echo esc_url( admin_url( 'post-new.php?post_type=placy_native_point' ) ); ?>" class="button button-primary">
                     Add Native Point
                 </a>
                 
-                <a href="<?php echo admin_url( 'post-new.php?post_type=placy_google_point' ); ?>" class="button button-primary">
+                <a href="<?php echo esc_url( admin_url( 'post-new.php?post_type=placy_google_point' ) ); ?>" class="button button-primary">
                     Add Google Point
                 </a>
                 
-                <a href="<?php echo admin_url( 'admin.php?page=placy-status' ); ?>" class="button">
+                <a href="<?php echo esc_url( admin_url( 'admin.php?page=placy-status' ) ); ?>" class="button">
                     View Status
                 </a>
             </p>
@@ -120,7 +123,7 @@ function placy_settings_page() {
                         <td>
                             <?php 
                             echo $daily_next 
-                                ? date( 'Y-m-d H:i:s', $daily_next ) 
+                                ? esc_html( date( 'Y-m-d H:i:s', $daily_next ) )
                                 : '<span style="color: red;">Not scheduled</span>';
                             ?>
                         </td>
@@ -131,7 +134,7 @@ function placy_settings_page() {
                         <td>
                             <?php 
                             echo $weekly_next 
-                                ? date( 'Y-m-d H:i:s', $weekly_next ) 
+                                ? esc_html( date( 'Y-m-d H:i:s', $weekly_next ) )
                                 : '<span style="color: red;">Not scheduled</span>';
                             ?>
                         </td>
@@ -252,12 +255,12 @@ function placy_status_page() {
                     <?php foreach ( $recent_google as $point ): ?>
                         <tr>
                             <td>
-                                <a href="<?php echo get_edit_post_link( $point->ID ); ?>">
-                                    <?php echo get_the_title( $point->ID ); ?>
+                                <a href="<?php echo esc_url( get_edit_post_link( $point->ID ) ); ?>">
+                                    <?php echo esc_html( get_the_title( $point->ID ) ); ?>
                                 </a>
                             </td>
                             <td>
-                                <code><?php echo get_field( 'google_place_id', $point->ID ); ?></code>
+                                <code><?php echo esc_html( get_field( 'google_place_id', $point->ID ) ); ?></code>
                             </td>
                             <td>
                                 <?php 
@@ -397,7 +400,7 @@ function placy_google_refresh_metabox_callback( $post ) {
             
             <?php if ( $last_synced ): ?>
                 <p><strong>Last Synced:</strong><br>
-                <?php echo date( 'Y-m-d H:i', strtotime( $last_synced ) ); ?><br>
+                <?php echo esc_html( date( 'Y-m-d H:i', strtotime( $last_synced ) ) ); ?><br>
                 <small>(<?php echo human_time_diff( strtotime( $last_synced ), current_time( 'timestamp' ) ); ?> ago)</small></p>
             <?php else: ?>
                 <p><strong>Status:</strong> <span style="color: orange;">⚠️ Not synced yet</span></p>
@@ -408,8 +411,8 @@ function placy_google_refresh_metabox_callback( $post ) {
             <?php endif; ?>
             
             <?php if ( isset( $data['rating'] ) ): ?>
-                <p><strong>Rating:</strong> ⭐ <?php echo $data['rating']; ?> 
-                (<?php echo $data['user_ratings_total'] ?? 0; ?> reviews)</p>
+                <p><strong>Rating:</strong> ⭐ <?php echo esc_html( $data['rating'] ); ?> 
+                (<?php echo esc_html( $data['user_ratings_total'] ?? 0 ); ?> reviews)</p>
             <?php endif; ?>
             
             <button type="button" class="button button-primary button-large" id="placy-refresh-google-data" style="width: 100%; margin-top: 10px;">

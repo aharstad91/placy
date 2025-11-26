@@ -34,7 +34,7 @@ add_action( 'admin_menu', 'placy_add_bulk_import_menu' );
 function placy_bulk_import_page() {
     // Check user capabilities
     if ( ! current_user_can( 'manage_options' ) ) {
-        wp_die( __( 'You do not have sufficient permissions to access this page.' ) );
+        wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'placy' ) );
     }
     
     // Get all projects
@@ -729,7 +729,9 @@ function placy_ajax_bulk_import_places() {
         wp_send_json_error( 'Unauthorized' );
     }
     
-    $place_ids = isset( $_POST['place_ids'] ) ? $_POST['place_ids'] : array();
+    $place_ids = isset( $_POST['place_ids'] ) && is_array( $_POST['place_ids'] ) 
+        ? array_map( 'sanitize_text_field', $_POST['place_ids'] ) 
+        : array();
     $project_id = intval( $_POST['project_id'] );
     $category_id = ! empty( $_POST['category_id'] ) ? intval( $_POST['category_id'] ) : null;
     
@@ -741,11 +743,14 @@ function placy_ajax_bulk_import_places() {
     $skipped = array();
     
     foreach ( $place_ids as $place_id ) {
+        // Sanitize place_id (already sanitized in array_map above, but double-check)
+        $place_id = sanitize_text_field( $place_id );
+        
         // Check for duplicates
         $existing = get_posts( array(
             'post_type' => 'placy_google_point',
             'meta_key' => 'google_place_id',
-            'meta_value' => sanitize_text_field( $place_id ),
+            'meta_value' => $place_id,
             'posts_per_page' => 1,
         ) );
         
@@ -755,7 +760,7 @@ function placy_ajax_bulk_import_places() {
         }
         
         // Create Google Point
-        $post_id = placy_create_google_point( sanitize_text_field( $place_id ), $project_id );
+        $post_id = placy_create_google_point( $place_id, $project_id );
         
         if ( ! is_wp_error( $post_id ) ) {
             // Auto-assign category if selected

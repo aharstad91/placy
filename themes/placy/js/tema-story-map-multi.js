@@ -1,12 +1,12 @@
 /**
  * Tema Story Map - Scroll-synchronized map with POI markers
- * 
+ *
  * Features:
  * - Intersection Observer for chapter tracking
  * - Dynamic marker updates based on scroll position
  * - Smooth map transitions with fitBounds
  * - Configurable chapter activation threshold
- * 
+ *
  * @package Placy
  * @since 1.0.0
  */
@@ -38,18 +38,18 @@
     // State
     let map = null;
     let markers = [];
-    let chapterData = new Map();
+    const chapterData = new Map();
     let activeChapterId = null;
-    let observer = null;
+    const observer = null;
     let debounceTimer = null;
     let startLocation = null; // Property/start location from ACF fields
-    let walkingDistances = new Map(); // Cache for walking distances
+    const walkingDistances = new Map(); // Cache for walking distances
     let currentRoute = null; // Currently displayed route
     let currentDurationMarkers = []; // Store duration markers for cleanup
-    
+
     // Google Places API state
-    let placesApiResults = new Map(); // Store API results per chapter
-    
+    const placesApiResults = new Map(); // Store API results per chapter
+
     /**
      * Get photo URL from Google Places API
      * @param {string} photoReference - Photo reference from Places API (old or new format)
@@ -60,14 +60,14 @@
         if (!photoReference) {
             return null;
         }
-        
+
         // Build photo URL using Places Photo API
         const apiKey = typeof placyMapConfig !== 'undefined' && placyMapConfig.googlePlacesApiKey ? placyMapConfig.googlePlacesApiKey : '';
         if (!apiKey) {
             console.warn('Google Places API key not configured');
             return null;
         }
-        
+
         // Check if this is the new API format (starts with "places/")
         if (photoReference.startsWith('places/')) {
             // New Places API (New) format: use the resource name directly
@@ -79,12 +79,12 @@
                 photo_reference: photoReference,
                 key: apiKey
             });
-            
+
             return 'https://maps.googleapis.com/maps/api/place/photo?' + params.toString();
         }
     }
     let placesMarkers = []; // Store Google Places markers separately
-    let showingApiResults = new Map(); // Track which chapters are showing API results
+    const showingApiResults = new Map(); // Track which chapters are showing API results
 
     /**
      * Get marker size based on current zoom level
@@ -107,7 +107,7 @@
     function updateMarkerSizes(zoom) {
         const size = getMarkerSize(zoom);
         console.log('Current zoom level:', zoom, '| Marker size:', size + 'px');
-        
+
         // Update all marker images (both old circular and new horizontal markers)
         const allMarkers = document.querySelectorAll('.marker-circle-container, .marker-image-container');
         allMarkers.forEach(function(imageEl) {
@@ -115,10 +115,10 @@
             const wrapper = imageEl.closest('.tema-story-marker-wrapper');
             const isActive = wrapper && wrapper.classList.contains('marker-active');
             const currentTransform = imageEl.style.transform;
-            
+
             imageEl.style.width = size + 'px';
             imageEl.style.height = size + 'px';
-            
+
             // Preserve any scale transform
             if (currentTransform && currentTransform.includes('scale')) {
                 // Keep existing scale
@@ -126,11 +126,11 @@
                 imageEl.style.transform = 'scale(1)';
             }
         });
-        
+
         // TASK 3: Update label visibility based on zoom level
         updateLabelVisibility(zoom);
     }
-    
+
     /**
      * Update POI label visibility based on zoom level
      * TASK 3: Hide labels at zoom < 15, show at zoom >= 15
@@ -141,36 +141,36 @@
     function updateLabelVisibility(zoom) {
         // Get all POI info cards (not Property labels)
         const poiLabels = document.querySelectorAll('.marker-info-card, .marker-label-poi');
-        
+
         // Calculate collision detection intensity based on zoom
         // Lower zoom = stricter spacing, higher zoom = more relaxed
-        const zoomFactor = Math.max(0, Math.min(1, 
-            (zoom - CONFIG.LABEL_COLLISION_ZOOM_START) / 
+        const zoomFactor = Math.max(0, Math.min(1,
+            (zoom - CONFIG.LABEL_COLLISION_ZOOM_START) /
             (CONFIG.LABEL_COLLISION_ZOOM_END - CONFIG.LABEL_COLLISION_ZOOM_START)
         ));
-        
+
         // Dynamic spacing: 180px at zoom 13, gradually reducing to 80px at zoom 17+
         const dynamicMinDistance = CONFIG.LABEL_MIN_DISTANCE + (40 * (1 - zoomFactor));
-        
+
         // Dynamic max visible: 6 at low zoom, unlimited at high zoom
-        const dynamicMaxVisible = zoom < 16 ? 
-            Math.floor(CONFIG.LABEL_MAX_VISIBLE * (0.75 + 0.25 * zoomFactor)) : 
+        const dynamicMaxVisible = zoom < 16 ?
+            Math.floor(CONFIG.LABEL_MAX_VISIBLE * (0.75 + 0.25 * zoomFactor)) :
             Infinity;
-        
+
         // First pass: determine which labels should be visible
         const labelsData = [];
         poiLabels.forEach(function(label) {
             const wrapper = label.closest('.tema-story-marker-wrapper');
             if (!wrapper) return;
-            
+
             // Check if this marker is hovered or active (force visible)
             const isHovered = label.hasAttribute('data-force-visible');
             const isActive = wrapper.classList.contains('marker-active');
             const isProperty = wrapper.getAttribute('data-marker-type') === 'property';
-            
+
             // Get screen position
             const rect = wrapper.getBoundingClientRect();
-            
+
             labelsData.push({
                 label: label,
                 wrapper: wrapper,
@@ -182,7 +182,7 @@
                 shouldShow: isHovered || isActive || zoom >= CONFIG.LABEL_COLLISION_ZOOM_START
             });
         });
-        
+
         // Sort by priority: active > hovered > normal
         labelsData.sort(function(a, b) {
             if (a.isActive && !b.isActive) return -1;
@@ -191,14 +191,14 @@
             if (!a.isHovered && b.isHovered) return 1;
             return 0;
         });
-        
+
         // Second pass: apply visibility with collision detection
         const visiblePositions = [];
         let visibleCount = 0;
-        
+
         labelsData.forEach(function(data) {
             const { label, wrapper, isHovered, isActive, shouldShow, x, y } = data;
-            
+
             if (isHovered || isActive) {
                 // Always show if hovered or active
                 label.style.opacity = '1';
@@ -218,7 +218,7 @@
                     const distance = Math.sqrt(Math.pow(pos.x - x, 2) + Math.pow(pos.y - y, 2));
                     return distance < dynamicMinDistance;
                 });
-                
+
                 if (hasNearbyLabel || visibleCount >= dynamicMaxVisible) {
                     // Hide if too close to another label or too many visible
                     label.style.opacity = '0';
@@ -240,7 +240,7 @@
                     const distance = Math.sqrt(Math.pow(pos.x - x, 2) + Math.pow(pos.y - y, 2));
                     return distance < CONFIG.LABEL_PRIORITY_DISTANCE;
                 });
-                
+
                 if (hasNearbyLabel) {
                     // Offset label slightly to avoid overlap
                     label.style.transform = 'translateY(-8px)';
@@ -249,7 +249,7 @@
                     label.style.transform = 'none';
                     label.style.opacity = '1';
                 }
-                
+
                 label.style.visibility = 'visible';
                 label.style.pointerEvents = 'auto';
                 visiblePositions.push({ x, y });
@@ -259,20 +259,20 @@
                     const distance = Math.sqrt(Math.pow(pos.x - x, 2) + Math.pow(pos.y - y, 2));
                     return distance < 60; // Very tight threshold
                 });
-                
+
                 if (hasVeryCloseLabel) {
                     label.style.transform = 'translateY(-10px)';
                 } else {
                     label.style.transform = 'none';
                 }
-                
+
                 label.style.opacity = '1';
                 label.style.visibility = 'visible';
                 label.style.pointerEvents = 'auto';
                 visiblePositions.push({ x, y });
             }
         });
-        
+
         // Property labels always visible (no changes needed, but ensure they stay visible)
         const propertyLabels = document.querySelectorAll('.marker-label-property');
         propertyLabels.forEach(function(label) {
@@ -289,12 +289,12 @@
      */
     function setupZoomListener(mapInstance) {
         if (!mapInstance) return;
-        
+
         mapInstance.on('zoom', function() {
             const currentZoom = mapInstance.getZoom();
             updateMarkerSizes(currentZoom);
         });
-        
+
         // Initial size update
         mapInstance.on('load', function() {
             const currentZoom = mapInstance.getZoom();
@@ -311,13 +311,13 @@
             startLocation = placyMapConfig.startLocation;
             return;
         }
-        
+
         // Fallback: Try to get from data attributes on body or container
         const container = document.querySelector('.tema-story-container');
         if (container) {
             const lat = container.getAttribute('data-start-lat');
             const lng = container.getAttribute('data-start-lng');
-            
+
             if (lat && lng) {
                 startLocation = [parseFloat(lng), parseFloat(lat)];
             }
@@ -359,7 +359,7 @@
         circleContainer.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
         circleContainer.style.transition = 'transform 0.3s ease, box-shadow 0.3s ease, width 0.3s ease, height 0.3s ease';
         circleContainer.style.transformOrigin = 'center center';
-        
+
         // Use property background or logo
         if (propertyBackground) {
             circleContainer.style.backgroundImage = `url(${propertyBackground})`;
@@ -376,7 +376,7 @@
             // Fallback: red circle for property
             circleContainer.style.backgroundColor = '#e74c3c';
         }
-        
+
         // Create label container under circle (same as POI markers)
         // TASK 2: Property label always visible
         const labelContainer = document.createElement('div');
@@ -390,7 +390,7 @@
         labelContainer.style.opacity = '1'; // Always visible
         labelContainer.style.visibility = 'visible';
         labelContainer.style.pointerEvents = 'auto';
-        
+
         // Property name
         const nameLabel = document.createElement('div');
         nameLabel.className = 'marker-name-label';
@@ -405,7 +405,7 @@
         nameLabel.style.textOverflow = 'ellipsis';
         nameLabel.style.width = '100%';
         labelContainer.appendChild(nameLabel);
-        
+
         // Subtitle "Punkt A"
         const subtitleLabel = document.createElement('div');
         subtitleLabel.textContent = 'Punkt A';
@@ -414,7 +414,7 @@
         subtitleLabel.style.color = '#6B7280';
         subtitleLabel.style.textShadow = '0 1px 2px rgba(255,255,255,0.8)';
         labelContainer.appendChild(subtitleLabel);
-        
+
         // Append elements to wrapper
         wrapper.appendChild(circleContainer);
         wrapper.appendChild(labelContainer);
@@ -424,7 +424,7 @@
             circleContainer.style.transform = 'scale(1.15)';
             circleContainer.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
         });
-        
+
         wrapper.addEventListener('mouseleave', function() {
             circleContainer.style.transform = 'scale(1)';
             circleContainer.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
@@ -438,11 +438,11 @@
         })
             .setLngLat(startLocation)
             .addTo(mapInstance);
-        
+
         // Store marker reference
         markers.push(propertyMarker);
     }
-    
+
     /**
      * Parse POI data and add markers for a specific chapter
      */
@@ -463,12 +463,12 @@
             if (parentResults && parentResults.style.display === 'none') {
                 continue;
             }
-            
+
             const coordsAttr = item.getAttribute('data-poi-coords');
             const poiId = item.getAttribute('data-poi-id');
             const title = item.getAttribute('data-poi-title');
             let image = item.getAttribute('data-poi-image');
-            
+
             // Check if this is a Google Point and get photo from photo reference
             const googlePlaceId = item.getAttribute('data-google-place-id');
             if (googlePlaceId && !image) {
@@ -492,7 +492,7 @@
                     let walking = null;
                     if (startLocation) {
                         walking = await getWalkingDistance(lngLat);
-                        
+
                         // Update POI element with walking time
                         if (walking) {
                             const walkTimeEl = item.querySelector('.poi-walking-time');
@@ -506,7 +506,7 @@
                     const ratingEl = item.querySelector('.poi-rating-value');
                     const ratingCountEl = item.querySelector('.poi-rating-count');
                     let rating = null;
-                    
+
                     if (ratingEl) {
                         const ratingText = ratingEl.textContent.replace(/\s+/g, ' ').trim();
                         const ratingMatch = ratingText.match(/(\d+\.?\d*)/);
@@ -546,7 +546,7 @@
         }
 
     }
-    
+
     /**
      * Add a marker for a POI to a specific map
      * Google Maps-style marker with image + info card
@@ -563,7 +563,7 @@
         wrapper.style.zIndex = '10';
         wrapper.style.filter = 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))';
         wrapper.style.transition = 'filter 0.2s ease';
-        
+
         // Create circular image container with dynamic size
         const imageSize = getMarkerSize(mapInstance.getZoom());
         const imageContainer = document.createElement('div');
@@ -576,7 +576,7 @@
         imageContainer.style.flexShrink = '0';
         imageContainer.style.transition = 'transform 0.2s ease, width 0.3s ease, height 0.3s ease';
         imageContainer.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
-        
+
         // Set image or gray background
         if (poi.image) {
             imageContainer.style.backgroundImage = `url(${poi.image})`;
@@ -585,7 +585,7 @@
         } else {
             imageContainer.style.backgroundColor = '#9CA3AF';
         }
-        
+
         // Create info card (transparent background, two rows)
         const infoCard = document.createElement('div');
         infoCard.className = 'marker-info-card';
@@ -594,7 +594,7 @@
         infoCard.style.minWidth = '0';
         infoCard.style.maxWidth = '140px';
         infoCard.style.transition = 'opacity 0.4s ease, visibility 0.4s ease, transform 0.3s ease';
-        
+
         // Initial state based on zoom level
         const currentZoom = mapInstance.getZoom();
         if (currentZoom < 15) {
@@ -606,7 +606,7 @@
             infoCard.style.visibility = 'visible';
             infoCard.style.pointerEvents = 'auto';
         }
-        
+
         // Row 1: POI name
         const nameRow = document.createElement('div');
         nameRow.className = 'marker-name-label';
@@ -621,7 +621,7 @@
         nameRow.style.marginBottom = '2px';
         nameRow.style.textShadow = 'rgba(255, 255, 255, 0.9) 1px 1px 1px, rgba(255, 255, 255, 0.8) 0px 0px 8px';
         infoCard.appendChild(nameRow);
-        
+
         // Row 2: Rating + Distance
         const metaRow = document.createElement('div');
         metaRow.style.display = 'flex';
@@ -629,30 +629,30 @@
         metaRow.style.gap = '10px';
         metaRow.style.fontSize = '11px';
         metaRow.style.color = '#6B7280';
-        
+
         // Rating (if available)
         if (poi.rating) {
             const ratingSpan = document.createElement('span');
             ratingSpan.style.display = 'flex';
             ratingSpan.style.alignItems = 'center';
             ratingSpan.style.gap = '2px';
-            
+
             const starSpan = document.createElement('span');
             starSpan.textContent = '★';
             starSpan.style.color = '#FBBC05';
             starSpan.style.fontSize = '12px';
             ratingSpan.appendChild(starSpan);
-            
+
             const ratingValue = document.createElement('span');
             ratingValue.textContent = poi.rating.value.toFixed(1);
             ratingValue.style.fontWeight = '500';
             ratingValue.style.color = '#374151';
             ratingValue.style.textShadow = '0 1px 3px rgba(255,255,255,0.9), 0 0 8px rgba(255,255,255,0.8)';
             ratingSpan.appendChild(ratingValue);
-            
+
             metaRow.appendChild(ratingSpan);
         }
-        
+
         // Distance (if available)
         if (poi.walking) {
             const distanceSpan = document.createElement('span');
@@ -661,9 +661,9 @@
             distanceSpan.style.textShadow = '0 1px 3px rgba(255,255,255,0.9), 0 0 8px rgba(255,255,255,0.8)';
             metaRow.appendChild(distanceSpan);
         }
-        
+
         infoCard.appendChild(metaRow);
-        
+
         // Append image and info card to wrapper
         wrapper.appendChild(imageContainer);
         wrapper.appendChild(infoCard);
@@ -686,7 +686,7 @@
                 infoCard.setAttribute('data-force-visible', 'true');
             }
         });
-        
+
         wrapper.addEventListener('mouseleave', function() {
             if (!wrapper.classList.contains('marker-active')) {
                 imageContainer.style.transform = 'scale(1)';
@@ -706,7 +706,7 @@
         // Click handler
         wrapper.addEventListener('click', function(e) {
             e.stopPropagation();
-            
+
             // Remove active state from all markers
             document.querySelectorAll('.tema-story-marker-wrapper[data-marker-type="poi"]').forEach(function(m) {
                 m.classList.remove('marker-active');
@@ -721,12 +721,12 @@
                 if (imgContainer) {
                     imgContainer.style.transform = 'scale(1)';
                 }
-                
+
                 // Reset filter for new style markers
                 if (m.querySelector('.marker-info-card')) {
                     m.style.filter = 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))';
                 }
-                
+
                 // Hide info card if zoom < 15 when deactivating
                 const info = m.querySelector('.marker-info-card');
                 if (info && !info.hasAttribute('data-force-visible')) {
@@ -738,7 +738,7 @@
                     }
                 }
             });
-            
+
             // Set this marker as active
             wrapper.classList.add('marker-active');
             wrapper.style.zIndex = '100';
@@ -794,7 +794,7 @@
         // Store marker reference
         markers.push(marker);
     }
-    
+
     /**
      * Draw walking route on a specific map
      * @param {Object} mapInstance - The map instance
@@ -804,7 +804,7 @@
     function drawRouteOnMap(mapInstance, geometry, duration) {
         // First, clear ALL existing routes from this map
         clearRouteFromMap(mapInstance);
-        
+
         // Use fixed IDs for this map instance
         const routeId = 'walking-route';
         const labelId = 'walking-route-label';
@@ -839,11 +839,11 @@
             // Add duration label at midpoint (50% of route distance)
             if (duration && geometry.coordinates && geometry.coordinates.length > 0) {
                 const coords = geometry.coordinates;
-                
+
                 // Calculate the actual midpoint by measuring 50% of total distance
                 let totalDistance = 0;
                 const distances = [0];
-                
+
                 // Calculate cumulative distances
                 for (let i = 1; i < coords.length; i++) {
                     const dx = coords[i][0] - coords[i-1][0];
@@ -852,18 +852,18 @@
                     totalDistance += segmentDistance;
                     distances.push(totalDistance);
                 }
-                
+
                 // Find the coordinate at 50% of total distance
                 const halfDistance = totalDistance / 2;
                 let midPoint = coords[Math.floor(coords.length / 2)]; // fallback
-                
+
                 for (let i = 1; i < distances.length; i++) {
                     if (distances[i] >= halfDistance) {
                         // Interpolate between this point and the previous
                         const prevDist = distances[i - 1];
                         const nextDist = distances[i];
                         const ratio = (halfDistance - prevDist) / (nextDist - prevDist);
-                        
+
                         midPoint = [
                             coords[i - 1][0] + (coords[i][0] - coords[i - 1][0]) * ratio,
                             coords[i - 1][1] + (coords[i][1] - coords[i - 1][1]) * ratio
@@ -885,14 +885,14 @@
                 durationEl.style.whiteSpace = 'nowrap';
                 durationEl.style.pointerEvents = 'none';
                 durationEl.textContent = formatDuration(duration);
-                
+
                 const durationMarker = new mapboxgl.Marker({
                     element: durationEl,
                     anchor: 'center'
                 })
                     .setLngLat(midPoint)
                     .addTo(mapInstance);
-                
+
                 // Store marker reference for cleanup
                 currentDurationMarkers.push(durationMarker);
             }
@@ -917,7 +917,7 @@
 
         try {
             const url = `https://api.mapbox.com/directions/v5/mapbox/walking/${startLocation[0]},${startLocation[1]};${destination[0]},${destination[1]}?geometries=geojson&access_token=${mapboxgl.accessToken}`;
-            
+
             const response = await fetch(url);
             const data = await response.json();
 
@@ -931,7 +931,7 @@
 
                 // Cache the result
                 walkingDistances.set(cacheKey, result);
-                
+
                 return result;
             }
         } catch (error) {
@@ -948,18 +948,18 @@
      */
     function formatDuration(seconds) {
         const minutes = Math.round(seconds / 60);
-        
+
         if (minutes < 60) {
             return `${minutes} min`;
         }
-        
+
         const hours = Math.floor(minutes / 60);
         const remainingMinutes = minutes % 60;
-        
+
         if (remainingMinutes === 0) {
             return `${hours} t`;
         }
-        
+
         return `${hours} t ${remainingMinutes} min`;
     }
 
@@ -972,7 +972,7 @@
         if (meters < 1000) {
             return `${Math.round(meters)}m`;
         }
-        
+
         return `${(meters / 1000).toFixed(1)}km`;
     }
 
@@ -1029,11 +1029,11 @@
             // Add duration label at midpoint of route (50% of total length)
             if (duration && geometry.coordinates && geometry.coordinates.length > 0) {
                 const coords = geometry.coordinates;
-                
+
                 // Calculate the actual midpoint by measuring 50% of total distance
                 let totalDistance = 0;
                 const distances = [0];
-                
+
                 // Calculate cumulative distances
                 for (let i = 1; i < coords.length; i++) {
                     const dx = coords[i][0] - coords[i-1][0];
@@ -1042,18 +1042,18 @@
                     totalDistance += segmentDistance;
                     distances.push(totalDistance);
                 }
-                
+
                 // Find the coordinate at 50% of total distance
                 const halfDistance = totalDistance / 2;
                 let midPoint = coords[Math.floor(coords.length / 2)]; // fallback
-                
+
                 for (let i = 1; i < distances.length; i++) {
                     if (distances[i] >= halfDistance) {
                         // Interpolate between this point and the previous
                         const prevDist = distances[i - 1];
                         const nextDist = distances[i];
                         const ratio = (halfDistance - prevDist) / (nextDist - prevDist);
-                        
+
                         midPoint = [
                             coords[i - 1][0] + (coords[i][0] - coords[i - 1][0]) * ratio,
                             coords[i - 1][1] + (coords[i][1] - coords[i - 1][1]) * ratio
@@ -1061,7 +1061,7 @@
                         break;
                     }
                 }
-                
+
                 map.addSource('route-label', {
                     type: 'geojson',
                     data: {
@@ -1089,14 +1089,14 @@
                 durationEl.style.whiteSpace = 'nowrap';
                 durationEl.style.pointerEvents = 'none';
                 durationEl.textContent = formatDuration(duration);
-                
+
                 const durationMarker = new mapboxgl.Marker({
                     element: durationEl,
                     anchor: 'center'
                 })
                     .setLngLat(midPoint)
                     .addTo(map);
-                
+
                 // Store marker reference for cleanup
                 currentDurationMarkers.push(durationMarker);
             }
@@ -1114,15 +1114,15 @@
      */
     function clearRouteFromMap(mapInstance) {
         if (!mapInstance) return;
-        
+
         // Remove all duration markers
         currentDurationMarkers.forEach(marker => marker.remove());
         currentDurationMarkers = [];
-        
+
         // Get all layers and sources on this map
         const style = mapInstance.getStyle();
         if (!style || !style.layers) return;
-        
+
         // Find and remove all route-related layers (both old random IDs and new fixed IDs)
         style.layers.forEach(function(layer) {
             if (layer.id && (layer.id.startsWith('route-') || layer.id === 'walking-route' || layer.id === 'walking-route-label')) {
@@ -1131,7 +1131,7 @@
                 }
             }
         });
-        
+
         // Find and remove all route-related sources
         if (style.sources) {
             Object.keys(style.sources).forEach(function(sourceId) {
@@ -1175,11 +1175,11 @@
         if (placesApiResults.has(chapterId)) {
             return placesApiResults.get(chapterId);
         }
-        
+
         try {
             // Get WordPress REST API root from the link tag
             const restApiRoot = document.querySelector('link[rel="https://api.w.org/"]')?.href || '/wp-json/';
-            
+
             // Use new CPT-based endpoint instead of live API
             const url = new URL(restApiRoot + 'placy/v1/google-points/query', window.location.origin);
             url.searchParams.append('lat', lat);
@@ -1188,48 +1188,48 @@
             url.searchParams.append('radius', radius);
             url.searchParams.append('minRating', minRating);
             url.searchParams.append('minReviews', minReviews);
-            
+
             // Add keyword if provided
             if (keyword && keyword.trim()) {
                 url.searchParams.append('keyword', keyword.trim());
             }
-            
+
             // Add exclude types as JSON
             if (excludeTypes && excludeTypes.length > 0) {
                 url.searchParams.append('excludeTypes', JSON.stringify(excludeTypes));
             }
-            
+
             // Add exclude place IDs as JSON
             if (excludePlaceIds && excludePlaceIds.length > 0) {
                 url.searchParams.append('excludePlaceIds', JSON.stringify(excludePlaceIds));
             }
-            
+
             console.log('[fetchNearbyPlaces] Querying Google Points CPT:', url.toString());
-            
+
             const response = await fetch(url.toString());
-            
+
             if (!response.ok) {
                 throw new Error('API request failed: ' + response.status);
             }
-            
+
             const data = await response.json();
-            
+
             console.log('[fetchNearbyPlaces] CPT Query result:', {
                 success: data.success,
                 count: data.count,
                 source: data.source
             });
-            
+
             // Cache the results
             placesApiResults.set(chapterId, data);
-            
+
             return data;
         } catch (error) {
             console.error('Error fetching nearby places from CPT:', error);
             return { success: false, count: 0, places: [] };
         }
     }
-    
+
     /**
      * Get photo URL from Google Places
      * @param {string} photoReference - Photo reference from Places API
@@ -1242,20 +1242,20 @@
             const restApiRoot = document.querySelector('link[rel="https://api.w.org/"]')?.href || '/wp-json/';
             const url = new URL(restApiRoot + 'placy/v1/places/photo/' + photoReference, window.location.origin);
             url.searchParams.append('maxwidth', maxWidth);
-            
+
             const response = await fetch(url.toString());
             const data = await response.json();
-            
+
             if (data.success && data.photoUrl) {
                 return data.photoUrl;
             }
         } catch (error) {
             console.error('Error fetching place photo:', error);
         }
-        
+
         return null;
     }
-    
+
     /**
      * Add Google Places markers to map
      * @param {Object} mapInstance - Map instance
@@ -1278,7 +1278,7 @@
             wrapper.setAttribute('data-marker-type', 'places-api');
             wrapper.setAttribute('data-chapter-id', chapterId);
             wrapper.setAttribute('data-place-id', place.placeId);
-            
+
             // Create circular image container with dynamic size (slightly smaller for Google Places)
             const imageSize = Math.max(30, getMarkerSize(mapInstance.getZoom()) * 0.85);
             const imageContainer = document.createElement('div');
@@ -1292,7 +1292,7 @@
             imageContainer.style.transition = 'transform 0.2s ease, width 0.3s ease, height 0.3s ease';
             imageContainer.style.backgroundColor = '#EF4444';
             imageContainer.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
-            
+
             // Add photo or icon
             if (place.photoReference) {
                 const photoUrl = getPhotoUrl(place.photoReference, 100);
@@ -1306,7 +1306,7 @@
             } else {
                 imageContainer.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;color:white;font-size:16px;">📍</div>';
             }
-            
+
             // Create info card
             const infoCard = document.createElement('div');
             infoCard.className = 'marker-info-card';
@@ -1315,14 +1315,14 @@
             infoCard.style.minWidth = '0';
             infoCard.style.maxWidth = '140px';
             infoCard.style.transition = 'opacity 0.4s ease, visibility 0.4s ease, transform 0.3s ease';
-            
+
             const currentZoom = mapInstance.getZoom();
             if (currentZoom < 15) {
                 infoCard.style.opacity = '0';
                 infoCard.style.visibility = 'hidden';
                 infoCard.style.pointerEvents = 'none';
             }
-            
+
             // Row 1: Name
             const nameRow = document.createElement('div');
             nameRow.className = 'marker-name-label';
@@ -1337,7 +1337,7 @@
             nameRow.style.marginBottom = '2px';
             nameRow.style.textShadow = 'rgba(255, 255, 255, 0.9) 1px 1px 1px, rgba(255, 255, 255, 0.8) 0px 0px 8px';
             infoCard.appendChild(nameRow);
-            
+
             // Row 2: Rating + Google badge
             const metaRow = document.createElement('div');
             metaRow.style.display = 'flex';
@@ -1345,30 +1345,30 @@
             metaRow.style.gap = '10px';
             metaRow.style.fontSize = '10px';
             metaRow.style.color = '#6B7280';
-            
+
             // Rating
             if (place.rating) {
                 const ratingSpan = document.createElement('span');
                 ratingSpan.style.display = 'flex';
                 ratingSpan.style.alignItems = 'center';
                 ratingSpan.style.gap = '2px';
-                
+
                 const starSpan = document.createElement('span');
                 starSpan.textContent = '★';
                 starSpan.style.color = '#FBBC05';
                 starSpan.style.fontSize = '11px';
                 ratingSpan.appendChild(starSpan);
-                
+
                 const ratingValue = document.createElement('span');
                 ratingValue.textContent = place.rating.toFixed(1);
                 ratingValue.style.fontWeight = '500';
                 ratingValue.style.color = '#374151';
                 ratingValue.style.textShadow = '0 1px 3px rgba(255,255,255,0.9), 0 0 8px rgba(255,255,255,0.8)';
                 ratingSpan.appendChild(ratingValue);
-                
+
                 metaRow.appendChild(ratingSpan);
             }
-            
+
             // "Google" badge
             const googleBadge = document.createElement('span');
             googleBadge.textContent = 'Google';
@@ -1376,12 +1376,12 @@
             googleBadge.style.color = '#9CA3AF';
             googleBadge.style.textShadow = '0 1px 3px rgba(255,255,255,0.9), 0 0 8px rgba(255,255,255,0.8)';
             metaRow.appendChild(googleBadge);
-            
+
             infoCard.appendChild(metaRow);
-            
+
             wrapper.appendChild(imageContainer);
             wrapper.appendChild(infoCard);
-            
+
             // Hover effects
             wrapper.addEventListener('mouseenter', function() {
                 imageContainer.style.transform = 'scale(1.1)';
@@ -1392,7 +1392,7 @@
                 infoCard.style.pointerEvents = 'auto';
                 infoCard.setAttribute('data-force-visible', 'true');
             });
-            
+
             wrapper.addEventListener('mouseleave', function() {
                 imageContainer.style.transform = 'scale(1)';
                 wrapper.style.zIndex = '5';
@@ -1405,16 +1405,16 @@
                     infoCard.style.pointerEvents = 'none';
                 }
             });
-            
+
             // Click handler - same behavior as WP POIs, scroll card into view
             wrapper.addEventListener('click', function(e) {
                 e.stopPropagation();
-                
+
                 // Find corresponding card and scroll to it
                 const card = document.querySelector('[data-place-id="' + place.placeId + '"]');
                 if (card) {
                     card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                    
+
                     // Highlight the card briefly
                     card.style.boxShadow = '0 0 0 3px #10B981';
                     setTimeout(function() {
@@ -1422,7 +1422,7 @@
                     }, 2000);
                 }
             });
-            
+
             // Create Mapbox marker
             const lngLat = [place.coordinates.lng, place.coordinates.lat];
             const marker = new mapboxgl.Marker({
@@ -1432,11 +1432,11 @@
             })
                 .setLngLat(lngLat)
                 .addTo(mapInstance);
-            
+
             placesMarkers.push(marker);
         });
     }
-    
+
     /**
      * Show popup for a Google Place
      * @param {Object} mapInstance - Map instance
@@ -1448,10 +1448,10 @@
         const popupContent = document.createElement('div');
         popupContent.style.minWidth = '200px';
         popupContent.style.maxWidth = '300px';
-        
+
         let html = '<div style="padding: 8px;">';
         html += '<h3 style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600;">' + place.name + '</h3>';
-        
+
         // Rating
         if (place.rating) {
             html += '<div style="display: flex; align-items: center; gap: 4px; margin-bottom: 6px; font-size: 12px;">';
@@ -1462,35 +1462,35 @@
             }
             html += '</div>';
         }
-        
+
         // Address
         if (place.vicinity) {
             html += '<p style="margin: 0 0 6px 0; font-size: 12px; color: #666;">' + place.vicinity + '</p>';
         }
-        
+
         // Open now status
         if (place.openNow !== null) {
             const status = place.openNow ? 'Åpent nå' : 'Stengt';
             const color = place.openNow ? '#10B981' : '#EF4444';
             html += '<p style="margin: 0 0 6px 0; font-size: 11px; color: ' + color + '; font-weight: 500;">' + status + '</p>';
         }
-        
+
         // Price level
         if (place.priceLevel !== null) {
             const priceSymbols = '€'.repeat(place.priceLevel);
             html += '<p style="margin: 0 0 8px 0; font-size: 12px; color: #666;">' + priceSymbols + '</p>';
         }
-        
+
         // Google Maps link
         html += '<a href="https://www.google.com/maps/place/?q=place_id:' + place.placeId + '" ';
         html += 'target="_blank" rel="noopener" ';
         html += 'style="display: inline-block; margin-top: 8px; padding: 6px 12px; background: #4285F4; color: white; text-decoration: none; border-radius: 4px; font-size: 12px; font-weight: 500;">';
         html += 'Se på Google Maps →</a>';
-        
+
         html += '</div>';
-        
+
         popupContent.innerHTML = html;
-        
+
         // Create popup
         const popup = new mapboxgl.Popup({
             offset: 25,
@@ -1501,7 +1501,7 @@
             .setDOMContent(popupContent)
             .addTo(mapInstance);
     }
-    
+
     /**
      * Remove all Google Places markers from map
      * @param {string} chapterId - Optional chapter ID to remove markers for specific chapter
@@ -1510,7 +1510,7 @@
         placesMarkers = placesMarkers.filter(function(marker) {
             const markerElement = marker.getElement();
             const markerChapterId = markerElement ? markerElement.getAttribute('data-chapter-id') : null;
-            
+
             if (chapterId === null || markerChapterId === chapterId) {
                 marker.remove();
                 return false;
@@ -1518,7 +1518,7 @@
             return true;
         });
     }
-    
+
     /**
      * Add "Show All" button to chapter
      * @param {string} chapterId - Chapter ID
@@ -1527,22 +1527,22 @@
     function addShowAllButton(chapterId, categoryNorwegian) {
         const chapter = document.querySelector('.chapter[data-chapter-id="' + chapterId + '"]');
         if (!chapter) return;
-        
+
         // Find the last POI list section in this chapter
         const poiListSections = chapter.querySelectorAll('.poi-list-block');
         if (poiListSections.length === 0) return;
-        
+
         const lastSection = poiListSections[poiListSections.length - 1];
-        
+
         // Check if button already exists
         if (lastSection.querySelector('.places-api-show-all-button')) return;
-        
+
         // Create button container
         const buttonContainer = document.createElement('div');
         buttonContainer.className = 'places-api-button-container';
         buttonContainer.style.marginTop = '24px';
         buttonContainer.style.textAlign = 'center';
-        
+
         // Create button
         const button = document.createElement('button');
         button.className = 'places-api-show-all-button';
@@ -1557,23 +1557,23 @@
         button.style.fontWeight = '600';
         button.style.cursor = 'pointer';
         button.style.transition = 'background-color 0.2s';
-        
+
         button.addEventListener('mouseenter', function() {
             button.style.backgroundColor = '#DC2626';
         });
-        
+
         button.addEventListener('mouseleave', function() {
             button.style.backgroundColor = '#EF4444';
         });
-        
+
         button.addEventListener('click', function() {
             toggleApiResults(chapterId, button);
         });
-        
+
         buttonContainer.appendChild(button);
         lastSection.appendChild(buttonContainer);
     }
-    
+
     /**
      * Toggle showing API results for a chapter
      * @param {string} chapterId - Chapter ID
@@ -1581,15 +1581,15 @@
      */
     async function toggleApiResults(chapterId, button) {
         const isShowing = showingApiResults.get(chapterId);
-        
+
         if (isShowing) {
             // Already showing - do nothing (button will be hidden)
             return;
         }
-        
+
         // Show loading state with spinner animation
         const categoryNorwegian = button.getAttribute('data-category-norwegian') || 'steder';
-        
+
         // Create spinner element
         const spinner = document.createElement('span');
         spinner.style.display = 'inline-block';
@@ -1600,7 +1600,7 @@
         spinner.style.borderRadius = '50%';
         spinner.style.marginRight = '8px';
         spinner.style.animation = 'spin 0.8s linear infinite';
-        
+
         // Add keyframes for spinner if not already added
         if (!document.getElementById('spinner-keyframes')) {
             const style = document.createElement('style');
@@ -1612,23 +1612,23 @@
             `;
             document.head.appendChild(style);
         }
-        
+
         button.innerHTML = '';
         button.appendChild(spinner);
         button.appendChild(document.createTextNode('Henter lignende ' + categoryNorwegian + ' fra Google...'));
         button.disabled = true;
         button.style.opacity = '0.9';
-        
+
         // Fetch API data but don't display yet
         const apiData = await fetchApiData(chapterId);
-        
+
         // Wait for minimum 2 seconds before displaying
         await new Promise(resolve => setTimeout(resolve, 2000));
-        
+
         // Now display the results after 2 seconds
         if (apiData && apiData.success && apiData.places.length > 0) {
             displayApiResults(chapterId, apiData);
-            
+
             // Dispatch event to notify proximity filter that new POIs are loaded
             const chapter = document.querySelector('[data-chapter-id="' + chapterId + '"]');
             if (chapter) {
@@ -1643,13 +1643,13 @@
                 console.log('[Google Places] Dispatched placesLoaded event for chapter:', chapterId, 'places:', apiData.places.length);
             }
         }
-        
+
         showingApiResults.set(chapterId, true);
-        
+
         // Hide button after results are shown
         button.style.display = 'none';
     }
-    
+
     /**
      * Fetch API data for a chapter (without displaying)
      * @param {string} chapterId - Chapter ID
@@ -1659,14 +1659,14 @@
         // Get chapter element to read configuration
         const chapter = document.querySelector('[data-chapter-id="' + chapterId + '"]');
         if (!chapter) return null;
-        
+
         // Get chapter map
         const mapContainer = document.querySelector('.chapter-map[data-chapter-id="' + chapterId + '"]');
         if (!mapContainer) return null;
-        
+
         const mapInstance = mapContainer._mapboxInstance;
         if (!mapInstance) return null;
-        
+
         // Get center coordinates (use start location or map center)
         let lat, lng;
         if (startLocation) {
@@ -1677,14 +1677,14 @@
             lat = center.lat;
             lng = center.lng;
         }
-        
+
         // Read configuration from chapter data attributes
         const category = chapter.getAttribute('data-places-category') || 'restaurant';
         const radius = parseInt(chapter.getAttribute('data-places-radius')) || 1500;
         const minRating = parseFloat(chapter.getAttribute('data-places-min-rating')) || 4.3;
         const minReviews = parseInt(chapter.getAttribute('data-places-min-reviews')) || 50;
         const keyword = chapter.getAttribute('data-places-keyword') || '';
-        
+
         // Get exclude types (JSON array)
         let excludeTypes = ['lodging']; // Default
         const excludeTypesAttr = chapter.getAttribute('data-places-exclude-types');
@@ -1695,7 +1695,7 @@
                 console.warn('Failed to parse exclude types:', e);
             }
         }
-        
+
         // Collect Google Place IDs from existing POIs in the chapter-wrapper to exclude them
         const excludePlaceIds = [];
         const chapterWrapper = chapter.closest('.wp-block-placy-chapter-wrapper');
@@ -1709,18 +1709,18 @@
             });
             console.log('[fetchApiData] Excluding ' + excludePlaceIds.length + ' manually curated POIs from API search');
         }
-        
+
         // Fetch places
         const apiData = await fetchNearbyPlaces(chapterId, lat, lng, category, radius, minRating, minReviews, keyword, excludeTypes, excludePlaceIds);
-        
+
         if (!apiData.success || apiData.places.length === 0) {
             console.warn('No places found for chapter:', chapterId);
             return null;
         }
-        
+
         return apiData;
     }
-    
+
     /**
      * Display API results for a chapter
      * @param {string} chapterId - Chapter ID
@@ -1730,20 +1730,20 @@
         // Get chapter map
         const mapContainer = document.querySelector('.chapter-map[data-chapter-id="' + chapterId + '"]');
         if (!mapContainer) return;
-        
+
         const mapInstance = mapContainer._mapboxInstance;
         if (!mapInstance) return;
-        
+
         // Add markers to map
         addPlacesMarkersToMap(mapInstance, chapterId, apiData.places);
-        
+
         // Add list items to chapter
         addPlacesListItems(chapterId, apiData.places);
-        
+
         // Adjust map bounds to include new markers
         adjustMapBounds(mapInstance, apiData.places);
     }
-    
+
     /**
      * Hide API results for a chapter
      * @param {string} chapterId - Chapter ID
@@ -1751,11 +1751,11 @@
     function hideApiResults(chapterId) {
         // Remove markers
         removePlacesMarkers(chapterId);
-        
+
         // Remove list items
         removePlacesListItems(chapterId);
     }
-    
+
     /**
      * Add Google Places list items to chapter
      * @param {string} chapterId - Chapter ID
@@ -1764,18 +1764,18 @@
     function addPlacesListItems(chapterId, places) {
         const chapter = document.querySelector('.chapter[data-chapter-id="' + chapterId + '"]');
         if (!chapter) return;
-        
+
         const poiListSections = chapter.querySelectorAll('.poi-list-block');
         if (poiListSections.length === 0) return;
-        
+
         const lastSection = poiListSections[poiListSections.length - 1];
         const listContainer = lastSection.querySelector('.flex.flex-col');
         if (!listContainer) return;
-        
+
         // Read configuration for disclaimer
         const category = chapter.getAttribute('data-places-category') || 'restaurant';
         const keyword = chapter.getAttribute('data-places-keyword') || '';
-        
+
         // Map category to Norwegian plural
         const categoryMap = {
             'restaurant': 'restauranter',
@@ -1786,13 +1786,13 @@
             'food': 'spisesteder'
         };
         const categoryNorwegian = categoryMap[category] || 'steder';
-        
+
         // Create container for API results
         const apiContainer = document.createElement('div');
         apiContainer.className = 'places-api-results';
         apiContainer.style.marginTop = '24px';
         apiContainer.style.paddingTop = '0';
-        
+
         // Add disclaimer header
         const disclaimerHeader = document.createElement('div');
         disclaimerHeader.className = 'google-places-disclaimer';
@@ -1801,36 +1801,36 @@
         disclaimerHeader.style.backgroundColor = '#F3F4F6';
         disclaimerHeader.style.borderLeft = '4px solid #9CA3AF';
         disclaimerHeader.style.borderRadius = '4px';
-        
+
         let disclaimerText = '<p style="margin: 0; font-size: 14px; color: #4B5563; line-height: 1.5;">';
         disclaimerText += '<strong style="color: #1F2937;">Google-søk:</strong> ';
-        
+
         if (keyword && keyword.trim()) {
             disclaimerText += 'Viser lignende <strong>' + categoryNorwegian + '</strong> tagget med <em>"' + keyword.trim() + '"</em>';
         } else {
             disclaimerText += 'Viser lignende <strong>' + categoryNorwegian + '</strong> i området';
         }
-        
+
         disclaimerText += ' <span style="color: #6B7280;">— hentet fra Google Places</span>';
         disclaimerText += '</p>';
-        
+
         disclaimerHeader.innerHTML = disclaimerText;
         apiContainer.appendChild(disclaimerHeader);
-        
+
         // Add place cards
         places.forEach(function(place) {
             const card = createPlaceListCard(place);
             apiContainer.appendChild(card);
         });
-        
+
         listContainer.appendChild(apiContainer);
-        
+
         // Re-initialize hover tracking for newly added cards
         setTimeout(function() {
             initPOIHoverTracking();
         }, 500);
     }
-    
+
     /**
      * Create list card for a Google Place
      * @param {Object} place - Place data
@@ -1846,9 +1846,9 @@
         card.setAttribute('data-marker-type', 'places-api');
         // Store coords as [lat, lng] to match POI format (proximity filter expects this)
         card.setAttribute('data-poi-coords', '[' + place.coordinates.lat + ',' + place.coordinates.lng + ']');
-        
+
         let html = '<div class="poi-card-content flex gap-4 p-4">';
-        
+
         // Image - use photo from API if available
         if (place.photoReference) {
             html += '<div class="flex-shrink-0">';
@@ -1856,19 +1856,19 @@
             html += '<img src="' + photoUrl + '" alt="' + place.name + '" class="w-24 h-24 rounded-lg object-cover">';
             html += '</div>';
         }
-        
+
         html += '<div class="flex-1 min-w-0 flex flex-col">';
         html += '<div class="flex items-start justify-between">';
-        
+
         // Left column: Title, badge, rating
         html += '<div class="flex flex-col mb-2">';
         html += '<h3 class="text-lg font-semibold text-gray-900">' + place.name + '</h3>';
-        
+
         // Google badge
         html += '<div class="flex items-center gap-2 mt-1 mb-2">';
         html += '<span class="inline-block px-2 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded">Fra Google</span>';
         html += '</div>';
-        
+
         // Rating row (including travel time placeholder)
         html += '<div class="flex items-center gap-4">';
         if (place.rating) {
@@ -1905,7 +1905,7 @@
             }
             html += '</div>';
         }
-        
+
         // Add travel time placeholder (will be populated by proximity-filter.js)
         html += '<div class="poi-travel-time flex items-center gap-2 text-gray-600" style="display: none;">';
         html += '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">';
@@ -1913,10 +1913,10 @@
         html += '</svg>';
         html += '<span class="poi-travel-time-text text-sm font-medium"></span>';
         html += '</div>';
-        
+
         html += '</div>'; // End rating row
         html += '</div>'; // End left column
-        
+
         // Right column: Button (aligned with title)
         html += '<div class="poi-button-container flex-shrink-0">';
         html += '<button onclick="showPlaceOnMap(this)" ';
@@ -1925,22 +1925,22 @@
         html += 'Se på kart';
         html += '</button>';
         html += '</div>'; // End button container
-        
+
         html += '</div>'; // End flex container (title row)
-        
+
         // Description at bottom
         if (place.vicinity) {
             html += '<div class="text-sm text-gray-600 line-clamp-2">' + place.vicinity + '</div>';
         }
-        
+
         html += '</div>'; // End content column
         html += '</div>'; // End card content
-        
+
         card.innerHTML = html;
-        
+
         return card;
     }
-    
+
     /**
      * Remove Google Places list items
      * @param {string} chapterId - Chapter ID
@@ -1948,13 +1948,13 @@
     function removePlacesListItems(chapterId) {
         const chapter = document.querySelector('.chapter[data-chapter-id="' + chapterId + '"]');
         if (!chapter) return;
-        
+
         const apiContainers = chapter.querySelectorAll('.places-api-results');
         apiContainers.forEach(function(container) {
             container.remove();
         });
     }
-    
+
     /**
      * Adjust map bounds to include new places
      * @param {Object} mapInstance - Map instance
@@ -1962,47 +1962,47 @@
      */
     function adjustMapBounds(mapInstance, places) {
         if (places.length === 0) return;
-        
+
         const bounds = new mapboxgl.LngLatBounds();
-        
+
         // Include start location
         if (startLocation) {
             bounds.extend(startLocation);
         }
-        
+
         // Include existing POIs
         markers.forEach(function(marker) {
             const lngLat = marker.getLngLat();
             bounds.extend([lngLat.lng, lngLat.lat]);
         });
-        
+
         // Include new places (only add a sample to avoid zooming out too much)
         const sampleSize = Math.min(5, places.length);
         for (let i = 0; i < sampleSize; i++) {
             bounds.extend([places[i].coordinates.lng, places[i].coordinates.lat]);
         }
-        
+
         mapInstance.fitBounds(bounds, {
             padding: 100,
             duration: 1000,
             maxZoom: 14
         });
     }
-    
+
     /**
      * Initialize Places API integration for all chapters
      */
     function initPlacesApiIntegration() {
         // For each chapter with a map, check if it should have a "Show All" button
         const chapters = document.querySelectorAll('.chapter[data-chapter-id]');
-        
+
         chapters.forEach(async function(chapter) {
             const chapterId = chapter.getAttribute('data-chapter-id');
-            
+
             // Check if this chapter has POIs (if it has POIs, offer to show more)
             const poiListSections = chapter.querySelectorAll('.poi-list-block');
             if (poiListSections.length === 0) return;
-            
+
             // Get coordinates for search
             let lat, lng;
             if (startLocation) {
@@ -2012,7 +2012,7 @@
                 // Use first POI coordinates as fallback
                 const firstPoi = chapter.querySelector('[data-poi-coords]');
                 if (!firstPoi) return;
-                
+
                 try {
                     const coords = JSON.parse(firstPoi.getAttribute('data-poi-coords'));
                     lat = coords[0];
@@ -2021,21 +2021,21 @@
                     return;
                 }
             }
-            
+
             // Read Places API configuration from data attributes on chapter element
             const placesEnabledAttr = chapter.getAttribute('data-places-enabled');
             const placesEnabled = placesEnabledAttr !== 'false'; // Default to true if not set
-            
+
             // Skip if Places API is explicitly disabled for this chapter
             if (!placesEnabled) return;
-            
+
             // Get search parameters from data attributes or use defaults
             const category = chapter.getAttribute('data-places-category') || 'restaurant';
             const keyword = chapter.getAttribute('data-places-keyword') || '';
             const radius = parseInt(chapter.getAttribute('data-places-radius')) || 1500;
             const minRating = parseFloat(chapter.getAttribute('data-places-min-rating')) || 4.3;
             const minReviews = parseInt(chapter.getAttribute('data-places-min-reviews')) || 50;
-            
+
             // Get exclude types (JSON array)
             let excludeTypes = ['lodging']; // Default
             const excludeTypesAttr = chapter.getAttribute('data-places-exclude-types');
@@ -2046,7 +2046,7 @@
                     console.warn('Failed to parse exclude types:', e);
                 }
             }
-            
+
             // Map category to Norwegian plural for button text
             const categoryMap = {
                 'restaurant': 'restauranter',
@@ -2057,7 +2057,7 @@
                 'food': 'spisesteder'
             };
             const categoryNorwegian = categoryMap[category] || 'steder';
-            
+
             // Add button to show results (without fetching data yet)
             addShowAllButton(chapterId, categoryNorwegian);
         });
@@ -2068,7 +2068,7 @@
      */
     function initMap() {
         const chapterMaps = document.querySelectorAll('.chapter-map');
-        
+
         if (chapterMaps.length === 0) {
             console.warn('Multi Map: No chapter maps found');
             return;
@@ -2089,7 +2089,7 @@
         // Initialize each chapter map
         chapterMaps.forEach(function(mapContainer) {
             const chapterId = mapContainer.getAttribute('data-chapter-id');
-            
+
             if (!chapterId) {
                 console.warn('Multi Map: Map missing data-chapter-id');
                 return;
@@ -2102,7 +2102,7 @@
                 center: CONFIG.DEFAULT_CENTER,
                 zoom: CONFIG.DEFAULT_ZOOM,
                 minZoom: 11,
-                maxZoom: 16,
+                maxZoom: 16
             });
 
             // Add navigation controls
@@ -2131,14 +2131,14 @@
 
                 // Parse and add markers for THIS chapter only
                 parseAndAddMarkersForChapter(chapterMap, chapterId);
-                
+
                 // Initialize dynamic POI lists for this chapter
                 initDynamicPoiLists();
             });
 
             // Keep last one as fallback
             map = chapterMap;
-            
+
         });
 
         // After all maps initialized, setup hover tracking
@@ -2152,7 +2152,7 @@
      */
     function parseChapterData() {
         const chapters = document.querySelectorAll('.chapter');
-        
+
         if (chapters.length === 0) {
             console.warn('Tema Story Map: No chapters found. Make sure to wrap content in <section class="chapter" data-chapter-id="...">');
             return;
@@ -2160,7 +2160,7 @@
 
         chapters.forEach(function(chapter, index) {
             const chapterId = chapter.getAttribute('data-chapter-id');
-            
+
             if (!chapterId) {
                 console.warn('Tema Story Map: Chapter missing data-chapter-id attribute', chapter);
                 return;
@@ -2168,14 +2168,14 @@
 
             // Find all POI list items within this chapter
             let poiItems = chapter.querySelectorAll('.poi-list-item, .poi-list-card');
-            
+
             // FALLBACK: If this chapter has no POIs, look for POIs between this chapter and the next
             if (poiItems.length === 0 && index < chapters.length - 1) {
                 const nextChapter = chapters[index + 1];
                 const allPoisOnPage = document.querySelectorAll('.poi-list-item, .poi-list-card');
                 const chapterRect = chapter.getBoundingClientRect();
                 const nextChapterRect = nextChapter.getBoundingClientRect();
-                
+
                 // Find POIs that are positioned between this chapter and the next
                 const poisBetweenChapters = Array.from(allPoisOnPage).filter(function(poi) {
                     const poiRect = poi.getBoundingClientRect();
@@ -2186,10 +2186,8 @@
                     });
                     return !inChapter && poi.offsetTop > chapter.offsetTop && poi.offsetTop < nextChapter.offsetTop;
                 });
-                
+
                 poiItems = poisBetweenChapters;
-                if (poisBetweenChapters.length > 0) {
-                }
             }
             // FALLBACK: If this is the last chapter and has no POIs, grab all remaining POIs
             else if (poiItems.length === 0 && index === chapters.length - 1) {
@@ -2201,10 +2199,8 @@
                     });
                     return !inChapter && poi.offsetTop > chapter.offsetTop;
                 });
-                
+
                 poiItems = poisAfterChapter;
-                if (poisAfterChapter.length > 0) {
-                }
             }
 
             const pois = [];
@@ -2214,12 +2210,12 @@
                 const coordsAttr = item.getAttribute('data-poi-coords');
                 const imageUrl = item.getAttribute('data-poi-image');
                 const title = item.getAttribute('data-poi-title') || 'Untitled POI';
-                
+
                 // Get rating data from DOM
                 const ratingEl = item.querySelector('.poi-rating-value');
                 const ratingCountEl = item.querySelector('.poi-rating-count');
                 let rating = null;
-                
+
                 if (ratingEl) {
                     const ratingText = ratingEl.textContent.replace(/\s+/g, ' ').trim();
                     const ratingMatch = ratingText.match(/(\d+\.?\d*)/);
@@ -2255,10 +2251,10 @@
             }
         });
 
-        
+
         // Add walking times to POI list items
         addWalkingTimesToPOIList();
-        
+
         // Initialize POI hover tracking after parsing is done
         setTimeout(function() {
             initPOIHoverTracking();
@@ -2290,11 +2286,11 @@
         for (const poi of allPois) {
             if (poi.element) {
                 const walking = await getWalkingDistance(poi.coords);
-                
+
                 if (walking) {
                     // Find walking time element
                     const walkTimeEl = poi.element.querySelector('.poi-walking-time');
-                    
+
                     if (walkTimeEl) {
                         walkTimeEl.textContent = formatDuration(walking.duration) + ' gange';
                     }
@@ -2345,16 +2341,16 @@
             const coords = JSON.parse(coordsAttr);
             if (Array.isArray(coords) && coords.length === 2) {
                 const lngLat = [parseFloat(coords[1]), parseFloat(coords[0])]; // [lng, lat] for Mapbox
-                
+
                 // Get POI ID for highlighting
                 const poiId = poiItem.getAttribute('data-poi-id');
-                
+
                 // Fit bounds to show both start location and POI
                 if (startLocation) {
                     const bounds = new mapboxgl.LngLatBounds();
                     bounds.extend(startLocation);
                     bounds.extend(lngLat);
-                    
+
                     mapInstance.fitBounds(bounds, {
                         padding: 120,
                         duration: 1200,
@@ -2386,7 +2382,7 @@
                         }
                     });
                 }
-                
+
                 // Highlight the card after map animation starts
                 if (poiId) {
                     setTimeout(function() {
@@ -2441,16 +2437,16 @@
             const coords = JSON.parse(coordsAttr);
             if (Array.isArray(coords) && coords.length === 2) {
                 const lngLat = [parseFloat(coords[0]), parseFloat(coords[1])]; // [lng, lat] for Mapbox
-                
+
                 // Get Place ID for marker activation
                 const placeId = poiItem.getAttribute('data-place-id');
-                
+
                 // Fit bounds to show both start location and place
                 if (startLocation) {
                     const bounds = new mapboxgl.LngLatBounds();
                     bounds.extend(startLocation);
                     bounds.extend(lngLat);
-                    
+
                     mapInstance.fitBounds(bounds, {
                         padding: 120,
                         duration: 1200,
@@ -2465,7 +2461,7 @@
                         essential: true
                     });
                 }
-                
+
                 // Draw route on this map if we have start location
                 if (startLocation) {
                     getWalkingDistance(lngLat).then(function(walking) {
@@ -2476,7 +2472,7 @@
                         }
                     });
                 }
-                
+
                 // Activate the marker (highlight it)
                 if (placeId) {
                     setTimeout(function() {
@@ -2507,10 +2503,10 @@
         // DISABLED: Not needed with per-chapter map architecture
         // Each chapter has its own map that shows its markers independently
         return;
-        
+
         /* Original scroll tracking code preserved but disabled
         const chapters = document.querySelectorAll('.chapter');
-        
+
         if (chapters.length === 0) {
             return;
         }
@@ -2535,7 +2531,7 @@
      */
     function initPOIHoverTracking() {
         const poiItems = document.querySelectorAll('.poi-list-item, .poi-list-card');
-        
+
         if (poiItems.length === 0) {
             return;
         }
@@ -2545,13 +2541,13 @@
             item.addEventListener('mouseenter', function() {
                 highlightActivePOI(this);
             });
-            
+
             // Deactivate on mouse leave
             item.addEventListener('mouseleave', function() {
                 clearActivePOI();
             });
         });
-        
+
     }
 
     /**
@@ -2563,15 +2559,15 @@
         if (!keepRoute) {
             clearRoute();
         }
-        
+
         // Clear card highlights and reset buttons
         document.querySelectorAll('.poi-list-item, .poi-list-card').forEach(function(item) {
             item.classList.remove('poi-active-click');
-            
+
             // Reset button container and button
             const buttonContainer = item.querySelector('.poi-button-container');
             const button = item.querySelector('.poi-show-on-map, button[onclick*="showPOIOnMap"]');
-            
+
             // Remove clear button if it exists
             if (buttonContainer) {
                 const clearBtn = buttonContainer.querySelector('.poi-clear-button');
@@ -2579,18 +2575,18 @@
                     clearBtn.remove();
                 }
             }
-            
+
             if (button) {
                 button.textContent = 'Se på kart';
-                
+
                 // Determine button type to restore correct style
                 const isSmallButton = button.classList.contains('poi-show-on-map'); // poi-list
                 const parentCard = button.closest('.poi-list-item, .poi-list-card');
                 const isMediumButton = parentCard && parentCard.classList.contains('poi-gallery-item'); // poi-gallery
-                
+
                 // Remove color classes
                 button.className = button.className.replace(/bg-\S+/g, '').replace(/text-\S+/g, '').replace(/hover:bg-\S+/g, '');
-                
+
                 if (isSmallButton) {
                     // Small button style (poi-list) - restore original
                     button.className = 'poi-show-on-map px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium text-xs rounded transition-colors duration-200 whitespace-nowrap';
@@ -2603,7 +2599,7 @@
                 }
             }
         });
-        
+
     }
 
     /**
@@ -2615,14 +2611,14 @@
         return new Promise(function(resolve) {
             // First, clear any existing highlights and reset buttons (but keep route)
             clearActivePOIState(true); // Don't clear route - it will be updated separately
-            
+
             // Find and highlight the corresponding card
             const targetCard = document.querySelector(`.poi-list-item[data-poi-id="${poiId}"], .poi-list-card[data-poi-id="${poiId}"]`);
-            
+
             if (targetCard) {
                 // Add visual highlight class
                 targetCard.classList.add('poi-active-click');
-                
+
                 // Update button to show active state and add clear button
                 const button = targetCard.querySelector('.poi-show-on-map, button[onclick*="showPOIOnMap"]');
                 if (button) {
@@ -2630,15 +2626,15 @@
                     const isSmallButton = button.classList.contains('poi-show-on-map'); // poi-list
                     const isMediumButton = button.classList.contains('text-sm'); // poi-gallery
                     const isLargeButton = !isSmallButton && !isMediumButton; // poi-highlight
-                    
+
                     button.textContent = '✓ Aktivt i kartet';
-                    
+
                     // Remove old color classes
                     button.className = button.className.replace(/bg-\S+/g, '').replace(/text-\S+/g, '').replace(/hover:bg-\S+/g, '');
-                    
+
                     // Add active state colors
                     button.classList.add('bg-emerald-600', 'hover:bg-emerald-700', 'text-white');
-                    
+
                     // Ensure proper styling is maintained based on size
                     if (isSmallButton) {
                         button.classList.add('px-3', 'py-1.5', 'font-medium', 'text-xs', 'rounded', 'transition-colors', 'duration-200', 'whitespace-nowrap');
@@ -2647,14 +2643,14 @@
                     } else {
                         button.classList.add('inline-flex', 'items-center', 'gap-2', 'px-6', 'py-2', 'rounded-lg', 'transition-colors');
                     }
-                    
+
                     // Find button container (should exist from PHP template)
                     const buttonContainer = targetCard.querySelector('.poi-button-container');
-                    
+
                     // Add clear button if container exists and clear button doesn't exist
                     if (buttonContainer && !buttonContainer.querySelector('.poi-clear-button')) {
                         const clearButton = document.createElement('button');
-                        
+
                         if (isSmallButton) {
                             // Small button style (poi-list)
                             clearButton.className = 'poi-clear-button px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium text-xs rounded transition-colors duration-200 whitespace-nowrap';
@@ -2665,7 +2661,7 @@
                             // Large button style (poi-highlight)
                             clearButton.className = 'poi-clear-button inline-flex items-center gap-2 px-6 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors font-medium';
                         }
-                        
+
                         clearButton.textContent = 'Fjern markering';
                         clearButton.onclick = function(e) {
                             e.stopPropagation();
@@ -2674,22 +2670,22 @@
                         buttonContainer.appendChild(clearButton);
                     }
                 }
-                
+
                 // Scroll card into view smoothly
                 targetCard.scrollIntoView({
                     behavior: 'smooth',
                     block: 'center'
                 });
-                
+
                 // Highlight corresponding marker on map
                 markers.forEach(function(marker) {
                     const wrapper = marker.getElement();
                     if (!wrapper) return;
-                    
+
                     const markerPoiId = wrapper.getAttribute('data-poi-id');
                     if (markerPoiId === poiId) {
                         wrapper.style.zIndex = '1000';
-                        
+
                         const markerLabel = wrapper.querySelector('.tema-story-marker-label');
                         if (markerLabel) {
                             markerLabel.style.backgroundColor = '#EFE9DE';
@@ -2699,8 +2695,8 @@
                         }
                     }
                 });
-                
-                
+
+
                 // Wait for scroll animation to complete (~600ms for smooth scroll)
                 setTimeout(resolve, 600);
             } else {
@@ -2716,7 +2712,7 @@
     function highlightActivePOI(poiElement) {
         const poiId = poiElement.getAttribute('data-poi-id');
         const placeId = poiElement.getAttribute('data-place-id');
-        
+
         // Support both native POIs (data-poi-id) and Google Places (data-place-id)
         if (!poiId && !placeId) return;
 
@@ -2725,7 +2721,7 @@
 
         // Add visual highlight to card
         poiElement.classList.add('poi-active-hover');
-        
+
         // Highlight corresponding marker on map
         if (poiId) {
             highlightMarkerOnMap(poiId);
@@ -2742,7 +2738,7 @@
         document.querySelectorAll('.poi-list-item, .poi-list-card').forEach(function(item) {
             item.classList.remove('poi-active-hover');
         });
-        
+
         // Reset all markers
         resetAllMarkers();
     }
@@ -2755,35 +2751,35 @@
         markers.forEach(function(marker) {
             const wrapper = marker.getElement();
             if (!wrapper) return;
-            
+
             // Skip property markers - they should maintain their z-index (1000)
             if (wrapper.getAttribute('data-marker-type') === 'property') return;
-            
+
             // Reset POI markers only
             wrapper.classList.remove('marker-active');
             wrapper.style.zIndex = '10'; // TASK 2: Default POI z-index
-            
+
             // Reset old marker style (circular)
             const circle = wrapper.querySelector('.marker-circle-container');
             if (circle) {
                 circle.style.transform = 'scale(1)';
                 circle.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
             }
-            
+
             // Reset new marker style (image)
             const imageContainer = wrapper.querySelector('.marker-image-container');
             if (imageContainer) {
                 imageContainer.style.transform = 'scale(1)';
                 wrapper.style.filter = 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))';
             }
-            
+
             // TASK 3: Reset label visibility based on zoom
             // Support both native POI labels (.marker-label-poi) and Google Places labels (.marker-label-container)
             const label = wrapper.querySelector('.marker-label-poi, .marker-label-container');
             if (label) {
                 // Remove force visible attribute first
                 label.removeAttribute('data-force-visible');
-                
+
                 // Find the map instance to get current zoom
                 const mapContainer = wrapper.closest('.chapter-map');
                 if (mapContainer && mapContainer._mapboxInstance) {
@@ -2795,13 +2791,13 @@
                     }
                 }
             }
-            
+
             // Reset info card visibility based on zoom (new style markers)
             const infoCard = wrapper.querySelector('.marker-info-card');
             if (infoCard) {
                 // Remove force visible attribute first
                 infoCard.removeAttribute('data-force-visible');
-                
+
                 const mapContainer = wrapper.closest('.chapter-map');
                 if (mapContainer && mapContainer._mapboxInstance) {
                     const currentZoom = mapContainer._mapboxInstance.getZoom();
@@ -2823,37 +2819,37 @@
     function highlightMarkerOnMap(poiId) {
         // Reset all POI markers first (not property markers)
         resetAllMarkers();
-        
+
         // Find and highlight the specific POI marker using direct POI ID matching
         markers.forEach(function(marker) {
             const wrapper = marker.getElement();
             if (!wrapper) return;
-            
+
             // Skip property markers - they should always stay on top (z-index 1000)
             if (wrapper.getAttribute('data-marker-type') === 'property') return;
-            
+
             // Get POI ID from data attribute stored on wrapper
             const markerPoiId = wrapper.getAttribute('data-poi-id');
             const isActive = markerPoiId === poiId;
-            
+
             if (isActive) {
                 // TASK 2: Increase z-index for layering (but below property marker)
                 wrapper.style.zIndex = '50'; // Hover POI z-index
-                
+
                 // Handle old marker style (circular)
                 const circle = wrapper.querySelector('.marker-circle-container');
                 if (circle) {
                     circle.style.transform = 'scale(1.15)';
                     circle.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
                 }
-                
+
                 // Handle new marker style (image)
                 const imageContainer = wrapper.querySelector('.marker-image-container');
                 if (imageContainer) {
                     imageContainer.style.transform = 'scale(1.1)';
                     wrapper.style.filter = 'drop-shadow(0 4px 8px rgba(0,0,0,0.4))';
                 }
-                
+
                 // TASK 3: Show label on hover regardless of zoom (old style)
                 const label = wrapper.querySelector('.marker-label-poi');
                 if (label) {
@@ -2862,7 +2858,7 @@
                     label.style.pointerEvents = 'auto';
                     label.setAttribute('data-force-visible', 'true');
                 }
-                
+
                 // Show info card on hover regardless of zoom (new style)
                 const infoCard = wrapper.querySelector('.marker-info-card');
                 if (infoCard) {
@@ -2882,37 +2878,37 @@
     function highlightPlacesMarkerOnMap(placeId) {
         // Reset all POI markers first (not property markers)
         resetAllMarkers();
-        
+
         // Find and highlight the specific Google Places marker
         markers.forEach(function(marker) {
             const wrapper = marker.getElement();
             if (!wrapper) return;
-            
+
             // Skip property markers
             if (wrapper.getAttribute('data-marker-type') === 'property') return;
-            
+
             // Get place ID from data attribute
             const markerPlaceId = wrapper.getAttribute('data-place-id');
             const isActive = markerPlaceId === placeId;
-            
+
             if (isActive) {
                 // Increase z-index for layering
                 wrapper.style.zIndex = '50';
-                
+
                 // Handle old marker style (circular)
                 const circle = wrapper.querySelector('.marker-circle-container');
                 if (circle) {
                     circle.style.transform = 'scale(1.15)';
                     circle.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
                 }
-                
+
                 // Handle new marker style (image)
                 const imageContainer = wrapper.querySelector('.marker-image-container');
                 if (imageContainer) {
                     imageContainer.style.transform = 'scale(1.1)';
                     wrapper.style.filter = 'drop-shadow(0 4px 8px rgba(0,0,0,0.4))';
                 }
-                
+
                 // Show label on hover regardless of zoom (old style)
                 const label = wrapper.querySelector('.marker-label-container');
                 if (label) {
@@ -2921,7 +2917,7 @@
                     label.style.pointerEvents = 'auto';
                     label.setAttribute('data-force-visible', 'true');
                 }
-                
+
                 // Show info card on hover regardless of zoom (new style)
                 const infoCard = wrapper.querySelector('.marker-info-card');
                 if (infoCard) {
@@ -2944,37 +2940,37 @@
         const allChapters = document.querySelectorAll('.chapter');
         let mostVisibleChapter = null;
         let highestRatio = 0;
-        
+
         allChapters.forEach(function(chapter) {
             // Get the chapter's position in viewport
             const rect = chapter.getBoundingClientRect();
             // Use viewport dimensions
             const viewportHeight = window.innerHeight;
-            
+
             // Calculate how much of the chapter is visible in the center zone (-40% to +40%)
             const centerTop = viewportHeight * 0.4;
             const centerBottom = viewportHeight * 0.6;
-            
+
             // Calculate intersection with center zone
             const visibleTop = Math.max(rect.top, centerTop);
             const visibleBottom = Math.min(rect.bottom, centerBottom);
             const visibleHeight = Math.max(0, visibleBottom - visibleTop);
             const centerZoneHeight = centerBottom - centerTop;
             const ratio = visibleHeight / centerZoneHeight;
-            
+
             if (ratio > highestRatio) {
                 highestRatio = ratio;
                 mostVisibleChapter = chapter;
             }
         });
-        
+
         // If we found a visible chapter, update to it
         if (mostVisibleChapter && highestRatio > 0) {
             const chapterId = mostVisibleChapter.getAttribute('data-chapter-id');
-            
+
             if (chapterId && chapterId !== activeChapterId) {
                 activeChapterId = chapterId;
-                
+
                 // Debounce map updates to prevent rapid firing during scroll
                 clearTimeout(debounceTimer);
                 debounceTimer = setTimeout(function() {
@@ -2990,7 +2986,7 @@
      */
     function updateMapForChapter(chapterId) {
         const pois = chapterData.get(chapterId);
-        
+
         if (!pois || pois.length === 0) {
             console.warn('Tema Story Map: No POIs found for chapter:', chapterId, '- keeping previous markers visible');
             // Don't update map if no POIs - keep showing previous chapter's markers
@@ -3030,7 +3026,7 @@
 
         pois.forEach(function(poi, index) {
             const walking = walkingData[index];
-            
+
             // Create marker container with label
             const markerContainer = document.createElement('div');
             markerContainer.className = 'tema-story-marker-container';
@@ -3051,7 +3047,7 @@
             el.style.cursor = 'pointer';
             el.style.flexShrink = '0';
             el.style.overflow = 'hidden';
-            
+
             // Use featured image if available, otherwise solid color
             if (poi.image) {
                 el.style.backgroundImage = `url(${poi.image})`;
@@ -3077,7 +3073,7 @@
             label.style.alignItems = 'center';
             label.style.gap = '8px';
             label.style.maxWidth = '200px';
-            
+
             // Image in label (if available)
             if (poi.image) {
                 const labelImage = document.createElement('div');
@@ -3090,13 +3086,13 @@
                 labelImage.style.flexShrink = '0';
                 label.appendChild(labelImage);
             }
-            
+
             // Text container
             const textContainer = document.createElement('div');
             textContainer.style.display = 'flex';
             textContainer.style.flexDirection = 'column';
             textContainer.style.gap = '2px';
-            
+
             // Title
             const titleSpan = document.createElement('span');
             titleSpan.textContent = poi.title;
@@ -3105,7 +3101,7 @@
             titleSpan.style.lineHeight = '1.2';
             titleSpan.style.wordBreak = 'break-word';
             textContainer.appendChild(titleSpan);
-            
+
             // Rating (if available)
             if (poi.rating) {
                 const ratingContainer = document.createElement('span');
@@ -3114,21 +3110,21 @@
                 ratingContainer.style.gap = '4px';
                 ratingContainer.style.fontSize = '12px';
                 ratingContainer.style.whiteSpace = 'nowrap';
-                
+
                 // Star
                 const starSpan = document.createElement('span');
                 starSpan.textContent = '★';
                 starSpan.style.color = '#FBBC05';
                 starSpan.style.fontSize = '12px';
                 ratingContainer.appendChild(starSpan);
-                
+
                 // Rating value
                 const ratingValueSpan = document.createElement('span');
                 ratingValueSpan.textContent = poi.rating.value.toFixed(1);
                 ratingValueSpan.style.fontWeight = '500';
                 ratingValueSpan.style.color = '#1a202c';
                 ratingContainer.appendChild(ratingValueSpan);
-                
+
                 // Review count (if available)
                 if (poi.rating.count) {
                     const countSpan = document.createElement('span');
@@ -3137,10 +3133,10 @@
                     countSpan.style.fontSize = '11px';
                     ratingContainer.appendChild(countSpan);
                 }
-                
+
                 textContainer.appendChild(ratingContainer);
             }
-            
+
             // Walking time (if available)
             if (walking) {
                 const walkTimeSpan = document.createElement('span');
@@ -3151,7 +3147,7 @@
                 walkTimeSpan.style.whiteSpace = 'nowrap';
                 textContainer.appendChild(walkTimeSpan);
             }
-            
+
             label.appendChild(textContainer);
 
             // Append dot and label to container
@@ -3162,7 +3158,7 @@
             label.style.opacity = '1';
             label.style.visibility = 'visible';
             label.style.pointerEvents = 'auto';
-            
+
             // Always hide marker dot (we only show labels now)
             el.style.opacity = '0';
             el.style.visibility = 'hidden';
@@ -3170,7 +3166,7 @@
 
             // Store POI ID on marker container for easy lookup
             markerContainer.setAttribute('data-poi-id', poi.id);
-            
+
             // Create marker with container (no popup)
             const marker = new mapboxgl.Marker(markerContainer)
                 .setLngLat(poi.coords)
@@ -3179,13 +3175,13 @@
             // Add click handler to center map, draw route, and highlight card
             markerContainer.addEventListener('click', function(e) {
                 e.stopPropagation();
-                
+
                 // Step 1: Fit bounds to show both start location and POI
                 if (startLocation) {
                     const bounds = new mapboxgl.LngLatBounds();
                     bounds.extend(startLocation);
                     bounds.extend(poi.coords);
-                    
+
                     map.fitBounds(bounds, {
                         padding: 120,
                         duration: 1200,
@@ -3200,14 +3196,14 @@
                         essential: true
                     });
                 }
-                
+
                 // Step 2: Draw walking route shortly after map starts moving
                 if (walking && walking.geometry) {
                     setTimeout(function() {
                         drawRoute(walking.geometry, walking.duration);
                     }, 400);
                 }
-                
+
                 // Step 3: After map animation is well underway, scroll to card
                 setTimeout(function() {
                     highlightCardInColumn(poi.id);
@@ -3275,11 +3271,11 @@
      */
     function initDynamicPoiLists() {
         const dynamicBlocks = document.querySelectorAll('.poi-list-dynamic-block');
-        
+
         dynamicBlocks.forEach(function(block) {
             const placesEnabled = block.getAttribute('data-places-enabled') !== 'false';
             if (!placesEnabled) return;
-            
+
             // Get chapter ID from parent
             const chapter = block.closest('[data-chapter-id]');
             if (!chapter) {
@@ -3287,11 +3283,11 @@
                 return;
             }
             const chapterId = chapter.getAttribute('data-chapter-id');
-            
+
             // Get configuration from block attributes
             const category = block.getAttribute('data-places-category') || 'restaurant';
             const keyword = block.getAttribute('data-places-keyword') || '';
-            
+
             // Map category to Norwegian plural
             const categoryMap = {
                 'restaurant': 'restauranter',
@@ -3319,7 +3315,7 @@
                 'tourist_attraction': 'turistattraksjoner'
             };
             const categoryNorwegian = categoryMap[category] || 'steder';
-            
+
             // Add button to this specific block
             addDynamicBlockButton(block, chapterId, categoryNorwegian);
         });
@@ -3334,16 +3330,16 @@
     function addDynamicBlockButton(block, chapterId, categoryNorwegian) {
         const placeholder = block.querySelector('.poi-list-dynamic-placeholder');
         if (!placeholder) return;
-        
+
         // Check if button already exists
         if (placeholder.querySelector('.places-api-show-all-button')) return;
-        
+
         // Create button container
         const buttonContainer = document.createElement('div');
         buttonContainer.className = 'places-api-button-container';
         buttonContainer.style.marginTop = '24px';
         buttonContainer.style.textAlign = 'center';
-        
+
         // Create button
         const button = document.createElement('button');
         button.className = 'places-api-show-all-button';
@@ -3358,19 +3354,19 @@
         button.style.fontWeight = '600';
         button.style.cursor = 'pointer';
         button.style.transition = 'background-color 0.2s';
-        
+
         button.addEventListener('mouseenter', function() {
             button.style.backgroundColor = '#DC2626';
         });
-        
+
         button.addEventListener('mouseleave', function() {
             button.style.backgroundColor = '#EF4444';
         });
-        
+
         button.addEventListener('click', function() {
             toggleDynamicBlockResults(block, chapterId, button);
         });
-        
+
         buttonContainer.appendChild(button);
         placeholder.appendChild(buttonContainer);
     }
@@ -3383,15 +3379,15 @@
      */
     async function toggleDynamicBlockResults(block, chapterId, button) {
         const isShowing = button.hasAttribute('data-results-shown');
-        
+
         if (isShowing) {
             // Already showing - do nothing (button will be hidden)
             return;
         }
-        
+
         // Show loading state with spinner animation
         const categoryNorwegian = button.getAttribute('data-category-norwegian') || 'steder';
-        
+
         // Create spinner element
         const spinner = document.createElement('span');
         spinner.style.display = 'inline-block';
@@ -3402,7 +3398,7 @@
         spinner.style.borderRadius = '50%';
         spinner.style.marginRight = '8px';
         spinner.style.animation = 'spin 0.8s linear infinite';
-        
+
         // Add keyframes for spinner if not already added
         if (!document.getElementById('spinner-keyframes')) {
             const style = document.createElement('style');
@@ -3414,24 +3410,24 @@
             `;
             document.head.appendChild(style);
         }
-        
+
         button.innerHTML = '';
         button.appendChild(spinner);
         button.appendChild(document.createTextNode('Henter lignende ' + categoryNorwegian + ' fra Google...'));
         button.disabled = true;
         button.style.opacity = '0.9';
-        
+
         // Fetch API data but don't display yet
         const apiData = await fetchDynamicBlockData(block, chapterId);
-        
+
         // Wait for minimum 2 seconds before displaying
         await new Promise(resolve => setTimeout(resolve, 2000));
-        
+
         // Now display the results after 2 seconds
         if (apiData && apiData.success && apiData.places.length > 0) {
             console.log('[Google Places] Successfully fetched ' + apiData.places.length + ' places');
             displayDynamicBlockResults(block, chapterId, apiData);
-            
+
             // Only set results-shown and hide button if display was successful
             button.setAttribute('data-results-shown', 'true');
             button.style.display = 'none';
@@ -3455,14 +3451,14 @@
         // Get chapter element
         const chapter = document.querySelector('[data-chapter-id="' + chapterId + '"]');
         if (!chapter) return null;
-        
+
         // Get chapter map
         const mapContainer = document.querySelector('.chapter-map[data-chapter-id="' + chapterId + '"]');
         if (!mapContainer) return null;
-        
+
         const mapInstance = mapContainer._mapboxInstance;
         if (!mapInstance) return null;
-        
+
         // Get center coordinates (use start location or map center)
         let lat, lng;
         if (startLocation) {
@@ -3473,14 +3469,14 @@
             lat = center.lat;
             lng = center.lng;
         }
-        
+
         // Read configuration from block data attributes
         const category = block.getAttribute('data-places-category') || 'restaurant';
         const radius = parseInt(block.getAttribute('data-places-radius')) || 1500;
         const minRating = parseFloat(block.getAttribute('data-places-min-rating')) || 4.3;
         const minReviews = parseInt(block.getAttribute('data-places-min-reviews')) || 50;
         const keyword = block.getAttribute('data-places-keyword') || '';
-        
+
         // Get exclude types (JSON array)
         let excludeTypes = ['lodging']; // Default
         const excludeTypesAttr = block.getAttribute('data-places-exclude-types');
@@ -3491,7 +3487,7 @@
                 console.warn('Failed to parse exclude types:', e);
             }
         }
-        
+
         // Collect Google Place IDs from existing POIs in the chapter-wrapper to exclude them
         const excludePlaceIds = [];
         const chapterWrapper = chapter.closest('.wp-block-placy-chapter-wrapper');
@@ -3505,21 +3501,21 @@
             });
             console.log('[fetchDynamicBlockData] Excluding ' + excludePlaceIds.length + ' manually curated POIs from API search');
         }
-        
+
         // Generate unique cache key for this block
         const blockId = chapterId + '-' + category + '-' + keyword;
-        
+
         // Fetch places
         console.log('[fetchDynamicBlockData] Fetching places:', { blockId, lat, lng, category, radius, minRating, minReviews, keyword });
         const apiData = await fetchNearbyPlaces(blockId, lat, lng, category, radius, minRating, minReviews, keyword, excludeTypes, excludePlaceIds);
-        
+
         console.log('[fetchDynamicBlockData] API Response:', { success: apiData.success, count: apiData.places?.length || 0 });
-        
+
         if (!apiData.success || apiData.places.length === 0) {
             console.warn('[fetchDynamicBlockData] No places found for dynamic block');
             return null;
         }
-        
+
         return apiData;
     }
 
@@ -3531,21 +3527,21 @@
      */
     function displayDynamicBlockResults(block, chapterId, apiData) {
         console.log('[displayDynamicBlockResults] Starting display with ' + apiData.places.length + ' places');
-        
+
         // Get chapter map
         const mapContainer = document.querySelector('.chapter-map[data-chapter-id="' + chapterId + '"]');
         if (!mapContainer) {
             console.error('[displayDynamicBlockResults] No map container found for chapter:', chapterId);
             return;
         }
-        
+
         const mapInstance = mapContainer._mapboxInstance;
         if (!mapInstance) return;
-        
+
         // Get configuration for disclaimer
         const category = block.getAttribute('data-places-category') || 'restaurant';
         const keyword = block.getAttribute('data-places-keyword') || '';
-        
+
         // Map category to Norwegian plural
         const categoryMap = {
             'restaurant': 'restauranter',
@@ -3573,17 +3569,17 @@
             'tourist_attraction': 'turistattraksjoner'
         };
         const categoryNorwegian = categoryMap[category] || 'steder';
-        
+
         // Find placeholder in this block
         const placeholder = block.querySelector('.poi-list-dynamic-placeholder');
         if (!placeholder) return;
-        
+
         // Create container for API results
         const apiContainer = document.createElement('div');
         apiContainer.className = 'places-api-results';
         apiContainer.style.marginTop = '24px';
         apiContainer.style.paddingTop = '0';
-        
+
         // Add disclaimer header
         const disclaimerHeader = document.createElement('div');
         disclaimerHeader.className = 'google-places-disclaimer';
@@ -3592,33 +3588,33 @@
         disclaimerHeader.style.backgroundColor = '#F3F4F6';
         disclaimerHeader.style.borderLeft = '4px solid #9CA3AF';
         disclaimerHeader.style.borderRadius = '4px';
-        
+
         let disclaimerText = '<p style="margin: 0; font-size: 14px; color: #4B5563; line-height: 1.5;">';
         disclaimerText += '<strong style="color: #1F2937;">Google-søk:</strong> ';
-        
+
         if (keyword && keyword.trim()) {
             disclaimerText += 'Viser lignende <strong>' + categoryNorwegian + '</strong> tagget med <em>"' + keyword.trim() + '"</em>';
         } else {
             disclaimerText += 'Viser lignende <strong>' + categoryNorwegian + '</strong> i området';
         }
-        
+
         disclaimerText += ' <span style="color: #6B7280;">— hentet fra Google Places</span>';
         disclaimerText += '</p>';
-        
+
         disclaimerHeader.innerHTML = disclaimerText;
         apiContainer.appendChild(disclaimerHeader);
-        
+
         // Add place cards
         apiData.places.forEach(function(place) {
             const card = createPlaceListCard(place);
             apiContainer.appendChild(card);
         });
-        
+
         placeholder.appendChild(apiContainer);
-        
+
         // Add markers to chapter map (shared map for all blocks in chapter)
         addPlacesMarkersToMap(mapInstance, chapterId, apiData.places);
-        
+
         // Adjust map bounds to include new markers
         adjustMapBounds(mapInstance, apiData.places);
     }
@@ -3631,14 +3627,14 @@
         // Get the block container
         const block = button.closest('.poi-list-dynamic-block');
         if (!block) return;
-        
+
         // Get the results container
         const resultsContainer = block.querySelector('.poi-list-dynamic-results');
         if (!resultsContainer) return;
-        
+
         // Get category text from button
         const categoryNorwegian = button.getAttribute('data-category-norwegian') || 'steder';
-        
+
         // Create spinner element
         const spinner = document.createElement('span');
         spinner.style.display = 'inline-block';
@@ -3649,7 +3645,7 @@
         spinner.style.borderRadius = '50%';
         spinner.style.marginRight = '8px';
         spinner.style.animation = 'spin 0.8s linear infinite';
-        
+
         // Add keyframes for spinner if not already added
         if (!document.getElementById('spinner-keyframes')) {
             const style = document.createElement('style');
@@ -3661,32 +3657,32 @@
             `;
             document.head.appendChild(style);
         }
-        
+
         // Show loading state
         button.innerHTML = '';
         button.appendChild(spinner);
         button.appendChild(document.createTextNode('Henter lignende ' + categoryNorwegian + ' fra Google...'));
         button.disabled = true;
         button.style.opacity = '0.9';
-        
+
         // Wait for 2 seconds to simulate loading
         await new Promise(resolve => setTimeout(resolve, 2000));
-        
+
         // Reveal the results
         resultsContainer.style.display = 'flex';
-        
+
         // Find the chapter and map for this block
         const chapter = block.closest('.chapter');
         const chapterId = chapter ? chapter.getAttribute('data-chapter-id') : null;
-        
+
         if (chapterId) {
             const mapContainer = document.querySelector(`.chapter-map[data-chapter-id="${chapterId}"]`);
             const mapInstance = mapContainer ? mapContainer._mapboxInstance : null;
-            
+
             if (mapInstance) {
                 // Add markers for the newly revealed POI cards from THIS block only
                 const newPoiCards = resultsContainer.querySelectorAll('.poi-list-card[data-poi-coords]');
-                
+
                 // Filter to only POI cards that don't already have markers
                 const existingMarkerIds = new Set();
                 if (mapInstance._poiMarkers) {
@@ -3698,18 +3694,18 @@
                         }
                     });
                 }
-                
+
                 for (const item of newPoiCards) {
                     const coordsAttr = item.getAttribute('data-poi-coords');
                     const poiId = item.getAttribute('data-poi-id');
                     const title = item.getAttribute('data-poi-title');
-                    
+
                     // Skip if marker already exists for this POI
                     if (existingMarkerIds.has(poiId)) {
                         continue;
                     }
                     let image = item.getAttribute('data-poi-image');
-                    
+
                     // Check if this is a Google Point and get photo from photo reference
                     const googlePlaceId = item.getAttribute('data-google-place-id');
                     if (googlePlaceId && !image) {
@@ -3718,19 +3714,19 @@
                             image = getPhotoUrl(photoRef, 200);
                         }
                     }
-                    
+
                     if (!coordsAttr) continue;
-                    
+
                     try {
                         const coords = JSON.parse(coordsAttr);
                         if (Array.isArray(coords) && coords.length === 2) {
                             const lngLat = [parseFloat(coords[1]), parseFloat(coords[0])];
-                            
+
                             // Get walking distance if start location exists
                             let walking = null;
                             if (startLocation) {
                                 walking = await getWalkingDistance(lngLat);
-                                
+
                                 if (walking) {
                                     const walkTimeEl = item.querySelector('.poi-walking-time');
                                     if (walkTimeEl) {
@@ -3738,12 +3734,12 @@
                                     }
                                 }
                             }
-                            
+
                             // Get rating from DOM
                             const ratingEl = item.querySelector('.poi-rating-value');
                             const ratingCountEl = item.querySelector('.poi-rating-count');
                             let rating = null;
-                            
+
                             if (ratingEl) {
                                 const ratingText = ratingEl.textContent.replace(/\s+/g, ' ').trim();
                                 const ratingMatch = ratingText.match(/(\d+\.?\d*)/);
@@ -3754,7 +3750,7 @@
                                     };
                                 }
                             }
-                            
+
                             const poi = {
                                 id: poiId,
                                 title: title || 'POI',
@@ -3764,7 +3760,7 @@
                                 walking: walking,
                                 rating: rating
                             };
-                            
+
                             // Add marker to map
                             addMarkerForPOI(mapInstance, poi, chapterId);
                         }
@@ -3774,13 +3770,13 @@
                 }
             }
         }
-        
+
         // Hide the button
         const buttonContainer = button.closest('.places-api-button-container');
         if (buttonContainer) {
             buttonContainer.style.display = 'none';
         }
-        
+
         // Re-initialize POI hover tracking for the newly revealed cards
         initPOIHoverTracking();
     }
@@ -3791,25 +3787,25 @@
     function initServersidePoiButtons() {
         // Find all POI list dynamic blocks with serverside-rendered results
         const buttons = document.querySelectorAll('.poi-list-dynamic-block .places-api-show-all-button');
-        
+
         buttons.forEach(function(button) {
             // Remove any existing event listeners by cloning
             const newButton = button.cloneNode(true);
             button.parentNode.replaceChild(newButton, button);
-            
+
             // Add hover effects
             newButton.addEventListener('mouseenter', function() {
                 if (!newButton.disabled) {
                     newButton.style.backgroundColor = '#DC2626';
                 }
             });
-            
+
             newButton.addEventListener('mouseleave', function() {
                 if (!newButton.disabled) {
                     newButton.style.backgroundColor = '#EF4444';
                 }
             });
-            
+
             // Add click handler
             newButton.addEventListener('click', function() {
                 revealServersideResults(newButton);

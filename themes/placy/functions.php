@@ -67,13 +67,6 @@ function placy_enqueue_scripts() {
     wp_enqueue_style( 'mapbox-gl-css', 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css', array(), '2.15.0' );
     wp_enqueue_script( 'mapbox-gl-js', 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js', array(), '2.15.0', true );
     
-    // Enqueue theme JavaScript files
-    // Prototype scripts disabled - using production POI map scripts
-    // wp_enqueue_script( 'placy-app', get_template_directory_uri() . '/js/app.js', array(), '1.0.0', true );
-    // wp_enqueue_script( 'placy-components', get_template_directory_uri() . '/js/components.js', array(), '1.0.0', true );
-    // wp_enqueue_script( 'placy-config', get_template_directory_uri() . '/js/config.js', array(), '1.0.0', true );
-    // wp_enqueue_script( 'placy-performance', get_template_directory_uri() . '/js/performance.js', array(), '1.0.0', true );
-    
     // POI Map Modal script
     wp_enqueue_script( 'placy-poi-map-modal', get_template_directory_uri() . '/js/poi-map-modal.js', array(), '1.0.0', true );
     
@@ -81,7 +74,11 @@ function placy_enqueue_scripts() {
     if ( is_singular( 'theme-story' ) ) {
         wp_enqueue_style( 'placy-tema-story', get_template_directory_uri() . '/css/tema-story.css', array(), '1.0.0' );
         wp_enqueue_style( 'placy-chapter-wrapper', get_template_directory_uri() . '/blocks/chapter-wrapper/style.css', array(), '1.0.0' );
-        wp_enqueue_script( 'placy-tema-story-map', get_template_directory_uri() . '/js/tema-story-map-multi.js', array( 'mapbox-gl-js' ), '2.3.3', true );
+        
+        // Use minified JS in production, source in development
+        $js_suffix = defined( 'WP_DEBUG' ) && WP_DEBUG ? '.js' : '.min.js';
+        wp_enqueue_script( 'placy-tema-story-map', get_template_directory_uri() . '/js/tema-story-map-multi' . $js_suffix, array( 'mapbox-gl-js' ), '2.3.4', true );
+        
         wp_enqueue_script( 'placy-chapter-nav', get_template_directory_uri() . '/js/chapter-nav.js', array(), '1.0.0', true );
         wp_enqueue_script( 'placy-chapter-header', get_template_directory_uri() . '/js/chapter-header.js', array(), '1.0.0', true );
         wp_enqueue_script( 'placy-intro-parallax', get_template_directory_uri() . '/js/intro-parallax.js', array(), '1.0.0', true );
@@ -183,10 +180,9 @@ require_once get_template_directory() . '/inc/rewrites.php';
 require_once get_template_directory() . '/inc/mapbox-config.php';
 
 /**
- * Include Google Places API integration (Legacy)
+ * Include Google Places API integration
  */
 require_once get_template_directory() . '/inc/google-places.php';
-require_once get_template_directory() . '/inc/test-google-places.php';
 
 /**
  * Include Google Points CPT Query API

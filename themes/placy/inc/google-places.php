@@ -137,8 +137,14 @@ function placy_clear_place_cache( $place_id ) {
 function placy_clear_all_place_caches() {
     global $wpdb;
     
-    $wpdb->query( "DELETE FROM $wpdb->options WHERE option_name LIKE '_transient_placy_place_%'" );
-    $wpdb->query( "DELETE FROM $wpdb->options WHERE option_name LIKE '_transient_timeout_placy_place_%'" );
+    $wpdb->query( $wpdb->prepare(
+        "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
+        '_transient_placy_place_%'
+    ) );
+    $wpdb->query( $wpdb->prepare(
+        "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
+        '_transient_timeout_placy_place_%'
+    ) );
 }
 
 /**

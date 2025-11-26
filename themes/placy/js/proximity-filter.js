@@ -1,20 +1,20 @@
 /**
  * Proximity Filter - Filter POIs by travel time
- * 
+ *
  * Features:
  * - localStorage-based caching (30-day validity)
  * - Mapbox Directions API integration
  * - Support for walk/bike/drive modes
  * - Global state management with multiple UI instances
  * - Fallback to straight-line distance
- * 
+ *
  * @package Placy
  * @since 2.0.0
  */
 
 (function() {
     'use strict';
-    
+
     console.log('[Proximity Filter] Script loaded and executing - version 2.0.0');
 
     // Configuration
@@ -214,8 +214,8 @@
 
             // Mapbox API call
             async fetchTravelTime(coords) {
-                const mapboxToken = typeof placyMapConfig !== 'undefined' && placyMapConfig.mapboxToken 
-                    ? placyMapConfig.mapboxToken 
+                const mapboxToken = typeof placyMapConfig !== 'undefined' && placyMapConfig.mapboxToken
+                    ? placyMapConfig.mapboxToken
                     : null;
 
                 if (!mapboxToken) {
@@ -302,7 +302,7 @@
                     const travelTimeEl = poiCard.querySelector('.poi-travel-time');
                     const travelTimeText = poiCard.querySelector('.poi-travel-time-text');
                     const walkingTimeText = poiCard.querySelector('.poi-walking-time');
-                    
+
                     if (isVisible) {
                         const travelTime = travelTimeMap.get(poiId);
                         if (travelTime !== undefined) {
@@ -333,13 +333,13 @@
             // Update map marker visibility
             updateMapMarkers(filteredIds) {
                 const markers = document.querySelectorAll('.tema-story-marker-wrapper');
-                
+
                 markers.forEach(marker => {
                     const poiId = marker.dataset.poiId;
-                    
+
                     // Skip property markers
                     if (marker.dataset.markerType === 'property') return;
-                    
+
                     if (poiId && filteredIds.has(poiId)) {
                         marker.style.display = 'flex';
                     } else if (poiId) {
@@ -361,13 +361,13 @@
             clearOldCache() {
                 const keys = Object.keys(localStorage);
                 const maxAge = CONFIG.CACHE_VALIDITY_DAYS * 24 * 60 * 60 * 1000;
-                
+
                 keys.forEach(key => {
                     if (key.startsWith(CONFIG.CACHE_KEY_PREFIX)) {
                         try {
                             const data = JSON.parse(localStorage.getItem(key));
                             const age = Date.now() - data.timestamp;
-                            
+
                             if (age > maxAge) {
                                 localStorage.removeItem(key);
                             }
@@ -387,7 +387,7 @@
     class ProximityFilter {
         constructor(element) {
             this.element = element;
-            
+
             // Read configuration from this instance's data attributes
             const defaultTime = parseInt(element.dataset.defaultTime) || 10;
             const defaultMode = element.dataset.defaultMode || 'walk';
@@ -401,7 +401,7 @@
 
             // Register this instance with global state
             ProximityFilterState.register(this);
-            
+
             this.init();
         }
 
@@ -413,10 +413,10 @@
 
             this.bindEvents();
             this.setupPlacesLoadedListener();
-            
+
             // Sync initial UI state
             this.syncUIState();
-            
+
             // Run filter (only first instance triggers actual filtering)
             if (ProximityFilterState.getFilteredPOIs().length === 0) {
                 ProximityFilterState.filterAllPOIs();
@@ -447,7 +447,7 @@
             // Listen for Google Places loaded events
             const chapterWrapper = this.element.closest('.chapter');
             if (!chapterWrapper) return;
-            
+
             chapterWrapper.addEventListener('placesLoaded', (event) => {
                 console.log('[Proximity Filter] Google Places loaded, re-filtering...', event.detail);
                 // Re-run filter to include newly added Google Places POIs
@@ -537,10 +537,10 @@
      */
     function init() {
         const filters = document.querySelectorAll('.proximity-filter-block');
-        
+
         // Clear old cache once
         ProximityFilterState.clearOldCache();
-        
+
         // Create UI instances for each filter block
         filters.forEach(filter => {
             new ProximityFilter(filter);
