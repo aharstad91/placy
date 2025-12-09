@@ -28,6 +28,11 @@
         'acf/chapter-index',
         'acf/proximity-timeline',
         'acf/travel-mode-selector',
+        'acf/chapter-heading',
+        'acf/chapter-text',
+        'acf/chapter-image',
+        'acf/chapter-list',
+        'acf/chapter-spacer',
     ];
 
     // Template for new chapters

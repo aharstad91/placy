@@ -1,0 +1,42 @@
+/**
+ * Chapter Spacer Block Styles
+ */
+
+.chapter-spacer {
+    display: block;
+    width: 100%;
+}
+
+/* Size variants */
+.chapter-spacer--small {
+    height: 16px;
+}
+
+.chapter-spacer--medium {
+    height: 32px;
+}
+
+.chapter-spacer--large {
+    height: 64px;
+}
+
+/* Editor preview styles */
+.block-editor-block-list__block .chapter-spacer {
+    background: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 5px,
+        rgba(0, 0, 0, 0.03) 5px,
+        rgba(0, 0, 0, 0.03) 10px
+    );
+    border: 1px dashed rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+    min-height: 16px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .chapter-spacer--large {
+        height: 48px;
+    }
+}

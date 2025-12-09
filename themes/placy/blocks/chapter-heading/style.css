@@ -1,0 +1,46 @@
+/**
+ * Chapter Heading Block Styles
+ */
+
+.chapter-heading {
+    margin-bottom: 1rem;
+}
+
+.chapter-heading h2,
+.chapter-heading h3,
+.chapter-heading h4 {
+    margin: 0;
+    line-height: 1.2;
+    font-weight: 600;
+    color: #1a1a1a;
+}
+
+/* H2 - Main heading */
+.chapter-heading--h2 h2 {
+    font-size: 2rem;
+}
+
+/* H3 - Subheading */
+.chapter-heading--h3 h3 {
+    font-size: 1.5rem;
+}
+
+/* H4 - Small heading */
+.chapter-heading--h4 h4 {
+    font-size: 1.25rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .chapter-heading--h2 h2 {
+        font-size: 1.75rem;
+    }
+    
+    .chapter-heading--h3 h3 {
+        font-size: 1.25rem;
+    }
+    
+    .chapter-heading--h4 h4 {
+        font-size: 1.125rem;
+    }
+}

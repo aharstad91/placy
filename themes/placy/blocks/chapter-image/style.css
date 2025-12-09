@@ -1,0 +1,66 @@
+/**
+ * Chapter Image Block Styles
+ */
+
+.chapter-image {
+    margin-bottom: 1.5rem;
+}
+
+.chapter-image figure {
+    margin: 0;
+}
+
+.chapter-image img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 8px;
+}
+
+.chapter-image figcaption {
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    color: #666;
+    font-style: italic;
+    text-align: center;
+}
+
+/* Default size */
+.chapter-image--default {
+    max-width: 100%;
+}
+
+/* Wide size */
+.chapter-image--wide {
+    max-width: calc(100% + 4rem);
+    margin-left: -2rem;
+    margin-right: -2rem;
+}
+
+.chapter-image--wide img {
+    border-radius: 0;
+}
+
+/* Full width */
+.chapter-image--full {
+    max-width: 100vw;
+    margin-left: calc(-50vw + 50%);
+    margin-right: calc(-50vw + 50%);
+}
+
+.chapter-image--full img {
+    border-radius: 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .chapter-image--wide {
+        max-width: 100%;
+        margin-left: 0;
+        margin-right: 0;
+    }
+    
+    .chapter-image--wide img {
+        border-radius: 8px;
+    }
+}

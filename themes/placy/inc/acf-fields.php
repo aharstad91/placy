@@ -1186,3 +1186,289 @@ if ( function_exists( 'acf_add_local_field_group' ) ) {
         'instruction_placement' => 'label',
     ) );
 }
+
+/**
+ * Register Chapter Heading Block Fields
+ */
+if ( function_exists( 'acf_add_local_field_group' ) ) {
+    acf_add_local_field_group( array(
+        'key' => 'group_chapter_heading',
+        'title' => 'Chapter Heading',
+        'fields' => array(
+            array(
+                'key' => 'field_chapter_heading_level',
+                'label' => 'Overskriftsnivå',
+                'name' => 'heading_level',
+                'type' => 'select',
+                'instructions' => 'Velg overskriftsnivå',
+                'required' => 0,
+                'choices' => array(
+                    'h2' => 'H2 - Hovedoverskrift',
+                    'h3' => 'H3 - Underoverskrift',
+                    'h4' => 'H4 - Liten overskrift',
+                ),
+                'default_value' => 'h2',
+                'wrapper' => array(
+                    'width' => '30',
+                ),
+            ),
+            array(
+                'key' => 'field_chapter_heading_text',
+                'label' => 'Overskrift',
+                'name' => 'heading_text',
+                'type' => 'text',
+                'required' => 1,
+                'placeholder' => 'Skriv overskriften her...',
+                'wrapper' => array(
+                    'width' => '70',
+                ),
+            ),
+        ),
+        'location' => array(
+            array(
+                array(
+                    'param' => 'block',
+                    'operator' => '==',
+                    'value' => 'acf/chapter-heading',
+                ),
+            ),
+        ),
+        'menu_order' => 0,
+        'position' => 'normal',
+        'style' => 'default',
+        'label_placement' => 'top',
+        'instruction_placement' => 'label',
+    ) );
+}
+
+/**
+ * Register Chapter Text Block Fields
+ */
+if ( function_exists( 'acf_add_local_field_group' ) ) {
+    acf_add_local_field_group( array(
+        'key' => 'group_chapter_text',
+        'title' => 'Chapter Text',
+        'fields' => array(
+            array(
+                'key' => 'field_chapter_text_variant',
+                'label' => 'Tekstvariant',
+                'name' => 'text_variant',
+                'type' => 'select',
+                'instructions' => 'Velg tekststil',
+                'required' => 0,
+                'choices' => array(
+                    'default' => 'Standard',
+                    'intro' => 'Intro (større tekst)',
+                    'caption' => 'Bildetekst (liten)',
+                ),
+                'default_value' => 'default',
+                'wrapper' => array(
+                    'width' => '30',
+                ),
+            ),
+            array(
+                'key' => 'field_chapter_text_content',
+                'label' => 'Tekst',
+                'name' => 'text_content',
+                'type' => 'wysiwyg',
+                'required' => 1,
+                'tabs' => 'all',
+                'toolbar' => 'basic',
+                'media_upload' => 0,
+                'wrapper' => array(
+                    'width' => '70',
+                ),
+            ),
+        ),
+        'location' => array(
+            array(
+                array(
+                    'param' => 'block',
+                    'operator' => '==',
+                    'value' => 'acf/chapter-text',
+                ),
+            ),
+        ),
+        'menu_order' => 0,
+        'position' => 'normal',
+        'style' => 'default',
+        'label_placement' => 'top',
+        'instruction_placement' => 'label',
+    ) );
+}
+
+/**
+ * Register Chapter Image Block Fields
+ */
+if ( function_exists( 'acf_add_local_field_group' ) ) {
+    acf_add_local_field_group( array(
+        'key' => 'group_chapter_image',
+        'title' => 'Chapter Image',
+        'fields' => array(
+            array(
+                'key' => 'field_chapter_image_image',
+                'label' => 'Bilde',
+                'name' => 'image',
+                'type' => 'image',
+                'required' => 1,
+                'return_format' => 'array',
+                'preview_size' => 'medium',
+                'library' => 'all',
+            ),
+            array(
+                'key' => 'field_chapter_image_caption',
+                'label' => 'Bildetekst',
+                'name' => 'image_caption',
+                'type' => 'text',
+                'required' => 0,
+                'placeholder' => 'Valgfri bildetekst...',
+                'wrapper' => array(
+                    'width' => '60',
+                ),
+            ),
+            array(
+                'key' => 'field_chapter_image_size',
+                'label' => 'Bildestørrelse',
+                'name' => 'image_size',
+                'type' => 'select',
+                'required' => 0,
+                'choices' => array(
+                    'default' => 'Standard',
+                    'wide' => 'Bred',
+                    'full' => 'Fullbredde',
+                ),
+                'default_value' => 'default',
+                'wrapper' => array(
+                    'width' => '40',
+                ),
+            ),
+        ),
+        'location' => array(
+            array(
+                array(
+                    'param' => 'block',
+                    'operator' => '==',
+                    'value' => 'acf/chapter-image',
+                ),
+            ),
+        ),
+        'menu_order' => 0,
+        'position' => 'normal',
+        'style' => 'default',
+        'label_placement' => 'top',
+        'instruction_placement' => 'label',
+    ) );
+}
+
+/**
+ * Register Chapter List Block Fields
+ */
+if ( function_exists( 'acf_add_local_field_group' ) ) {
+    acf_add_local_field_group( array(
+        'key' => 'group_chapter_list',
+        'title' => 'Chapter List',
+        'fields' => array(
+            array(
+                'key' => 'field_chapter_list_style',
+                'label' => 'Listestil',
+                'name' => 'list_style',
+                'type' => 'select',
+                'required' => 0,
+                'choices' => array(
+                    'bullet' => 'Punktliste',
+                    'numbered' => 'Nummerert',
+                    'icon' => 'Med ikoner',
+                ),
+                'default_value' => 'bullet',
+            ),
+            array(
+                'key' => 'field_chapter_list_items',
+                'label' => 'Listeelementer',
+                'name' => 'list_items',
+                'type' => 'repeater',
+                'required' => 1,
+                'min' => 1,
+                'layout' => 'table',
+                'button_label' => 'Legg til element',
+                'sub_fields' => array(
+                    array(
+                        'key' => 'field_chapter_list_item_text',
+                        'label' => 'Tekst',
+                        'name' => 'item_text',
+                        'type' => 'text',
+                        'required' => 1,
+                        'placeholder' => 'Skriv listeelement...',
+                        'wrapper' => array(
+                            'width' => '70',
+                        ),
+                    ),
+                    array(
+                        'key' => 'field_chapter_list_item_icon',
+                        'label' => 'Ikon (Font Awesome)',
+                        'name' => 'item_icon',
+                        'type' => 'text',
+                        'required' => 0,
+                        'placeholder' => 'fa-check',
+                        'instructions' => 'Kun for ikonstil',
+                        'wrapper' => array(
+                            'width' => '30',
+                        ),
+                    ),
+                ),
+            ),
+        ),
+        'location' => array(
+            array(
+                array(
+                    'param' => 'block',
+                    'operator' => '==',
+                    'value' => 'acf/chapter-list',
+                ),
+            ),
+        ),
+        'menu_order' => 0,
+        'position' => 'normal',
+        'style' => 'default',
+        'label_placement' => 'top',
+        'instruction_placement' => 'label',
+    ) );
+}
+
+/**
+ * Register Chapter Spacer Block Fields
+ */
+if ( function_exists( 'acf_add_local_field_group' ) ) {
+    acf_add_local_field_group( array(
+        'key' => 'group_chapter_spacer',
+        'title' => 'Chapter Spacer',
+        'fields' => array(
+            array(
+                'key' => 'field_chapter_spacer_size',
+                'label' => 'Størrelse',
+                'name' => 'spacer_size',
+                'type' => 'select',
+                'required' => 0,
+                'choices' => array(
+                    'small' => 'Liten (16px)',
+                    'medium' => 'Medium (32px)',
+                    'large' => 'Stor (64px)',
+                ),
+                'default_value' => 'medium',
+            ),
+        ),
+        'location' => array(
+            array(
+                array(
+                    'param' => 'block',
+                    'operator' => '==',
+                    'value' => 'acf/chapter-spacer',
+                ),
+            ),
+        ),
+        'menu_order' => 0,
+        'position' => 'normal',
+        'style' => 'default',
+        'label_placement' => 'top',
+        'instruction_placement' => 'label',
+    ) );
+}

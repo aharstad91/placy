@@ -467,6 +467,94 @@ function placy_register_acf_blocks() {
             'enqueue_style'     => get_template_directory_uri() . '/blocks/travel-mode-selector/style.css',
             'enqueue_script'    => get_template_directory_uri() . '/blocks/travel-mode-selector/script.js',
         ) );
+        
+        // ===========================================
+        // CHAPTER BLOCKS - For use inside chapter-wrapper
+        // ===========================================
+        
+        // Register Chapter Heading block
+        acf_register_block_type( array(
+            'name'              => 'chapter-heading',
+            'title'             => __( 'Kapittel Overskrift', 'placy' ),
+            'description'       => __( 'Standardisert overskrift for kapitler med kontroll på hierarki og stil', 'placy' ),
+            'render_template'   => get_template_directory() . '/blocks/chapter-heading/template.php',
+            'category'          => 'placy-chapters',
+            'icon'              => 'heading',
+            'keywords'          => array( 'heading', 'overskrift', 'kapittel', 'tittel', 'h2', 'h3' ),
+            'mode'              => 'preview',
+            'supports'          => array(
+                'align' => false,
+                'anchor' => true,
+            ),
+            'enqueue_style'     => get_template_directory_uri() . '/css/chapter-blocks.css',
+        ) );
+        
+        // Register Chapter Text block
+        acf_register_block_type( array(
+            'name'              => 'chapter-text',
+            'title'             => __( 'Kapittel Tekst', 'placy' ),
+            'description'       => __( 'Kontrollert brødtekstblokk med varianter og bredde-innstillinger', 'placy' ),
+            'render_template'   => get_template_directory() . '/blocks/chapter-text/template.php',
+            'category'          => 'placy-chapters',
+            'icon'              => 'editor-paragraph',
+            'keywords'          => array( 'text', 'tekst', 'paragraph', 'avsnitt', 'brødtekst' ),
+            'mode'              => 'preview',
+            'supports'          => array(
+                'align' => false,
+                'anchor' => true,
+            ),
+            'enqueue_style'     => get_template_directory_uri() . '/css/chapter-blocks.css',
+        ) );
+        
+        // Register Chapter Image block
+        acf_register_block_type( array(
+            'name'              => 'chapter-image',
+            'title'             => __( 'Kapittel Bilde', 'placy' ),
+            'description'       => __( 'Full kontroll på bilder i kapitler med aspect ratio og stilvalg', 'placy' ),
+            'render_template'   => get_template_directory() . '/blocks/chapter-image/template.php',
+            'category'          => 'placy-chapters',
+            'icon'              => 'format-image',
+            'keywords'          => array( 'image', 'bilde', 'foto', 'media' ),
+            'mode'              => 'preview',
+            'supports'          => array(
+                'align' => false,
+                'anchor' => true,
+            ),
+            'enqueue_style'     => get_template_directory_uri() . '/css/chapter-blocks.css',
+        ) );
+        
+        // Register Chapter List block
+        acf_register_block_type( array(
+            'name'              => 'chapter-list',
+            'title'             => __( 'Kapittel Liste', 'placy' ),
+            'description'       => __( 'Standardisert listeblokk med punkter, nummerering eller checkliste', 'placy' ),
+            'render_template'   => get_template_directory() . '/blocks/chapter-list/template.php',
+            'category'          => 'placy-chapters',
+            'icon'              => 'editor-ul',
+            'keywords'          => array( 'list', 'liste', 'punkter', 'checklist', 'nummerert' ),
+            'mode'              => 'preview',
+            'supports'          => array(
+                'align' => false,
+                'anchor' => true,
+            ),
+            'enqueue_style'     => get_template_directory_uri() . '/css/chapter-blocks.css',
+        ) );
+        
+        // Register Chapter Spacer block
+        acf_register_block_type( array(
+            'name'              => 'chapter-spacer',
+            'title'             => __( 'Kapittel Mellomrom', 'placy' ),
+            'description'       => __( 'Kontrollert vertikal luft mellom elementer', 'placy' ),
+            'render_template'   => get_template_directory() . '/blocks/chapter-spacer/template.php',
+            'category'          => 'placy-chapters',
+            'icon'              => 'arrow-down-alt2',
+            'keywords'          => array( 'spacer', 'mellomrom', 'luft', 'margin', 'padding' ),
+            'mode'              => 'preview',
+            'supports'          => array(
+                'align' => false,
+            ),
+            'enqueue_style'     => get_template_directory_uri() . '/css/chapter-blocks.css',
+        ) );
     }
 }
 add_action( 'acf/init', 'placy_register_acf_blocks' );
