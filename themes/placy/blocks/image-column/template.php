@@ -26,7 +26,7 @@ if ( ! empty( $block['className'] ) ) {
 ?>
 
 <div id="<?php echo esc_attr( $block_id ); ?>" class="<?php echo esc_attr( $class_name ); ?> w-full my-8">
-    <div class="flex gap-4 h-64">
+    <div class="flex gap-4" style="height: 20rem;">
         <?php if ( $image_1 ) : ?>
             <div class="w-3/5 overflow-hidden rounded-lg">
                 <img 

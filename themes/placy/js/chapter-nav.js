@@ -17,7 +17,7 @@
     // Configuration
     const CONFIG = {
         NAV_THRESHOLD: 0.3,  // 30% visibility triggers active state
-        SCROLL_OFFSET: 32    // Offset for scroll positioning (px)
+        SCROLL_OFFSET: 80    // Offset for scroll positioning (px) - accounts for sticky nav
     };
 
     // Guard against multiple initializations
@@ -27,40 +27,201 @@
      * Initialize chapter navigation
      */
     function initChapterNav() {
+        console.log('[ChapterNav] Initializing...');
+        
         // Prevent double initialization
         if (isInitialized) {
+            console.log('[ChapterNav] Already initialized, skipping');
             return;
         }
 
         const navContainer = document.getElementById('chapter-nav');
         const introNavContainer = document.getElementById('intro-chapter-nav');
+        const stickyTocNav = document.getElementById('sticky-toc-nav');
+        const chapterCardsContainer = document.getElementById('story-chapter-cards');
 
-        if (!navContainer && !introNavContainer) {
+        console.log('[ChapterNav] Found containers:', {
+            navContainer: !!navContainer,
+            introNavContainer: !!introNavContainer,
+            stickyTocNav: !!stickyTocNav,
+            chapterCardsContainer: !!chapterCardsContainer
+        });
+
+        if (!navContainer && !introNavContainer && !stickyTocNav && !chapterCardsContainer) {
+            console.log('[ChapterNav] No nav containers found, exiting');
             return;
         }
 
         // Find all chapter sections
         const chapters = document.querySelectorAll('.chapter');
+        console.log('[ChapterNav] Found chapters:', chapters.length);
 
         if (chapters.length === 0) {
+            console.log('[ChapterNav] No chapters found, exiting');
             return;
         }
 
         isInitialized = true;
 
-        // Build navigation menu for both locations
+        // Build navigation menu for all locations
         if (navContainer) {
             buildNavMenu(chapters, navContainer);
-            // Initialize scroll tracking
             initScrollTracking(chapters, navContainer);
         }
 
         if (introNavContainer) {
             buildNavMenu(chapters, introNavContainer);
-            // Initialize scroll tracking for intro nav too
             initScrollTracking(chapters, introNavContainer);
         }
 
+        if (stickyTocNav) {
+            buildStickyTocNav(chapters, stickyTocNav);
+            initScrollTracking(chapters, stickyTocNav);
+        }
+
+        if (chapterCardsContainer) {
+            buildChapterCards(chapters, chapterCardsContainer);
+        }
+
+    }
+
+    /**
+     * Build chapter cards for foreword section
+     * @param {NodeList} chapters - Chapter sections
+     * @param {HTMLElement} container - Chapter cards container
+     */
+    function buildChapterCards(chapters, container) {
+        container.innerHTML = '';
+
+        // Font Awesome icons for chapters (cycling through a set)
+        const chapterIcons = [
+            'fa-map-marker-alt',
+            'fa-route',
+            'fa-building',
+            'fa-tree',
+            'fa-utensils',
+            'fa-shopping-bag',
+            'fa-landmark',
+            'fa-coffee',
+            'fa-bus',
+            'fa-home'
+        ];
+
+        chapters.forEach(function(chapter, index) {
+            // Get anchor
+            let anchor = chapter.getAttribute('data-chapter-anchor') || chapter.id;
+            if (!anchor) {
+                const chapterId = chapter.getAttribute('data-chapter-id');
+                anchor = chapterId || 'chapter-' + (index + 1);
+                chapter.id = anchor;
+                chapter.setAttribute('data-chapter-anchor', anchor);
+            }
+
+            // Get title
+            const titleAttr = chapter.getAttribute('data-chapter-title');
+            const title = (titleAttr && titleAttr.trim() !== '') 
+                ? titleAttr 
+                : 'Kapittel ' + (index + 1);
+
+            // Create card element
+            const card = document.createElement('a');
+            card.href = '#' + anchor;
+            card.className = 'story-chapter-card';
+            card.setAttribute('data-chapter-anchor', anchor);
+
+            // Icon
+            const iconWrapper = document.createElement('div');
+            iconWrapper.className = 'story-chapter-card-icon';
+            const icon = document.createElement('i');
+            icon.className = 'fas ' + chapterIcons[index % chapterIcons.length];
+            iconWrapper.appendChild(icon);
+
+            // Content
+            const content = document.createElement('div');
+            content.className = 'story-chapter-card-content';
+
+            const numberSpan = document.createElement('span');
+            numberSpan.className = 'story-chapter-card-number';
+            numberSpan.textContent = 'Kapittel ' + (index + 1);
+
+            const titleSpan = document.createElement('span');
+            titleSpan.className = 'story-chapter-card-title';
+            titleSpan.textContent = title;
+
+            content.appendChild(numberSpan);
+            content.appendChild(titleSpan);
+
+            card.appendChild(iconWrapper);
+            card.appendChild(content);
+
+            // Smooth scroll on click
+            card.addEventListener('click', function(e) {
+                e.preventDefault();
+                scrollToChapter(anchor);
+            });
+
+            container.appendChild(card);
+        });
+
+        console.log('[ChapterNav] Built', chapters.length, 'chapter cards');
+    }
+
+    /**
+     * Build sticky TOC navigation bar from chapters
+     * @param {NodeList} chapters - Chapter sections
+     * @param {HTMLElement} navContainer - Sticky TOC nav container
+     */
+    function buildStickyTocNav(chapters, navContainer) {
+        const innerContainer = navContainer.querySelector('.sticky-toc-inner');
+        if (!innerContainer) return;
+
+        innerContainer.innerHTML = '';
+
+        chapters.forEach(function(chapter, index) {
+            // Get anchor
+            let anchor = chapter.getAttribute('data-chapter-anchor') || chapter.id;
+            if (!anchor) {
+                const chapterId = chapter.getAttribute('data-chapter-id');
+                anchor = chapterId || 'chapter-' + (index + 1);
+                chapter.id = anchor;
+                chapter.setAttribute('data-chapter-anchor', anchor);
+            }
+
+            // Get nav label (short), fallback to title, then generic
+            const navLabel = chapter.getAttribute('data-chapter-nav-label');
+            const titleAttr = chapter.getAttribute('data-chapter-title');
+            const label = (navLabel && navLabel.trim() !== '') 
+                ? navLabel 
+                : (titleAttr && titleAttr.trim() !== '') 
+                    ? titleAttr 
+                    : 'Kapittel ' + (index + 1);
+
+            // Create pill element
+            const pill = document.createElement('a');
+            pill.href = '#' + anchor;
+            pill.className = 'toc-pill';
+            pill.setAttribute('data-chapter-anchor', anchor);
+
+            // Number badge
+            const numberBadge = document.createElement('span');
+            numberBadge.className = 'toc-pill-number';
+            numberBadge.textContent = (index + 1);
+
+            // Label
+            const labelSpan = document.createElement('span');
+            labelSpan.textContent = label;
+
+            pill.appendChild(numberBadge);
+            pill.appendChild(labelSpan);
+
+            // Smooth scroll on click
+            pill.addEventListener('click', function(e) {
+                e.preventDefault();
+                scrollToChapter(anchor);
+            });
+
+            innerContainer.appendChild(pill);
+        });
     }
 
     /**
@@ -188,8 +349,8 @@
      */
     function setActiveNavItem(anchor, navContainer) {
 
-        // Remove active class from all items
-        const navItems = navContainer.querySelectorAll('.chapter-nav-item');
+        // Remove active class from all items (both chapter-nav-item and toc-pill)
+        const navItems = navContainer.querySelectorAll('.chapter-nav-item, .toc-pill');
         navItems.forEach(function(item) {
             item.classList.remove('active');
         });
@@ -199,8 +360,6 @@
 
         if (activeItem) {
             activeItem.classList.add('active');
-        } else {
-            console.warn('Chapter Navigation: Nav item not found for anchor:', anchor);
         }
     }
 

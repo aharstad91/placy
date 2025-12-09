@@ -57,6 +57,9 @@ function placy_enqueue_scripts() {
     wp_enqueue_style( 'placy-tailwind', get_template_directory_uri() . '/css/tailwind-output.css', array(), '1.0.0' );
     wp_enqueue_style( 'placy-custom', get_template_directory_uri() . '/css/styles.css', array(), '1.0.0' );
     
+    // Enqueue Font Awesome 6 for category icons
+    wp_enqueue_style( 'font-awesome', 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css', array(), '6.5.1' );
+    
     // Enqueue Adobe Typekit fonts
     wp_enqueue_style( 'adobe-typekit', 'https://use.typekit.net/jlp3dzl.css', array(), null );
     
@@ -70,23 +73,25 @@ function placy_enqueue_scripts() {
     // POI Map Modal script
     wp_enqueue_script( 'placy-poi-map-modal', get_template_directory_uri() . '/js/poi-map-modal.js', array(), '1.0.0', true );
     
-    // Tema Story styles and scripts (only on theme-story post type) - v2.3.3
-    if ( is_singular( 'theme-story' ) ) {
+    // Tema Story styles and scripts (on theme-story AND story post types) - v2.3.4
+    if ( is_singular( 'theme-story' ) || is_singular( 'story' ) ) {
         wp_enqueue_style( 'placy-tema-story', get_template_directory_uri() . '/css/tema-story.css', array(), '1.0.0' );
         wp_enqueue_style( 'placy-chapter-wrapper', get_template_directory_uri() . '/blocks/chapter-wrapper/style.css', array(), '1.0.0' );
         
-        // Use minified JS in production, source in development
-        $js_suffix = defined( 'WP_DEBUG' ) && WP_DEBUG ? '.js' : '.min.js';
-        wp_enqueue_script( 'placy-tema-story-map', get_template_directory_uri() . '/js/tema-story-map-multi' . $js_suffix, array( 'mapbox-gl-js' ), '2.3.4', true );
+        // Temporarily force non-minified JS for development (icons update)
+        // TODO: Run minification and switch back to conditional
+        wp_enqueue_script( 'placy-tema-story-map', get_template_directory_uri() . '/js/tema-story-map-multi.js', array( 'mapbox-gl-js' ), '2.4.0', true );
         
         wp_enqueue_script( 'placy-chapter-nav', get_template_directory_uri() . '/js/chapter-nav.js', array(), '1.0.0', true );
         wp_enqueue_script( 'placy-chapter-header', get_template_directory_uri() . '/js/chapter-header.js', array(), '1.0.0', true );
+        wp_enqueue_script( 'placy-chapter-index', get_template_directory_uri() . '/js/chapter-index.js', array(), '1.0.0', true );
         wp_enqueue_script( 'placy-intro-parallax', get_template_directory_uri() . '/js/intro-parallax.js', array(), '1.0.0', true );
         wp_enqueue_script( 'placy-container-gradient', get_template_directory_uri() . '/js/container-gradient.js', array(), '1.0.0', true );
         wp_enqueue_script( 'placy-scroll-indicator', get_template_directory_uri() . '/js/scroll-indicator.js', array(), '1.0.0', true );
         wp_enqueue_script( 'placy-proximity-filter', get_template_directory_uri() . '/js/proximity-filter.js', array(), '2.0.0', true );
         wp_enqueue_script( 'placy-entur-live-departures', get_template_directory_uri() . '/js/entur-live-departures.js', array(), '1.0.0', true );
         wp_enqueue_script( 'placy-bysykkel-live-availability', get_template_directory_uri() . '/js/bysykkel-live-availability.js', array(), '1.0.0', true );
+        wp_enqueue_script( 'placy-hyre-live-availability', get_template_directory_uri() . '/js/hyre-live-availability.js', array(), '1.0.0', true );
         
         // Localize Entur script with REST API URL
         wp_localize_script( 'placy-entur-live-departures', 'enturSettings', array(
@@ -96,6 +101,11 @@ function placy_enqueue_scripts() {
         // Localize Bysykkel script with REST API URL
         wp_localize_script( 'placy-bysykkel-live-availability', 'bysykkelSettings', array(
             'restUrl' => esc_url_raw( rest_url( 'placy/v1/bysykkel/availability' ) ),
+        ) );
+        
+        // Localize Hyre script with REST API URL
+        wp_localize_script( 'placy-hyre-live-availability', 'hyreSettings', array(
+            'restUrl' => esc_url_raw( rest_url( 'placy/v1/hyre/availability' ) ),
         ) );
         
         // Get property data from related project
@@ -215,6 +225,16 @@ require_once get_template_directory() . '/inc/entur-integration.php';
 require_once get_template_directory() . '/inc/bysykkel-integration.php';
 
 /**
+ * Include Hyre Car Sharing API integration
+ */
+require_once get_template_directory() . '/inc/hyre-integration.php';
+
+/**
+ * Include Mapbox Directions API proxy for Travel Calculator
+ */
+require_once get_template_directory() . '/inc/mapbox-directions-api.php';
+
+/**
  * Include Tema Story block patterns
  */
 require_once get_template_directory() . '/inc/tema-story-patterns.php';
@@ -249,6 +269,7 @@ function placy_enqueue_block_assets() {
         'poi-gallery'       => '/blocks/poi-gallery/style.css',
         'image-column'      => '/blocks/image-column/style.css',
         'proximity-filter'  => '/blocks/proximity-filter/style.css',
+        'travel-mode-selector' => '/blocks/travel-mode-selector/style.css',
     );
     
     // Enqueue all block styles
@@ -354,20 +375,97 @@ function placy_register_acf_blocks() {
             ),
         ) );
         
-        // Register Proximity Filter block
+        // Register Proximity Filter block (DEPRECATED - use proximity-timeline instead)
         acf_register_block_type( array(
             'name'              => 'proximity-filter',
-            'title'             => __( 'Proximity Filter', 'placy' ),
-            'description'       => __( 'Filter POIs based on travel time and mode', 'placy' ),
+            'title'             => __( '⚠️ Proximity Filter (Deprecated)', 'placy' ),
+            'description'       => __( 'DEPRECATED - Use Proximity Timeline block instead. Filter POIs based on travel time and mode', 'placy' ),
             'render_template'   => get_template_directory() . '/blocks/proximity-filter/template.php',
             'category'          => 'placy-content',
-            'icon'              => 'location',
-            'keywords'          => array( 'proximity', 'filter', 'time', 'distance' ),
+            'icon'              => 'warning',
+            'keywords'          => array( 'proximity', 'filter', 'time', 'distance', 'deprecated' ),
             'mode'              => 'preview',
             'supports'          => array(
                 'align' => false,
                 'anchor' => true,
             ),
+        ) );
+        
+        // Register Travel Calculator block
+        acf_register_block_type( array(
+            'name'              => 'travel-calculator',
+            'title'             => __( 'Travel Calculator', 'placy' ),
+            'description'       => __( 'Beregn reisetid fra adresse til eiendommen', 'placy' ),
+            'render_template'   => get_template_directory() . '/blocks/travel-calculator/template.php',
+            'category'          => 'placy-content',
+            'icon'              => 'clock',
+            'keywords'          => array( 'travel', 'reisetid', 'calculator', 'kalkulator', 'avstand' ),
+            'mode'              => 'preview',
+            'supports'          => array(
+                'align' => false,
+                'anchor' => true,
+            ),
+            'enqueue_assets'    => function() {
+                wp_enqueue_style( 'placy-travel-calculator', get_template_directory_uri() . '/blocks/travel-calculator/style.css', array(), '1.0.0' );
+                wp_enqueue_script( 'placy-travel-calculator', get_template_directory_uri() . '/js/travel-calculator.js', array( 'mapbox-gl-js' ), '1.0.0', true );
+                wp_localize_script( 'placy-travel-calculator', 'travelCalcSettings', array(
+                    'restUrl' => esc_url_raw( rest_url( 'placy/v1/travel-calc' ) ),
+                    'mapboxToken' => placy_get_mapbox_token(),
+                ) );
+            },
+        ) );
+        
+        // Register Chapter Index block
+        acf_register_block_type( array(
+            'name'              => 'chapter-index',
+            'title'             => __( 'Kapittel Indeks', 'placy' ),
+            'description'       => __( 'Navigasjonspiller for seksjoner innenfor et kapittel', 'placy' ),
+            'render_template'   => get_template_directory() . '/blocks/chapter-index/template.php',
+            'category'          => 'placy-content',
+            'icon'              => 'list-view',
+            'keywords'          => array( 'index', 'indeks', 'navigation', 'kapittel', 'chapter' ),
+            'mode'              => 'preview',
+            'supports'          => array(
+                'align' => false,
+                'anchor' => true,
+            ),
+            'enqueue_style'     => get_template_directory_uri() . '/blocks/chapter-index/style.css',
+        ) );
+        
+        // Register Proximity Timeline block
+        acf_register_block_type( array(
+            'name'              => 'proximity-timeline',
+            'title'             => __( 'Nærhet Timeline', 'placy' ),
+            'description'       => __( 'Viser nærhetsavstander med timeline og dynamisk tidsberegning', 'placy' ),
+            'render_template'   => get_template_directory() . '/blocks/proximity-timeline/template.php',
+            'category'          => 'placy-content',
+            'icon'              => 'clock',
+            'keywords'          => array( 'proximity', 'timeline', 'nærhet', 'avstand', 'tid' ),
+            'mode'              => 'preview',
+            'supports'          => array(
+                'align' => array( 'wide', 'full' ),
+                'anchor' => true,
+            ),
+            'enqueue_style'     => get_template_directory_uri() . '/blocks/proximity-timeline/style.css',
+            'enqueue_script'    => get_template_directory_uri() . '/blocks/proximity-timeline/script.js',
+        ) );
+        
+        // Register Travel Mode Selector block
+        acf_register_block_type( array(
+            'name'              => 'travel-mode-selector',
+            'title'             => __( 'Reisetid Velger', 'placy' ),
+            'description'       => __( 'Viser knapper for valg av reisemodus (gange/sykkel/bil)', 'placy' ),
+            'render_template'   => get_template_directory() . '/blocks/travel-mode-selector/template.php',
+            'category'          => 'placy-content',
+            'icon'              => 'admin-site-alt3',
+            'keywords'          => array( 'travel', 'mode', 'transport', 'reisetid', 'gange', 'sykkel', 'bil' ),
+            'mode'              => 'preview',
+            'supports'          => array(
+                'align' => false,
+                'anchor' => true,
+            ),
+            'enqueue_style'     => get_template_directory_uri() . '/blocks/travel-mode-selector/style.css',
+            'enqueue_script'    => get_template_directory_uri() . '/blocks/travel-mode-selector/script.js',
         ) );
     }
 }
@@ -458,7 +556,7 @@ function placy_block_editor_styles() {
         'placy-chapter-wrapper-editor',
         get_template_directory_uri() . '/blocks/chapter-wrapper/block.js',
         array( 'wp-blocks', 'wp-element', 'wp-block-editor', 'wp-components' ),
-        '2.0.0', // Updated for multi-map support
+        '2.1.0', // Added travel-calculator to allowed blocks
         true
     );
 }

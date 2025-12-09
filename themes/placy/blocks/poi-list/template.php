@@ -51,20 +51,40 @@ $is_in_chapter = strpos( $parent_classes, 'chapter' ) !== false;
                 // Get featured image URL - landscape format for card top
                 $featured_image = get_the_post_thumbnail_url( $poi->ID, 'large' );
                 
-                // Get editorial text if available, otherwise use post content
+                // Get category icon for map marker
+                $category_icon = placy_get_poi_category_icon( $poi->ID );
+                
+                // Get description - check editorial_text, then ACF description field (Native Points), then post_content
                 $editorial_text = get_field( 'editorial_text', $poi->ID );
-                $content = $editorial_text ? $editorial_text : apply_filters( 'the_content', get_post_field( 'post_content', $poi->ID ) );
+                $acf_description = get_field( 'description', $poi->ID );
+                $post_content = get_post_field( 'post_content', $poi->ID );
+                
+                if ( $editorial_text ) {
+                    $content = $editorial_text;
+                } elseif ( $acf_description ) {
+                    $content = $acf_description;
+                } elseif ( $post_content ) {
+                    $content = apply_filters( 'the_content', $post_content );
+                } else {
+                    $content = '';
+                }
                 $excerpt = get_the_excerpt( $poi->ID );
                 
                 // Get Entur integration data
                 $entur_stopplace_id = get_field( 'entur_stopplace_id', $poi->ID );
                 $entur_quay_id = get_field( 'entur_quay_id', $poi->ID );
                 $entur_transport_mode = get_field( 'entur_transport_mode', $poi->ID );
+                $entur_group_by_direction = get_field( 'entur_group_by_direction', $poi->ID );
+                $entur_line_filter = get_field( 'entur_line_filter', $poi->ID );
                 $show_live_departures = get_field( 'show_live_departures', $poi->ID );
                 
                 // Get Bysykkel integration data
                 $bysykkel_station_id = get_field( 'bysykkel_station_id', $poi->ID );
                 $show_bike_availability = get_field( 'show_bike_availability', $poi->ID );
+                
+                // Get Hyre integration data
+                $hyre_station_id = get_field( 'hyre_station_id', $poi->ID );
+                $show_hyre_availability = get_field( 'show_hyre_availability', $poi->ID );
             ?>
                 <article 
                     class="poi-list-card bg-white border border-gray-200 rounded-lg overflow-hidden transition-all duration-300 hover:border-gray-300"
@@ -88,22 +108,32 @@ $is_in_chapter = strpos( $parent_classes, 'chapter' ) !== false;
                     <?php if ( $coords ) : ?>
                         data-poi-coords="<?php echo esc_attr( $coords ); ?>"
                     <?php endif; ?>
+                    data-poi-icon="<?php echo esc_attr( $category_icon['icon'] ); ?>"
+                    data-poi-icon-color="<?php echo esc_attr( $category_icon['color'] ); ?>"
                     <?php if ( $featured_image ) : ?>
                         data-poi-image="<?php echo esc_url( $featured_image ); ?>"
                     <?php endif; ?>
                     <?php if ( $entur_stopplace_id && $show_live_departures ) : ?>
                         data-entur-stopplace-id="<?php echo esc_attr( $entur_stopplace_id ); ?>"
                         data-show-live-departures="1"
+                        data-entur-group-by-direction="<?php echo $entur_group_by_direction ? '1' : '0'; ?>"
                         <?php if ( $entur_quay_id ) : ?>
                             data-entur-quay-id="<?php echo esc_attr( $entur_quay_id ); ?>"
                         <?php endif; ?>
                         <?php if ( $entur_transport_mode ) : ?>
                             data-entur-transport-mode="<?php echo esc_attr( $entur_transport_mode ); ?>"
                         <?php endif; ?>
+                        <?php if ( $entur_line_filter ) : ?>
+                            data-entur-line-filter="<?php echo esc_attr( $entur_line_filter ); ?>"
+                        <?php endif; ?>
                     <?php endif; ?>
                     <?php if ( $bysykkel_station_id && $show_bike_availability ) : ?>
                         data-bysykkel-station-id="<?php echo esc_attr( $bysykkel_station_id ); ?>"
                         data-show-bike-availability="1"
+                    <?php endif; ?>
+                    <?php if ( $hyre_station_id && $show_hyre_availability ) : ?>
+                        data-hyre-station-id="<?php echo esc_attr( $hyre_station_id ); ?>"
+                        data-show-hyre-availability="1"
                     <?php endif; ?>
                 >
                     <div class="poi-card-content flex gap-4 p-4">
@@ -122,6 +152,12 @@ $is_in_chapter = strpos( $parent_classes, 'chapter' ) !== false;
                                 <img src="<?php echo esc_url( $photo_url_list ); ?>" 
                                      alt="<?php echo esc_attr( get_the_title( $poi->ID ) ); ?>"
                                      class="w-24 h-24 object-cover rounded-lg">
+                            </div>
+                        <?php elseif ( ! empty( $category_icon['icon'] ) ) : ?>
+                            <!-- Show category icon as fallback -->
+                            <div class="poi-card-icon flex-shrink-0 flex items-center justify-center" 
+                                 style="width: 48px; height: 48px; border-radius: 5px; background-color: <?php echo esc_attr( $category_icon['color'] ); ?>;">
+                                <i class="fa-solid <?php echo esc_attr( $category_icon['icon'] ); ?>" style="color: white; font-size: 18px;"></i>
                             </div>
                         <?php endif; ?>
                         
@@ -194,9 +230,7 @@ $is_in_chapter = strpos( $parent_classes, 'chapter' ) !== false;
                                         <?php endif; ?>
                                         
                                         <div class="flex items-center gap-2 text-gray-600">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                                            </svg>
+                                            <span class="poi-travel-icon"><i class="fas fa-walking"></i></span>
                                             <span class="poi-walking-time text-sm font-medium">
                                                 Beregner...
                                             </span>
@@ -246,11 +280,11 @@ $is_in_chapter = strpos( $parent_classes, 'chapter' ) !== false;
                             </div>
                             <!-- Bottom row: Tekst kommer her -->
                             <?php if ( $content ) : ?>
-                                <div class="poi-description text-sm text-gray-600 line-clamp-2">
+                                <div class="poi-description text-sm text-gray-600">
                                     <?php echo wp_kses_post( $content ); ?>
                                 </div>
                             <?php elseif ( $excerpt ) : ?>
-                                <div class="poi-description text-sm text-gray-600 line-clamp-2">
+                                <div class="poi-description text-sm text-gray-600">
                                     <?php echo esc_html( $excerpt ); ?>
                                 </div>
                             <?php endif; ?>

@@ -1,0 +1,75 @@
+/* Travel Mode Selector Block Styles */
+
+.travel-mode-selector-block {
+    padding: 1.5rem 0;
+}
+
+/* Mode Buttons */
+.travel-mode-buttons {
+    display: flex;
+    align-items: center;
+    gap: 0;
+}
+
+.travel-mode-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1rem;
+    border: 1px solid #e5e7eb;
+    background: white;
+    color: #64748b;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.travel-mode-btn:first-child {
+    border-top-left-radius: 2rem;
+    border-bottom-left-radius: 2rem;
+    border-right: none;
+}
+
+.travel-mode-btn:nth-child(2) {
+    border-radius: 0;
+}
+
+.travel-mode-btn:last-child {
+    border-top-right-radius: 2rem;
+    border-bottom-right-radius: 2rem;
+    border-left: none;
+}
+
+.travel-mode-btn:hover {
+    background: #f8fafc;
+    color: #1a202c;
+}
+
+.travel-mode-btn.active {
+    background: #1a202c;
+    border-color: #1a202c;
+    color: white;
+    position: relative;
+    z-index: 1;
+}
+
+.travel-mode-btn.active + .travel-mode-btn {
+    border-left: 1px solid #e5e7eb;
+}
+
+.travel-mode-btn i {
+    font-size: 0.875rem;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+    .travel-mode-buttons {
+        width: 100%;
+    }
+    
+    .travel-mode-btn {
+        flex: 1;
+        justify-content: center;
+    }
+}

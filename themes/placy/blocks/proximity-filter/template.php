@@ -82,13 +82,13 @@ if ( ! is_admin() && ! $project_coords ) {
             <label class="block text-sm font-medium text-gray-700 mb-2">Transportmiddel</label>
             <div class="flex gap-2">
                 <button class="proximity-mode-btn <?php echo $default_mode === 'walk' ? 'active' : ''; ?>" data-mode="walk">
-                    🚶 Gange
+                    <i class="fas fa-walking"></i> Gange
                 </button>
                 <button class="proximity-mode-btn <?php echo $default_mode === 'bike' ? 'active' : ''; ?>" data-mode="bike">
-                    🚴 Sykkel
+                    <i class="fas fa-bicycle"></i> Sykkel
                 </button>
                 <button class="proximity-mode-btn <?php echo $default_mode === 'drive' ? 'active' : ''; ?>" data-mode="drive">
-                    🚗 Bil
+                    <i class="fas fa-car"></i> Bil
                 </button>
             </div>
         </div>

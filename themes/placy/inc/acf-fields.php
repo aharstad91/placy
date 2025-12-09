@@ -913,3 +913,276 @@ function placy_populate_poi_gallery_categories( $field ) {
     
     return $field;
 }
+
+/**
+ * Chapter Index Block Fields
+ * Repeater with label + anchor for in-chapter navigation
+ */
+if ( function_exists( 'acf_add_local_field_group' ) ) {
+    acf_add_local_field_group( array(
+        'key' => 'group_chapter_index',
+        'title' => 'Kapittel Indeks',
+        'fields' => array(
+            array(
+                'key' => 'field_chapter_index_items',
+                'label' => 'Indeks-elementer',
+                'name' => 'index_items',
+                'type' => 'repeater',
+                'instructions' => 'Legg til navigasjonselementer som peker til seksjoner i kapittelet',
+                'required' => 0,
+                'min' => 0,
+                'max' => 10,
+                'layout' => 'table',
+                'button_label' => 'Legg til element',
+                'sub_fields' => array(
+                    array(
+                        'key' => 'field_chapter_index_label',
+                        'label' => 'Tekst',
+                        'name' => 'label',
+                        'type' => 'text',
+                        'instructions' => '',
+                        'required' => 1,
+                        'placeholder' => 'F.eks. Buss & metrobuss',
+                        'wrapper' => array(
+                            'width' => '60',
+                        ),
+                    ),
+                    array(
+                        'key' => 'field_chapter_index_anchor',
+                        'label' => 'Anker',
+                        'name' => 'anchor',
+                        'type' => 'text',
+                        'instructions' => '',
+                        'required' => 1,
+                        'placeholder' => 'buss-metrobuss',
+                        'prepend' => '#',
+                        'wrapper' => array(
+                            'width' => '40',
+                        ),
+                    ),
+                ),
+            ),
+        ),
+        'location' => array(
+            array(
+                array(
+                    'param' => 'block',
+                    'operator' => '==',
+                    'value' => 'acf/chapter-index',
+                ),
+            ),
+        ),
+        'menu_order' => 0,
+        'position' => 'normal',
+        'style' => 'default',
+        'label_placement' => 'top',
+        'instruction_placement' => 'label',
+    ) );
+}
+
+/**
+ * Register Story Intro Fields
+ */
+if ( function_exists( 'acf_add_local_field_group' ) ) {
+    acf_add_local_field_group( array(
+        'key' => 'group_story_intro_fields',
+        'title' => 'Story Intro',
+        'fields' => array(
+            array(
+                'key' => 'field_story_intro_image',
+                'label' => 'Intro Bilde',
+                'name' => 'story_intro_image',
+                'type' => 'image',
+                'instructions' => 'Bakgrunnsbilde for intro-seksjonen (100vh)',
+                'required' => 0,
+                'return_format' => 'array',
+                'preview_size' => 'medium',
+                'library' => 'all',
+            ),
+            array(
+                'key' => 'field_story_intro_text',
+                'label' => 'Intro Tekst',
+                'name' => 'story_intro_text',
+                'type' => 'wysiwyg',
+                'instructions' => 'Introduksjonstekst som vises over bildet',
+                'required' => 0,
+                'tabs' => 'all',
+                'toolbar' => 'basic',
+                'media_upload' => 0,
+            ),
+            array(
+                'key' => 'field_story_container_bg_color',
+                'label' => 'Container Bakgrunnsfarge',
+                'name' => 'story_container_bg_color',
+                'type' => 'color_picker',
+                'instructions' => 'Bakgrunnsfarge som introen fader til (default: hvit)',
+                'required' => 0,
+                'default_value' => '#ffffff',
+                'enable_opacity' => 0,
+                'return_format' => 'string',
+            ),
+            array(
+                'key' => 'field_story_foreword_text',
+                'label' => 'Forord Tekst',
+                'name' => 'story_foreword_text',
+                'type' => 'wysiwyg',
+                'instructions' => 'Forord/ingress som vises i indeks-seksjonen (under intro, før innholdet)',
+                'required' => 0,
+                'tabs' => 'all',
+                'toolbar' => 'full',
+                'media_upload' => 0,
+            ),
+            array(
+                'key' => 'field_story_foreword_image',
+                'label' => 'Forord Bilde',
+                'name' => 'story_foreword_image',
+                'type' => 'image',
+                'instructions' => 'Bilde som vises ved siden av kapitteloversikten i forord-seksjonen',
+                'required' => 0,
+                'return_format' => 'array',
+                'preview_size' => 'medium',
+                'library' => 'all',
+            ),
+        ),
+        'location' => array(
+            array(
+                array(
+                    'param' => 'post_type',
+                    'operator' => '==',
+                    'value' => 'story',
+                ),
+            ),
+        ),
+        'menu_order' => 100,
+        'position' => 'normal',
+        'style' => 'default',
+        'label_placement' => 'top',
+        'instruction_placement' => 'label',
+    ) );
+}
+
+/**
+ * Register Proximity Timeline Block Fields
+ */
+if ( function_exists( 'acf_add_local_field_group' ) ) {
+    acf_add_local_field_group( array(
+        'key' => 'group_proximity_timeline_block',
+        'title' => 'Proximity Timeline Block Fields',
+        'fields' => array(
+            array(
+                'key' => 'field_proximity_timeline_title',
+                'label' => 'Tittel',
+                'name' => 'timeline_title',
+                'type' => 'text',
+                'instructions' => 'Hovedtittel for timeline-seksjonen',
+                'required' => 0,
+                'placeholder' => 'Teknostallen er så nærme disse viktige punktene',
+            ),
+            array(
+                'key' => 'field_proximity_timeline_subtitle',
+                'label' => 'Undertittel',
+                'name' => 'timeline_subtitle',
+                'type' => 'text',
+                'instructions' => 'Valgfri undertittel/ingress',
+                'required' => 0,
+                'placeholder' => 'Tiden det tar fra Teknostallen til steder du faktisk bruker i hverdagen.',
+            ),
+            array(
+                'key' => 'field_proximity_timeline_items',
+                'label' => 'Timeline Punkter',
+                'name' => 'timeline_items',
+                'type' => 'repeater',
+                'instructions' => 'Legg til opptil 4 nærhetspunkter',
+                'required' => 0,
+                'min' => 1,
+                'max' => 4,
+                'layout' => 'block',
+                'button_label' => 'Legg til punkt',
+                'sub_fields' => array(
+                    array(
+                        'key' => 'field_proximity_timeline_item_title',
+                        'label' => 'Tittel',
+                        'name' => 'title',
+                        'type' => 'text',
+                        'required' => 1,
+                        'placeholder' => 'NTNU Gløshaugen',
+                        'wrapper' => array(
+                            'width' => '50',
+                        ),
+                    ),
+                    array(
+                        'key' => 'field_proximity_timeline_item_description',
+                        'label' => 'Beskrivelse',
+                        'name' => 'description',
+                        'type' => 'textarea',
+                        'required' => 0,
+                        'rows' => 2,
+                        'placeholder' => 'Samarbeid rett over gata – forelesere, studenter og forskningsmiljøer innen få...',
+                        'wrapper' => array(
+                            'width' => '50',
+                        ),
+                    ),
+                    array(
+                        'key' => 'field_proximity_timeline_item_lat',
+                        'label' => 'Latitude',
+                        'name' => 'latitude',
+                        'type' => 'number',
+                        'required' => 1,
+                        'placeholder' => '63.4195',
+                        'step' => 'any',
+                        'wrapper' => array(
+                            'width' => '25',
+                        ),
+                    ),
+                    array(
+                        'key' => 'field_proximity_timeline_item_lng',
+                        'label' => 'Longitude',
+                        'name' => 'longitude',
+                        'type' => 'number',
+                        'required' => 1,
+                        'placeholder' => '10.4016',
+                        'step' => 'any',
+                        'wrapper' => array(
+                            'width' => '25',
+                        ),
+                    ),
+                    array(
+                        'key' => 'field_proximity_timeline_item_image',
+                        'label' => 'Bilde (valgfritt)',
+                        'name' => 'image',
+                        'type' => 'image',
+                        'required' => 0,
+                        'return_format' => 'array',
+                        'preview_size' => 'thumbnail',
+                        'wrapper' => array(
+                            'width' => '50',
+                        ),
+                    ),
+                ),
+            ),
+            array(
+                'key' => 'field_proximity_timeline_footer_text',
+                'label' => 'Bunntekst',
+                'name' => 'footer_text',
+                'type' => 'text',
+                'instructions' => 'Valgfri tekst under timeline',
+                'required' => 0,
+                'placeholder' => 'Lenger ned i historien ser du hvordan hverdagen ser ut med sykkel, buss og bysykkel fra Teknostallen.',
+            ),
+        ),
+        'location' => array(
+            array(
+                array(
+                    'param' => 'block',
+                    'operator' => '==',
+                    'value' => 'acf/proximity-timeline',
+                ),
+            ),
+        ),
+        'menu_order' => 0,
+        'position' => 'normal',
+        'style' => 'default',
+        'label_placement' => 'top',
+        'instruction_placement' => 'label',
+    ) );
+}

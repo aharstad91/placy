@@ -1,0 +1,1156 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teknostallen - Story</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Figtree:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Figtree', sans-serif;
+        }
+        
+        .hero-overlay {
+            background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.1) 100%);
+        }
+        
+        /* TOC Pill Navigation Styles */
+        .toc-pill {
+            color: #6b7280;
+            background: #f3f4f6;
+        }
+        .toc-pill span:first-child {
+            background: #d1d5db;
+            color: #374151;
+        }
+        .toc-pill:hover {
+            background: #e5e7eb;
+            color: #374151;
+        }
+        .toc-pill.active {
+            background: #ecfdf5;
+            color: #059669;
+            box-shadow: inset 0 -2px 0 0 #059669;
+        }
+        .toc-pill.active span:first-child {
+            background: #059669;
+            color: white;
+        }
+        
+        /* Hide scrollbar but keep functionality */
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        
+        /* Smooth scroll offset for sticky nav */
+        .scroll-mt-24 {
+            scroll-margin-top: 6rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+
+    <!-- Hero Section -->
+    <section class="relative h-[55vh] md:h-[70vh] min-h-[400px] md:min-h-[500px] w-full">
+        <!-- Hero Background Image -->
+        <div class="absolute inset-0">
+            <img 
+                src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80" 
+                alt="Teknostallen kontorbygg"
+                class="w-full h-full object-cover"
+            >
+            <div class="hero-overlay absolute inset-0"></div>
+        </div>
+        
+        <!-- Hero Content - Bottom Left -->
+        <div class="absolute bottom-8 left-8 right-8 md:right-auto">
+            <div class="max-w-xl bg-black/60 backdrop-blur-sm text-white rounded-2xl p-6 md:p-8">
+                <h1 class="text-3xl md:text-4xl lg:text-5xl font-bold mb-3 leading-tight">
+                    Teknostallen
+                </h1>
+                <p class="text-base md:text-lg text-gray-200 leading-relaxed">
+                    Et moderne kontorbygg i hjertet av Teknobyen, designet for fremtidens arbeidsplass med fokus på bærekraft og trivsel.
+                </p>
+            </div>
+        </div>
+        
+        <!-- Back Button -->
+        <a href="#" class="absolute top-6 left-6 flex items-center gap-2 px-4 py-2 bg-white/90 backdrop-blur-sm rounded-lg text-gray-700 hover:bg-white transition-all shadow-sm">
+            <i class="fas fa-arrow-left"></i>
+            <span class="font-medium">Tilbake</span>
+        </a>
+    </section>
+
+    <!-- Meta Chips Section -->
+    <section class="bg-white border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-6 py-5">
+            <div class="flex flex-wrap items-center gap-3">
+                <!-- Chip: Type -->
+                <div class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-full text-sm font-medium text-gray-700">
+                    <i class="fas fa-building text-gray-500"></i>
+                    <span>Kontorbygg i Teknobyen</span>
+                </div>
+                
+                <!-- Chip: Size -->
+                <div class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-full text-sm font-medium text-gray-700">
+                    <i class="fas fa-ruler-combined text-gray-500"></i>
+                    <span>≈ 46–48 000 m²</span>
+                </div>
+                
+                <!-- Chip: Sustainability -->
+                <div class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-100 rounded-full text-sm font-medium text-emerald-700">
+                    <i class="fas fa-leaf text-emerald-500"></i>
+                    <span>Bærekraftig kontorbygg</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section Navigation - Pill Style TOC -->
+    <nav class="bg-white border-b border-gray-100 sticky top-0 z-50 shadow-sm">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="flex items-center gap-2 py-3 overflow-x-auto scrollbar-hide">
+                <a href="#mikrolokasjon" class="toc-pill active flex-shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all">
+                    <span class="w-5 h-5 rounded-full bg-current flex items-center justify-center text-xs text-white">1</span>
+                    <span>Mikrolokasjon</span>
+                </a>
+                <a href="#transport" class="toc-pill flex-shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all">
+                    <span class="w-5 h-5 rounded-full bg-current flex items-center justify-center text-xs">2</span>
+                    <span>Transport</span>
+                </a>
+                <a href="#bygget" class="toc-pill flex-shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all">
+                    <span class="w-5 h-5 rounded-full bg-current flex items-center justify-center text-xs">3</span>
+                    <span>Bygget</span>
+                </a>
+                <a href="#hverdagslogistikk" class="toc-pill flex-shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all">
+                    <span class="w-5 h-5 rounded-full bg-current flex items-center justify-center text-xs">4</span>
+                    <span>Hverdagslogistikk</span>
+                </a>
+                <a href="#helse-miljo" class="toc-pill flex-shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all">
+                    <span class="w-5 h-5 rounded-full bg-current flex items-center justify-center text-xs">5</span>
+                    <span>Helse & miljø</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-6 py-12">
+        
+        <!-- Section 1: Mikrolokasjon & rolle i byen -->
+        <section id="mikrolokasjon" class="mb-20 scroll-mt-24">
+          <!-- Kapittel-nummer + tittel -->
+          <div class="flex items-center gap-3 mb-4">
+            <span class="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center text-sm font-bold">
+              1
+            </span>
+            <h2 class="text-2xl font-bold text-gray-900">
+              Mikrolokasjon &amp; rolle i byen
+            </h2>
+          </div>
+
+          <!-- Ingress -->
+          <p class="text-gray-600 mb-4 max-w-2xl">
+            Teknostallen ligger midt i Teknobyen, i beltet mellom NTNU Gløshaugen,
+            SINTEF og St. Olavs hospital. Her sitter du i et av Trondheims viktigste
+            kunnskapsområder, med kort vei til både campus, sykehus og sentrum.
+          </p>
+
+          <!-- Chips / nøkkelstikkord -->
+          <div class="flex flex-wrap items-center gap-3 mb-10 text-xs font-medium">
+            <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-100 text-gray-700">
+              <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+              Midt i Teknobyen
+            </span>
+            <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-100 text-gray-700">
+              <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+              Mellom NTNU, SINTEF og St. Olavs
+            </span>
+            <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-100 text-gray-700">
+              <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+              Ca. 10 min til sentrum
+            </span>
+          </div>
+
+          <!-- To hovedkort: tekst + 10-minutters-boble -->
+          <div class="grid gap-8 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] items-start mb-10">
+            <!-- Venstre hovedkort -->
+            <article class="bg-white border border-gray-200 rounded-2xl p-6 md:p-7 shadow-sm">
+              <h3 class="text-lg font-semibold text-gray-900 mb-3">
+                Midt i beltet mellom campus, helse og byliv
+              </h3>
+              <p class="text-gray-600 text-sm mb-3">
+                Fra Teknostallen har du gangavstand til NTNU Gløshaugen, flere SINTEF-miljøer
+                og St. Olavs hospital. For leietakere betyr det kort vei til samarbeidspartnere,
+                forskningsprosjekter og rekrutteringsgrunnlag – uten å krysse gjennom sentrum.
+              </p>
+              <p class="text-gray-600 text-sm">
+                Samtidig er Midtbyen bare en kort bussreise unna. Det gjør det enkelt å kombinere
+                møter på campus, arbeidsdager i Teknostallen og kundemøter i sentrum, uten at
+                dagen går bort i transport.
+              </p>
+            </article>
+
+            <!-- Høyre hovedkort: 10-minutters-bobla -->
+            <aside class="bg-white border border-gray-200 rounded-2xl p-6 md:p-7 shadow-sm">
+              <p class="text-[11px] font-semibold tracking-wide uppercase text-purple-600 mb-2">
+                10-minutters-bobla
+              </p>
+              <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                Alt viktig innen noen få minutter
+              </h3>
+
+              <ol class="space-y-4 text-sm">
+                <li class="flex gap-3">
+                  <span class="mt-1 w-2.5 h-2.5 rounded-full bg-purple-500 flex-shrink-0"></span>
+                  <div>
+                    <div class="font-semibold">2 min til NTNU Gløshaugen</div>
+                    <p class="text-gray-500 text-xs">
+                      Møter og samarbeid rett over gata.
+                    </p>
+                  </div>
+                </li>
+                <li class="flex gap-3">
+                  <span class="mt-1 w-2.5 h-2.5 rounded-full bg-purple-500 flex-shrink-0"></span>
+                  <div>
+                    <div class="font-semibold">3 min til SINTEF-bygg i Teknobyen</div>
+                    <p class="text-gray-500 text-xs">
+                      FoU-partnere innen praktisk gangavstand.
+                    </p>
+                  </div>
+                </li>
+                <li class="flex gap-3">
+                  <span class="mt-1 w-2.5 h-2.5 rounded-full bg-purple-500 flex-shrink-0"></span>
+                  <div>
+                    <div class="font-semibold">5 min til St. Olavs</div>
+                    <p class="text-gray-500 text-xs">
+                      Et av landets største helse- og forskningsmiljø.
+                    </p>
+                  </div>
+                </li>
+                <li class="flex gap-3">
+                  <span class="mt-1 w-2.5 h-2.5 rounded-full bg-purple-500 flex-shrink-0"></span>
+                  <div>
+                    <div class="font-semibold">10 min til Trondheim sentrum</div>
+                    <p class="text-gray-500 text-xs">
+                      Møter, servering og kultur i Midtbyen.
+                    </p>
+                  </div>
+                </li>
+              </ol>
+            </aside>
+          </div>
+
+          <!-- Bento-grid med kategori-kort -->
+          <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            <!-- Kort 1 -->
+            <article class="border border-blue-200 bg-blue-50/60 rounded-2xl p-5">
+              <p class="text-[11px] font-semibold tracking-wide uppercase text-blue-700 mb-1">
+                NTNU &amp; SINTEF
+              </p>
+              <h3 class="font-semibold text-gray-900 mb-1">
+                Campus-nabo
+              </h3>
+              <p class="text-xs text-gray-600 leading-snug">
+                Teknostallen er en naturlig møteplass mellom NTNU, SINTEF og næringslivet.
+                Prosjektgrupper, gjesteforelesninger og student­samarbeid kan skje uten at
+                noen må krysse byen.
+              </p>
+            </article>
+
+            <!-- Kort 2 -->
+            <article class="border border-emerald-200 bg-emerald-50/60 rounded-2xl p-5">
+              <p class="text-[11px] font-semibold tracking-wide uppercase text-emerald-700 mb-1">
+                St. Olavs &amp; helsetech
+              </p>
+              <h3 class="font-semibold text-gray-900 mb-1">
+                Helsekorridoren
+              </h3>
+              <p class="text-xs text-gray-600 leading-snug">
+                Med St. Olavs hospital bare få minutters gange unna ligger bygget midt
+                i en voksende klynge for helse- og velferdsteknologi, kliniske studier
+                og medisinske samarbeid.
+              </p>
+            </article>
+
+            <!-- Kort 3 -->
+            <article class="border border-indigo-200 bg-indigo-50/60 rounded-2xl p-5">
+              <p class="text-[11px] font-semibold tracking-wide uppercase text-indigo-700 mb-1">
+                IT, software &amp; rådgivning
+              </p>
+              <h3 class="font-semibold text-gray-900 mb-1">
+                Digital næringsklynge
+              </h3>
+              <p class="text-xs text-gray-600 leading-snug">
+                I etasjene over Hagen sitter et tungt miljø innen IT, software og rådgivning.
+                For nye leietakere betyr det kort vei til både samarbeidspartnere, leverandører
+                og kunder i samme bygg.
+              </p>
+            </article>
+
+            <!-- Kort 4 -->
+            <article class="border border-sky-200 bg-sky-50/60 rounded-2xl p-5">
+              <p class="text-[11px] font-semibold tracking-wide uppercase text-sky-700 mb-1">
+                Virkemidler &amp; forvaltning
+              </p>
+              <h3 class="font-semibold text-gray-900 mb-1">
+                Samfunnsaktører i nabolaget
+              </h3>
+              <p class="text-xs text-gray-600 leading-snug">
+                Nasjonale aktører innen kunnskaps- og næringsutvikling har valgt Teknostallen
+                som base – et ekstra lag for bedrifter som jobber tett med forskning,
+                innovasjon og offentlig sektor.
+              </p>
+            </article>
+
+            <!-- Kort 5 -->
+            <article class="border border-amber-200 bg-amber-50/60 rounded-2xl p-5">
+              <p class="text-[11px] font-semibold tracking-wide uppercase text-amber-700 mb-1">
+                Mat, trening &amp; service
+              </p>
+              <h3 class="font-semibold text-gray-900 mb-1">
+                Hverdag i første etasje
+              </h3>
+              <p class="text-xs text-gray-600 leading-snug">
+                Bakeri, restaurant, jusbar, treningssenter, kantine og sykkelverksted
+                ligger i samme bygg. Hverdagslogistikken løses i etasjen under kontoret.
+              </p>
+            </article>
+
+            <!-- Kort 6 -->
+            <article class="border border-orange-200 bg-orange-50/60 rounded-2xl p-5">
+              <p class="text-[11px] font-semibold tracking-wide uppercase text-orange-700 mb-1">
+                Midtbyen &amp; Lerkendal
+              </p>
+              <h3 class="font-semibold text-gray-900 mb-1">
+                Byliv innen 10 min
+              </h3>
+              <p class="text-xs text-gray-600 leading-snug">
+                Med korte buss- og sykkelforbindelser til Midtbyen og Lerkendal har du
+                kamp, kultur, hotell og servering innenfor en 10-minuttersradius.
+              </p>
+            </article>
+          </div>
+        </section>
+
+        <!-- Section 2: Tilgjengelighet & transport -->
+        <section id="transport" class="mb-20 scroll-mt-24">
+            <!-- Heading -->
+            <div class="flex items-center gap-3 mb-6">
+                <span class="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center text-sm font-bold">2</span>
+                <h2 class="text-2xl font-bold text-gray-900">Tilgjengelighet &amp; transport</h2>
+            </div>
+
+            <!-- Intro -->
+            <p class="text-gray-600 mb-6 max-w-2xl">
+                Teknostallen ligger midt i et av byens best betjente kollektivområder. Her er det enkelt å komme seg til og fra jobb,
+                enten du reiser med buss, tog, sykkel eller bil.
+            </p>
+
+            <!-- Chips / oversikt -->
+            <div class="flex flex-wrap items-center gap-3 mb-8 text-xs font-medium">
+                <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-100 text-gray-700">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    Buss &amp; metrobuss
+                </span>
+                <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-100 text-gray-700">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    Tog (Lerkendal)
+                </span>
+                <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-100 text-gray-700">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    Sykkel &amp; gange
+                </span>
+                <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-100 text-gray-700">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    Bil &amp; parkering
+                </span>
+            </div>
+
+            <!-- Transport-seksjoner: stack -->
+            <div class="space-y-8">
+
+                <!-- Buss -->
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wide">Buss &amp; metrobuss</h3>
+                        <span class="text-[11px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700">
+                            Klikk et punkt for å se rute
+                        </span>
+                    </div>
+                    <p class="text-gray-600 text-sm mb-4 max-w-2xl">
+                        Nærmeste holdeplasser rundt Hesthagen og Klæbuveien har hyppige avganger mot sentrum, bydelene og Værnes.
+                        Bussreisen til Midtbyen tar bare noen få minutter.
+                    </p>
+
+                    <div class="space-y-3">
+                        <!-- Hesthagen -->
+                        <button
+                            type="button"
+                            class="w-full text-left flex items-center justify-between gap-4 p-4 rounded-xl border border-gray-100 hover:border-emerald-300 hover:shadow-sm transition-all"
+                            data-poi-id="holdeplass-hesthagen"
+                            data-route-mode="walk"
+                        >
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-sm font-semibold text-gray-900">Hesthagen holdeplass</span>
+                                    <span class="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
+                                        2–3 min gange
+                                    </span>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1">
+                                    Bybuss og flybuss mot sentrum, bydelene og Værnes
+                                </p>
+                            </div>
+                            <div class="flex items-center gap-2 text-emerald-600 text-xs font-medium flex-shrink-0">
+                                <i class="fas fa-bus"></i>
+                                <span>Se rute</span>
+                            </div>
+                        </button>
+
+                        <!-- Ekstra holdeplass -->
+                        <button
+                            type="button"
+                            class="w-full text-left flex items-center justify-between gap-4 p-4 rounded-xl border border-gray-100 hover:border-emerald-300 hover:shadow-sm transition-all"
+                            data-poi-id="holdeplass-klaebuveien"
+                            data-route-mode="walk"
+                        >
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-sm font-semibold text-gray-900">Bussholdeplass Klæbuveien</span>
+                                    <span class="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
+                                        3–4 min gange
+                                    </span>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1">
+                                    Flere linjer mot sentrum og sør-/østlige bydeler
+                                </p>
+                            </div>
+                            <div class="flex items-center gap-2 text-emerald-600 text-xs font-medium flex-shrink-0">
+                                <i class="fas fa-bus"></i>
+                                <span>Se rute</span>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tog -->
+                <div>
+                    <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-3">Tog (Lerkendal)</h3>
+                    <p class="text-gray-600 text-sm mb-4 max-w-2xl">
+                        Lerkendal stasjon er nærmeste togstopp. Herfra går lokaltog langs Trønderbanen, med enkel overgang til buss
+                        eller en kort gåtur til Teknostallen.
+                    </p>
+
+                    <button
+                        type="button"
+                        class="w-full text-left flex items-center justify-between gap-4 p-4 rounded-xl border border-gray-100 hover:border-emerald-300 hover:shadow-sm transition-all"
+                        data-poi-id="lerkendal-stasjon"
+                        data-route-mode="walk"
+                    >
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm font-semibold text-gray-900">Lerkendal stasjon</span>
+                                <span class="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
+                                    8–10 min gange
+                                </span>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">
+                                Togforbindelser langs Trønderbanen og videre mot Trondheim S
+                            </p>
+                        </div>
+                        <div class="flex items-center gap-2 text-emerald-600 text-xs font-medium flex-shrink-0">
+                            <i class="fas fa-train"></i>
+                            <span>Se rute</span>
+                        </div>
+                    </button>
+                </div>
+
+                <!-- Sykkel & gange -->
+                <div>
+                    <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-3">Sykkel &amp; gange</h3>
+                    <p class="text-gray-600 text-sm mb-4 max-w-2xl">
+                        Teknostallen ligger langs gode gang- og sykkelforbindelser via Elgeseter og Klæbuveien. 
+                        I bygget finner du sykkelparkering, garderober og treningssenter, slik at det er enkelt å velge en aktiv reisevei.
+                    </p>
+
+                    <div class="space-y-3">
+                        <button
+                            type="button"
+                            class="w-full text-left flex items-center justify-between gap-4 p-4 rounded-xl border border-gray-100 hover:border-emerald-300 hover:shadow-sm transition-all"
+                            data-poi-id="sykkelparkering-teknostallen"
+                            data-route-mode="none"
+                        >
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-sm font-semibold text-gray-900">Sykkelparkering Teknostallen</span>
+                                    <span class="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
+                                        I bygget
+                                    </span>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1">
+                                    Trygg parkering for sykkel, tett på inngangen
+                                </p>
+                            </div>
+                            <div class="flex items-center gap-2 text-emerald-600 text-xs font-medium flex-shrink-0">
+                                <i class="fas fa-bicycle"></i>
+                                <span>Vis i kart</span>
+                            </div>
+                        </button>
+
+                        <button
+                            type="button"
+                            class="w-full text-left flex items-center justify-between gap-4 p-4 rounded-xl border border-gray-100 hover:border-emerald-300 hover:shadow-sm transition-all"
+                            data-poi-id="gangvei-sentrum"
+                            data-route-mode="walk"
+                        >
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-sm font-semibold text-gray-900">Gang- og sykkelvei mot sentrum</span>
+                                    <span class="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
+                                        Ca. 15 min gange / 5 min sykkel
+                                    </span>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1">
+                                    Sammenhengende rute langs Elgeseter og over Elgeseter bru
+                                </p>
+                            </div>
+                            <div class="flex items-center gap-2 text-emerald-600 text-xs font-medium flex-shrink-0">
+                                <i class="fas fa-route"></i>
+                                <span>Se rute</span>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Bil & parkering -->
+                <div>
+                    <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-3">Bil &amp; parkering</h3>
+                    <p class="text-gray-600 text-sm mb-4 max-w-2xl">
+                        For de som av og til kommer med bil, tilbyr Teknostallen parkeringskjeller og flere parkeringsmuligheter i nærområdet.
+                        Det er enkel adkomst fra både sør og nord via E6 og hovedinnfartsårene.
+                    </p>
+
+                    <div class="space-y-3">
+                        <button
+                            type="button"
+                            class="w-full text-left flex items-center justify-between gap-4 p-4 rounded-xl border border-gray-100 hover:border-emerald-300 hover:shadow-sm transition-all"
+                            data-poi-id="p-kjeller-teknostallen"
+                            data-route-mode="drive"
+                        >
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-sm font-semibold text-gray-900">Parkeringskjeller Teknostallen</span>
+                                    <span class="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
+                                        Direkte tilkomst fra bygget
+                                    </span>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1">
+                                    Innkjøring fra nærliggende adkomstvei
+                                </p>
+                            </div>
+                            <div class="flex items-center gap-2 text-emerald-600 text-xs font-medium flex-shrink-0">
+                                <i class="fas fa-parking"></i>
+                                <span>Vis i kart</span>
+                            </div>
+                        </button>
+
+                        <button
+                            type="button"
+                            class="w-full text-left flex items-center justify-between gap-4 p-4 rounded-xl border border-gray-100 hover:border-emerald-300 hover:shadow-sm transition-all"
+                            data-poi-id="p-hus-naeromrade"
+                            data-route-mode="drive"
+                        >
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-sm font-semibold text-gray-900">Nærliggende P-hus</span>
+                                    <span class="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
+                                        3–5 min gange
+                                    </span>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1">
+                                    Ekstra kapasitet for gjester og større arrangementer
+                                </p>
+                            </div>
+                            <div class="flex items-center gap-2 text-emerald-600 text-xs font-medium flex-shrink-0">
+                                <i class="fas fa-parking"></i>
+                                <span>Se rute</span>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Section 3: Bygget -->
+        <section id="bygget" class="mb-20 scroll-mt-24">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center text-sm font-bold">3</span>
+                <h2 class="text-2xl font-bold text-gray-900">Bygget – hverdagsstedene inne i Teknostallen</h2>
+            </div>
+            
+            <!-- Intro text -->
+            <div class="max-w-3xl mb-10">
+                <p class="text-gray-600 leading-relaxed mb-4">
+                    I Teknostallen er mye av arbeidsdagen samlet i selve bygget. I midten ligger <strong class="text-gray-900">Hagen</strong> – en stor, grønn innendørs hage med sittegrupper, uformelle møteplasser og servering. Her kan du ta en kaffe, ha korte møter eller bare få et avbrekk i løpet av dagen.
+                </p>
+                <p class="text-gray-600 leading-relaxed mb-4">
+                    Rundt Hagen finner du kontorarealer, møterom i ulike størrelser og flere sosiale soner. I første etasje ligger bakeri, restaurant, bar og personalrestaurant, mens 3T treningssenter, garderober og sykkeltilbud gjør det enkelt å kombinere jobb og aktivitet. På taket er det takterrasse med løpebane og sitteplasser – et sted for både pauser, utemøter og arrangementer.
+                </p>
+                <p class="text-gray-600 leading-relaxed">
+                    For leietakere betyr det at mange av hverdagens behov løses uten å forlate bygget: arbeidsplass, møter, mat, trening og sosiale arenaer er samlet under samme tak.
+                </p>
+            </div>
+            
+            <!-- "Hva du har i bygget" block -->
+            <div class="space-y-8">
+                
+                <!-- Feature Cards: Signatursteder -->
+                <div class="grid md:grid-cols-2 gap-6">
+                    
+                    <!-- Feature Card: Hagen -->
+                    <div class="bg-white border border-gray-200 rounded-2xl overflow-hidden hover:shadow-lg transition-shadow">
+                        <div class="h-48 bg-gradient-to-br from-emerald-400 to-emerald-600 relative">
+                            <img src="https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=800&q=80" 
+                                 alt="Hagen - innendørs grøntareal" 
+                                 class="w-full h-full object-cover mix-blend-overlay opacity-60">
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <div class="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
+                                    <i class="fas fa-seedling text-white text-3xl"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-6">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="px-2 py-1 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full">Signatursted</span>
+                            </div>
+                            <h4 class="text-xl font-bold text-gray-900 mb-2">Hagen</h4>
+                            <p class="text-gray-600 leading-relaxed">
+                                Byggets hjerte – en stor, grønn innendørs hage med sittegrupper, uformelle møteplasser og servering. Perfekt for en kaffekopp, korte møter eller bare et avbrekk i arbeidsdagen.
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- Feature Card: Takterrasse -->
+                    <div class="bg-white border border-gray-200 rounded-2xl overflow-hidden hover:shadow-lg transition-shadow">
+                        <div class="h-48 bg-gradient-to-br from-amber-400 to-orange-500 relative">
+                            <img src="https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=800&q=80" 
+                                 alt="Takterrasse med utsikt" 
+                                 class="w-full h-full object-cover mix-blend-overlay opacity-60">
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <div class="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
+                                    <i class="fas fa-sun text-white text-3xl"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-6">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="px-2 py-1 bg-amber-100 text-amber-700 text-xs font-medium rounded-full">Signatursted</span>
+                            </div>
+                            <h4 class="text-xl font-bold text-gray-900 mb-2">Takterrasse</h4>
+                            <p class="text-gray-600 leading-relaxed">
+                                På taket finner du en grønn terrasse med løpebane, sitteplasser og panoramautsikt over byen. Et sted for pauser, utemøter, trening og arrangementer.
+                            </p>
+                        </div>
+                    </div>
+                    
+                </div>
+                
+                <!-- Fasiliteter: Ikon-grid -->
+                <div class="bg-gray-50 border border-gray-200 rounded-2xl p-6 md:p-8">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-6">Fasiliteter i bygget</h3>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5">
+                        
+                        <!-- Kantine -->
+                        <div class="flex flex-col items-center text-center p-4 bg-white rounded-xl border border-gray-100 cursor-default">
+                            <div class="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center mb-3">
+                                <i class="fas fa-utensils text-amber-600 text-lg"></i>
+                            </div>
+                            <h4 class="font-medium text-gray-900 text-sm">Kantine</h4>
+                            <p class="text-xs text-gray-500 mt-1">Variert meny</p>
+                        </div>
+                        
+                        <!-- Restaurant & bar -->
+                        <div class="flex flex-col items-center text-center p-4 bg-white rounded-xl border border-gray-100 cursor-default">
+                            <div class="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center mb-3">
+                                <i class="fas fa-wine-glass text-amber-600 text-lg"></i>
+                            </div>
+                            <h4 class="font-medium text-gray-900 text-sm">Restaurant & bar</h4>
+                            <p class="text-xs text-gray-500 mt-1">1. etasje</p>
+                        </div>
+                        
+                        <!-- Bakeri -->
+                        <div class="flex flex-col items-center text-center p-4 bg-white rounded-xl border border-gray-100 cursor-default">
+                            <div class="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center mb-3">
+                                <i class="fas fa-bread-slice text-amber-600 text-lg"></i>
+                            </div>
+                            <h4 class="font-medium text-gray-900 text-sm">Bakeri</h4>
+                            <p class="text-xs text-gray-500 mt-1">Ferskt brød</p>
+                        </div>
+                        
+                        <!-- Møterom -->
+                        <div class="flex flex-col items-center text-center p-4 bg-white rounded-xl border border-gray-100 cursor-default">
+                            <div class="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center mb-3">
+                                <i class="fas fa-door-open text-slate-600 text-lg"></i>
+                            </div>
+                            <h4 class="font-medium text-gray-900 text-sm">Møterom</h4>
+                            <p class="text-xs text-gray-500 mt-1">Flere størrelser</p>
+                        </div>
+                        
+                        <!-- Møtesenter -->
+                        <div class="flex flex-col items-center text-center p-4 bg-white rounded-xl border border-gray-100 cursor-default">
+                            <div class="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center mb-3">
+                                <i class="fas fa-users-rectangle text-slate-600 text-lg"></i>
+                            </div>
+                            <h4 class="font-medium text-gray-900 text-sm">Møtesenter</h4>
+                            <p class="text-xs text-gray-500 mt-1">Konferanser</p>
+                        </div>
+                        
+                        <!-- Lounge -->
+                        <div class="flex flex-col items-center text-center p-4 bg-white rounded-xl border border-gray-100 cursor-default">
+                            <div class="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center mb-3">
+                                <i class="fas fa-couch text-slate-600 text-lg"></i>
+                            </div>
+                            <h4 class="font-medium text-gray-900 text-sm">Lounge</h4>
+                            <p class="text-xs text-gray-500 mt-1">Sosiale soner</p>
+                        </div>
+                        
+                        <!-- 3T treningssenter -->
+                        <div class="flex flex-col items-center text-center p-4 bg-white rounded-xl border border-gray-100 cursor-default">
+                            <div class="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center mb-3">
+                                <i class="fas fa-dumbbell text-emerald-600 text-lg"></i>
+                            </div>
+                            <h4 class="font-medium text-gray-900 text-sm">3T Trening</h4>
+                            <p class="text-xs text-gray-500 mt-1">Full gym</p>
+                        </div>
+                        
+                        <!-- Garderober -->
+                        <div class="flex flex-col items-center text-center p-4 bg-white rounded-xl border border-gray-100 cursor-default">
+                            <div class="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center mb-3">
+                                <i class="fas fa-shower text-emerald-600 text-lg"></i>
+                            </div>
+                            <h4 class="font-medium text-gray-900 text-sm">Garderober</h4>
+                            <p class="text-xs text-gray-500 mt-1">Dusj & skap</p>
+                        </div>
+                        
+                        <!-- Sykkelparkering -->
+                        <div class="flex flex-col items-center text-center p-4 bg-white rounded-xl border border-gray-100 cursor-default">
+                            <div class="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center mb-3">
+                                <i class="fas fa-bicycle text-emerald-600 text-lg"></i>
+                            </div>
+                            <h4 class="font-medium text-gray-900 text-sm">Sykkel</h4>
+                            <p class="text-xs text-gray-500 mt-1">Trygg parkering</p>
+                        </div>
+                        
+                        <!-- Resepsjon -->
+                        <div class="flex flex-col items-center text-center p-4 bg-white rounded-xl border border-gray-100 cursor-default">
+                            <div class="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center mb-3">
+                                <i class="fas fa-concierge-bell text-slate-600 text-lg"></i>
+                            </div>
+                            <h4 class="font-medium text-gray-900 text-sm">Resepsjon</h4>
+                            <p class="text-xs text-gray-500 mt-1">Service</p>
+                        </div>
+                        
+                        <!-- Post & pakker -->
+                        <div class="flex flex-col items-center text-center p-4 bg-white rounded-xl border border-gray-100 cursor-default">
+                            <div class="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center mb-3">
+                                <i class="fas fa-box text-slate-600 text-lg"></i>
+                            </div>
+                            <h4 class="font-medium text-gray-900 text-sm">Post & pakker</h4>
+                            <p class="text-xs text-gray-500 mt-1">Mottak</p>
+                        </div>
+                        
+                        <!-- Parkering -->
+                        <div class="flex flex-col items-center text-center p-4 bg-white rounded-xl border border-gray-100 cursor-default">
+                            <div class="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center mb-3">
+                                <i class="fas fa-square-parking text-slate-600 text-lg"></i>
+                            </div>
+                            <h4 class="font-medium text-gray-900 text-sm">Parkering</h4>
+                            <p class="text-xs text-gray-500 mt-1">Elbil-lading</p>
+                        </div>
+                        
+                    </div>
+                </div>
+                
+            </div>
+        </section>
+
+        <!-- Section 4: Hverdagslogistikk -->
+        <section id="hverdagslogistikk" class="mb-20 scroll-mt-24">
+            <div class="flex items-center gap-3 mb-6">
+                <span class="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center text-sm font-bold">4</span>
+                <h2 class="text-2xl font-bold text-gray-900">Hverdagslogistikk</h2>
+            </div>
+
+            <p class="text-gray-600 mb-8 max-w-2xl">
+                Alt du trenger for en smidig arbeidsdag – fra kaffe og lunsj til trening og små ærend, enten du holder deg i bygget eller tar en kort tur i nærområdet.
+            </p>
+
+            <!-- A: Tidsstripe -->
+            <div class="flex flex-wrap items-center gap-3 mb-8 text-sm font-medium text-gray-500">
+                <span class="inline-flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Frokost
+                </span>
+                <span class="h-px w-8 bg-gray-300"></span>
+                <span class="inline-flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Lunsj
+                </span>
+                <span class="h-px w-8 bg-gray-300"></span>
+                <span class="inline-flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Afterwork
+                </span>
+                <span class="h-px w-8 bg-gray-300"></span>
+                <span class="inline-flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Små ærend
+                </span>
+            </div>
+
+            <div class="grid lg:grid-cols-2 gap-8">
+                <!-- Venstre: I bygget -->
+                <div class="bg-gray-50 border border-gray-200 rounded-2xl p-6 md:p-8">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-gray-900">I bygget</h3>
+                        <span class="text-xs font-medium px-3 py-1 rounded-full bg-gray-100 text-gray-600">
+                            Interne fasiliteter
+                        </span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <!-- Snurr -->
+                        <div class="flex items-start gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
+                                <i class="fas fa-bread-slice text-amber-600 text-lg"></i>
+                            </div>
+                            <div>
+                                <div class="text-sm font-semibold text-gray-900">Snurr bakeri</div>
+                                <p class="text-xs text-gray-500">Kaffe og bakst i Hagen</p>
+                            </div>
+                        </div>
+
+                        <!-- Glød -->
+                        <div class="flex items-start gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-rose-100 flex items-center justify-center flex-shrink-0">
+                                <i class="fas fa-utensils text-rose-600 text-lg"></i>
+                            </div>
+                            <div>
+                                <div class="text-sm font-semibold text-gray-900">Glød restaurant</div>
+                                <p class="text-xs text-gray-500">Lunsj og middag i bygget</p>
+                            </div>
+                        </div>
+
+                        <!-- Mellom -->
+                        <div class="flex items-start gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center flex-shrink-0">
+                                <i class="fas fa-wine-glass-alt text-purple-600 text-lg"></i>
+                            </div>
+                            <div>
+                                <div class="text-sm font-semibold text-gray-900">Mellom Social Space</div>
+                                <p class="text-xs text-gray-500">Afterwork, scene og arrangementer</p>
+                            </div>
+                        </div>
+
+                        <!-- 3T / sykkel -->
+                        <div class="flex items-start gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                                <i class="fas fa-dumbbell text-emerald-600 text-lg"></i>
+                            </div>
+                            <div>
+                                <div class="text-sm font-semibold text-gray-900">3T & garderober</div>
+                                <p class="text-xs text-gray-500">Trening, dusj og garderobe for syklister</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Høyre: I nærområdet -->
+                <div class="bg-white border border-gray-200 rounded-2xl p-6 md:p-8">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-gray-900">I nærområdet</h3>
+                        <span class="text-xs font-medium px-3 py-1 rounded-full bg-emerald-50 text-emerald-700">
+                            Klikk for å se på kart
+                        </span>
+                    </div>
+
+                    <div class="space-y-4">
+                        <!-- Dagligvare -->
+                        <button
+                            class="w-full text-left flex items-center justify-between gap-4 p-4 rounded-xl border border-gray-100 hover:border-emerald-300 hover:shadow-sm transition-all"
+                            data-poi-id="dagligvare-1"
+                        >
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-sm font-semibold text-gray-900">Nærmeste dagligvare</span>
+                                    <span class="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
+                                        5 min gange
+                                    </span>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1">Handle på vei til eller fra jobb</p>
+                            </div>
+                            <div class="flex items-center gap-2 text-emerald-600 text-xs font-medium flex-shrink-0">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <span>Se på kart</span>
+                            </div>
+                        </button>
+
+                        <!-- Apotek / tjenester -->
+                        <button
+                            class="w-full text-left flex items-center justify-between gap-4 p-4 rounded-xl border border-gray-100 hover:border-emerald-300 hover:shadow-sm transition-all"
+                            data-poi-id="apotek-1"
+                        >
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-sm font-semibold text-gray-900">Apotek & tjenester</span>
+                                    <span class="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
+                                        6–8 min gange
+                                    </span>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1">Små ærend i lunsjen</p>
+                            </div>
+                            <div class="flex items-center gap-2 text-emerald-600 text-xs font-medium flex-shrink-0">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <span>Se på kart</span>
+                            </div>
+                        </button>
+
+                        <!-- Sykkelservice -->
+                        <button
+                            class="w-full text-left flex items-center justify-between gap-4 p-4 rounded-xl border border-gray-100 hover:border-emerald-300 hover:shadow-sm transition-all"
+                            data-poi-id="sykkelservice-1"
+                        >
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-sm font-semibold text-gray-900">Heimdal sykkelservice</span>
+                                    <span class="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
+                                        I bygget / nært inngangen
+                                    </span>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1">Service mens du er på jobb</p>
+                            </div>
+                            <div class="flex items-center gap-2 text-emerald-600 text-xs font-medium flex-shrink-0">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <span>Se på kart</span>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: Helse, miljø og trivsel -->
+        <section id="helse-miljo" class="mb-20 scroll-mt-24">
+            <div class="flex items-center gap-3 mb-6">
+                <span class="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center text-sm font-bold">5</span>
+                <h2 class="text-2xl font-bold text-gray-900">Helse, miljø og trivsel</h2>
+            </div>
+            
+            <!-- Intro text -->
+            <div class="max-w-3xl mb-8">
+                <p class="text-gray-600 mb-4">
+                    Teknostallen er utviklet som et helse- og miljøbygg, der innsiden skal oppleves like gjennomtenkt som utsiden. Hagen og takhagen gir lys, luft og grønt inn i arbeidsdagen, med gode muligheter for pauser, uformelle møter og lav terskel for å bevege seg litt mellom øktene.
+                </p>
+                <p class="text-gray-600 mb-4">
+                    Bygget er energieffektivt, med moderne tekniske løsninger og felles energisentral for Teknobyen. For de som jobber her merkes det i form av jevnt inneklima, god luftkvalitet og et bygg som er tilrettelagt for både fysisk aktivitet og roligere soner. Sertifiseringer som BREEAM og WELL understøtter dette, men den viktigste effekten er at arbeidsmiljøet oppleves behagelig og bærekraftig i hverdagen.
+                </p>
+                <p class="text-gray-600">
+                    For arbeidsgivere gir dette et ekstra lag i rekruttering og HMS-arbeid: man kan vise til dokumenterte miljø- og helsekvaliteter, samtidig som ansatte faktisk har konkrete steder i og rundt bygget som inviterer til bevegelse, pauser og sosialt fellesskap.
+                </p>
+            </div>
+            
+            <!-- a) Fakta-stripe med chips -->
+            <div class="flex flex-wrap gap-3 mb-10">
+                <div class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 border border-emerald-200 rounded-full">
+                    <i class="fas fa-bolt text-emerald-600 text-sm"></i>
+                    <span class="text-emerald-800 text-sm font-medium">Energieffektivt kontorbygg</span>
+                </div>
+                <div class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 border border-emerald-200 rounded-full">
+                    <i class="fas fa-leaf text-emerald-600 text-sm"></i>
+                    <span class="text-emerald-800 text-sm font-medium">Grønne fellesarealer inne og ute</span>
+                </div>
+                <div class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 border border-emerald-200 rounded-full">
+                    <i class="fas fa-bicycle text-emerald-600 text-sm"></i>
+                    <span class="text-emerald-800 text-sm font-medium">Tilrettelagt for aktivitet og sykkel</span>
+                </div>
+                <div class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 border border-emerald-200 rounded-full">
+                    <i class="fas fa-award text-emerald-600 text-sm"></i>
+                    <span class="text-emerald-800 text-sm font-medium">Mål om BREEAM / WELL-sertifisering</span>
+                </div>
+            </div>
+            
+            <!-- b) Interne POI som støtter helse & trivsel -->
+            <div class="mb-8">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Steder for helse og trivsel i bygget</h3>
+                
+                <!-- POI Grid - 5 items -->
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+                    
+                    <!-- Hagen -->
+                    <div class="group cursor-pointer flex flex-col items-center text-center p-5 bg-white rounded-xl border border-gray-100 hover:border-emerald-300 hover:shadow-md transition-all">
+                        <div class="w-14 h-14 bg-gradient-to-br from-emerald-100 to-green-100 rounded-xl flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+                            <i class="fas fa-seedling text-emerald-600 text-xl"></i>
+                        </div>
+                        <h4 class="font-semibold text-gray-900 text-sm mb-1">Hagen</h4>
+                        <p class="text-xs text-gray-500 leading-snug">Grønt, lyst innendørs fellesområde</p>
+                    </div>
+                    
+                    <!-- Takhage & løpebane -->
+                    <div class="group cursor-pointer flex flex-col items-center text-center p-5 bg-white rounded-xl border border-gray-100 hover:border-sky-300 hover:shadow-md transition-all">
+                        <div class="w-14 h-14 bg-gradient-to-br from-sky-100 to-cyan-100 rounded-xl flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+                            <i class="fas fa-cloud-sun text-sky-600 text-xl"></i>
+                        </div>
+                        <h4 class="font-semibold text-gray-900 text-sm mb-1">Takhage & løpebane</h4>
+                        <p class="text-xs text-gray-500 leading-snug">Uteområder for pauser, møter og aktivitet</p>
+                    </div>
+                    
+                    <!-- 3T treningssenter -->
+                    <div class="group cursor-pointer flex flex-col items-center text-center p-5 bg-white rounded-xl border border-gray-100 hover:border-red-300 hover:shadow-md transition-all">
+                        <div class="w-14 h-14 bg-gradient-to-br from-red-100 to-orange-100 rounded-xl flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+                            <i class="fas fa-dumbbell text-red-600 text-xl"></i>
+                        </div>
+                        <h4 class="font-semibold text-gray-900 text-sm mb-1">3T treningssenter</h4>
+                        <p class="text-xs text-gray-500 leading-snug">Fullskala treningssenter i bygget</p>
+                    </div>
+                    
+                    <!-- Garderober -->
+                    <div class="group cursor-pointer flex flex-col items-center text-center p-5 bg-white rounded-xl border border-gray-100 hover:border-cyan-300 hover:shadow-md transition-all">
+                        <div class="w-14 h-14 bg-gradient-to-br from-cyan-100 to-blue-100 rounded-xl flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+                            <i class="fas fa-shower text-cyan-600 text-xl"></i>
+                        </div>
+                        <h4 class="font-semibold text-gray-900 text-sm mb-1">Garderober</h4>
+                        <p class="text-xs text-gray-500 leading-snug">Dusj og garderober for syklister og pendlere</p>
+                    </div>
+                    
+                    <!-- Rolige soner -->
+                    <div class="group cursor-pointer flex flex-col items-center text-center p-5 bg-white rounded-xl border border-gray-100 hover:border-purple-300 hover:shadow-md transition-all">
+                        <div class="w-14 h-14 bg-gradient-to-br from-purple-100 to-violet-100 rounded-xl flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+                            <i class="fas fa-spa text-purple-600 text-xl"></i>
+                        </div>
+                        <h4 class="font-semibold text-gray-900 text-sm mb-1">Rolige soner</h4>
+                        <p class="text-xs text-gray-500 leading-snug">Stillere områder for konsentrert arbeid</p>
+                    </div>
+                    
+                </div>
+            </div>
+            
+            <!-- c) Miljøsertifiseringer og energi -->
+            <div class="mt-10">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Miljø og energi</h3>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-2xl p-6">
+                        <div class="flex items-center gap-4 mb-4">
+                            <div class="w-14 h-14 bg-emerald-500 rounded-2xl flex items-center justify-center">
+                                <span class="text-white text-xl font-bold">A</span>
+                            </div>
+                            <div>
+                                <h4 class="text-lg font-bold text-gray-900">Energimerke A</h4>
+                                <p class="text-emerald-700 text-sm">Lavt energiforbruk</p>
+                            </div>
+                        </div>
+                        <ul class="space-y-2 text-gray-700 text-sm">
+                            <li class="flex items-center gap-2">
+                                <i class="fas fa-check text-emerald-500"></i>
+                                Fjernvarme og -kjøling
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <i class="fas fa-check text-emerald-500"></i>
+                                Solceller på tak
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <i class="fas fa-check text-emerald-500"></i>
+                                LED-belysning med bevegelsessensor
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-6">
+                        <div class="flex items-center gap-4 mb-4">
+                            <div class="w-14 h-14 bg-blue-500 rounded-2xl flex items-center justify-center">
+                                <i class="fas fa-award text-white text-xl"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-lg font-bold text-gray-900">BREEAM-NOR Excellent</h4>
+                                <p class="text-blue-700 text-sm">Internasjonal miljøsertifisering</p>
+                            </div>
+                        </div>
+                        <ul class="space-y-2 text-gray-700 text-sm">
+                            <li class="flex items-center gap-2">
+                                <i class="fas fa-check text-blue-500"></i>
+                                Bærekraftige materialer
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <i class="fas fa-check text-blue-500"></i>
+                                Lavt vannforbruk
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <i class="fas fa-check text-blue-500"></i>
+                                Biologisk mangfold ivaretatt
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12">
+        <div class="max-w-7xl mx-auto px-6 text-center">
+            <p class="text-gray-400">© 2025 Teknostallen. Alle rettigheter reservert.</p>
+        </div>
+    </footer>
+
+    <!-- Smooth scroll and active state for TOC pills -->
+    <script>
+        // TOC pill navigation
+        const tocPills = document.querySelectorAll('.toc-pill');
+        const contentSections = document.querySelectorAll('section[id]');
+        
+        // Click handler for smooth scroll
+        tocPills.forEach(pill => {
+            pill.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                const target = document.querySelector(targetId);
+                
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+        
+        // Intersection Observer for active pill state
+        const pillObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    // Remove active from all pills
+                    tocPills.forEach(pill => pill.classList.remove('active'));
+                    
+                    // Add active to matching pill
+                    const activePill = document.querySelector(`.toc-pill[href="#${entry.target.id}"]`);
+                    if (activePill) {
+                        activePill.classList.add('active');
+                    }
+                }
+            });
+        }, { 
+            threshold: 0.2,
+            rootMargin: '-80px 0px -60% 0px'
+        });
+        
+        contentSections.forEach(section => pillObserver.observe(section));
+    </script>
+
+</body>
+</html>

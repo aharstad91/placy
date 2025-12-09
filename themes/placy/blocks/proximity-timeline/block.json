@@ -1,0 +1,18 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "acf/proximity-timeline",
+  "title": "Nærhet Timeline",
+  "category": "placy",
+  "icon": "clock",
+  "description": "Viser nærhetsavstander med timeline og dynamisk tidsberegning for gå/sykkel/bil",
+  "keywords": ["proximity", "timeline", "nærhet", "avstand", "tid"],
+  "acf": {
+    "mode": "preview",
+    "renderTemplate": "blocks/proximity-timeline/template.php"
+  },
+  "supports": {
+    "align": ["wide", "full"],
+    "anchor": true
+  }
+}

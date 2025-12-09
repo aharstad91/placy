@@ -20,7 +20,8 @@
         DEBOUNCE_DELAY: 100,            // Debounce delay for map updates (ms)
         MARKER_FADE_DURATION: 200,      // Marker transition duration (ms)
         FIT_BOUNDS_PADDING: 80,         // Padding around markers in fitBounds
-        DEFAULT_ZOOM: 13,               // Default zoom if single marker
+        DEFAULT_ZOOM: 15,               // Default zoom - shows 3D buildings
+        MIN_ZOOM: 15,                   // Minimum zoom level - keeps 3D buildings visible
         DEFAULT_CENTER: [10.3951, 63.4305], // Trondheim center as fallback
         // Marker size based on zoom level
         MARKER_SIZES: {
@@ -44,11 +45,17 @@
     let debounceTimer = null;
     let startLocation = null; // Property/start location from ACF fields
     const walkingDistances = new Map(); // Cache for walking distances
+    const travelDistances = new Map(); // Cache for all travel modes: mode-lng,lat -> result
     let currentRoute = null; // Currently displayed route
     let currentDurationMarkers = []; // Store duration markers for cleanup
+    let currentTravelMode = 'walk'; // Current travel mode: walk, bike, drive
 
     // Google Places API state
     const placesApiResults = new Map(); // Store API results per chapter
+
+    // Progressive marker activation state
+    const poiMarkerMap = new Map(); // Maps POI element -> marker wrapper element
+    const chapterObservers = new Map(); // Store IntersectionObservers per chapter
 
     /**
      * Get photo URL from Google Places API
@@ -106,7 +113,8 @@
      */
     function updateMarkerSizes(zoom) {
         const size = getMarkerSize(zoom);
-        console.log('Current zoom level:', zoom, '| Marker size:', size + 'px');
+        const iconFontSize = (size >= 48) ? '18px' : '12px';
+        console.log('Current zoom level:', zoom, '| Marker size:', size + 'px', '| Icon size:', iconFontSize);
 
         // Update all marker images (both old circular and new horizontal markers)
         const allMarkers = document.querySelectorAll('.marker-circle-container, .marker-image-container');
@@ -118,6 +126,12 @@
 
             imageEl.style.width = size + 'px';
             imageEl.style.height = size + 'px';
+
+            // Update Font Awesome icon size inside the marker
+            const iconEl = imageEl.querySelector('i.fa-solid');
+            if (iconEl) {
+                iconEl.style.fontSize = iconFontSize;
+            }
 
             // Preserve any scale transform
             if (currentTransform && currentTransform.includes('scale')) {
@@ -468,6 +482,10 @@
             const poiId = item.getAttribute('data-poi-id');
             const title = item.getAttribute('data-poi-title');
             let image = item.getAttribute('data-poi-image');
+            
+            // Get category icon for marker (Font Awesome)
+            const poiIcon = item.getAttribute('data-poi-icon') || 'fa-location-dot';
+            const poiIconColor = item.getAttribute('data-poi-icon-color') || '#6366F1';
 
             // Check if this is a Google Point and get photo from photo reference
             const googlePlaceId = item.getAttribute('data-google-place-id');
@@ -523,6 +541,8 @@
                         title: title || 'POI',
                         coords: lngLat,
                         image: image,
+                        icon: poiIcon,
+                        iconColor: poiIconColor,
                         element: item,
                         index: markerIndex,
                         walking: walking,
@@ -549,7 +569,7 @@
 
     /**
      * Add a marker for a POI to a specific map
-     * Google Maps-style marker with image + info card
+     * Uses Font Awesome icon based on category
      */
     function addMarkerForPOI(mapInstance, poi, chapterId) {
         // Create wrapper container - horizontal layout like Google Maps
@@ -564,27 +584,32 @@
         wrapper.style.filter = 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))';
         wrapper.style.transition = 'filter 0.2s ease';
 
-        // Create circular image container with dynamic size
-        const imageSize = getMarkerSize(mapInstance.getZoom());
-        const imageContainer = document.createElement('div');
-        imageContainer.className = 'marker-image-container';
-        imageContainer.style.width = imageSize + 'px';
-        imageContainer.style.height = imageSize + 'px';
-        imageContainer.style.borderRadius = '50%';
-        imageContainer.style.overflow = 'hidden';
-        imageContainer.style.border = '2px solid white';
-        imageContainer.style.flexShrink = '0';
-        imageContainer.style.transition = 'transform 0.2s ease, width 0.3s ease, height 0.3s ease';
-        imageContainer.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+        // Create circular icon container with dynamic size
+        const iconSize = getMarkerSize(mapInstance.getZoom());
+        const iconContainer = document.createElement('div');
+        iconContainer.className = 'marker-image-container marker-icon-container';
+        iconContainer.style.width = iconSize + 'px';
+        iconContainer.style.height = iconSize + 'px';
+        iconContainer.style.borderRadius = '50%';
+        iconContainer.style.overflow = 'hidden';
+        iconContainer.style.border = '2px solid white';
+        iconContainer.style.flexShrink = '0';
+        iconContainer.style.transition = 'transform 0.2s ease, width 0.3s ease, height 0.3s ease';
+        iconContainer.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+        iconContainer.style.display = 'flex';
+        iconContainer.style.alignItems = 'center';
+        iconContainer.style.justifyContent = 'center';
+        iconContainer.style.backgroundColor = poi.iconColor || '#6366F1';
 
-        // Set image or gray background
-        if (poi.image) {
-            imageContainer.style.backgroundImage = `url(${poi.image})`;
-            imageContainer.style.backgroundSize = 'cover';
-            imageContainer.style.backgroundPosition = 'center';
-        } else {
-            imageContainer.style.backgroundColor = '#9CA3AF';
-        }
+        // Create Font Awesome icon element
+        const iconEl = document.createElement('i');
+        const iconClass = poi.icon || 'fa-location-dot';
+        iconEl.className = `fa-solid ${iconClass}`;
+        iconEl.style.color = 'white';
+        // Dynamic icon size: 18px for large markers (48px), 12px for small markers (24px)
+        iconEl.style.fontSize = (iconSize >= 48) ? '18px' : '12px';
+        iconEl.style.transition = 'font-size 0.3s ease';
+        iconContainer.appendChild(iconEl);
 
         // Create info card (transparent background, two rows)
         const infoCard = document.createElement('div');
@@ -664,8 +689,8 @@
 
         infoCard.appendChild(metaRow);
 
-        // Append image and info card to wrapper
-        wrapper.appendChild(imageContainer);
+        // Append icon and info card to wrapper
+        wrapper.appendChild(iconContainer);
         wrapper.appendChild(infoCard);
 
         // Store POI ID on wrapper
@@ -673,10 +698,18 @@
         wrapper.setAttribute('data-chapter-id', chapterId);
         wrapper.setAttribute('data-marker-type', 'poi');
 
-        // Hover effect - scale image and show info card
+        // Start in compact state for progressive activation
+        wrapper.classList.add('marker-compact');
+
+        // Store POI element to marker wrapper mapping for scroll activation
+        if (poi.element) {
+            poiMarkerMap.set(poi.element, wrapper);
+        }
+
+        // Hover effect - scale icon and show info card
         wrapper.addEventListener('mouseenter', function() {
             if (!wrapper.classList.contains('marker-active')) {
-                imageContainer.style.transform = 'scale(1.1)';
+                iconContainer.style.transform = 'scale(1.1)';
                 wrapper.style.zIndex = '50';
                 wrapper.style.filter = 'drop-shadow(0 4px 8px rgba(0,0,0,0.4))';
                 // Show info card on hover regardless of zoom
@@ -689,7 +722,7 @@
 
         wrapper.addEventListener('mouseleave', function() {
             if (!wrapper.classList.contains('marker-active')) {
-                imageContainer.style.transform = 'scale(1)';
+                iconContainer.style.transform = 'scale(1)';
                 wrapper.style.zIndex = '10';
                 wrapper.style.filter = 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))';
                 // Hide info card if zoom < 15 and not force visible
@@ -743,7 +776,7 @@
             wrapper.classList.add('marker-active');
             wrapper.style.zIndex = '100';
             wrapper.style.filter = 'drop-shadow(0 6px 16px rgba(0,0,0,0.5))';
-            imageContainer.style.transform = 'scale(1.15)';
+            iconContainer.style.transform = 'scale(1.15)';
             // Force info card visible when active
             infoCard.style.opacity = '1';
             infoCard.style.visibility = 'visible';
@@ -759,13 +792,17 @@
                 mapInstance.fitBounds(bounds, {
                     padding: 120,
                     duration: 1200,
-                    maxZoom: 16
+                    maxZoom: 16,
+                    pitch: 45,
+                    bearing: -30
                 });
             } else {
                 mapInstance.flyTo({
                     center: poi.coords,
                     zoom: 16,
-                    duration: 1200
+                    duration: 1200,
+                    pitch: 45,
+                    bearing: -30
                 });
             }
 
@@ -897,6 +934,58 @@
                 currentDurationMarkers.push(durationMarker);
             }
         }
+    }
+
+    /**
+     * Fetch travel distance and time from start location to POI using Mapbox Directions API
+     * @param {Array} destination - [lng, lat] coordinates of destination
+     * @param {string} mode - Travel mode: 'walk', 'bike', or 'drive'
+     * @returns {Promise<Object>} Object with distance (meters) and duration (seconds)
+     */
+    async function getTravelDistance(destination, mode = 'walk') {
+        if (!startLocation) {
+            return null;
+        }
+
+        // Map our modes to Mapbox profiles
+        const modeProfiles = {
+            walk: 'walking',
+            bike: 'cycling',
+            drive: 'driving'
+        };
+        const profile = modeProfiles[mode] || 'walking';
+
+        // Check cache first
+        const cacheKey = `${mode}-${destination[0]},${destination[1]}`;
+        if (travelDistances.has(cacheKey)) {
+            return travelDistances.get(cacheKey);
+        }
+
+        try {
+            const url = `https://api.mapbox.com/directions/v5/mapbox/${profile}/${startLocation[0]},${startLocation[1]};${destination[0]},${destination[1]}?geometries=geojson&access_token=${mapboxgl.accessToken}`;
+
+            const response = await fetch(url);
+            const data = await response.json();
+
+            if (data.routes && data.routes.length > 0) {
+                const route = data.routes[0];
+                const result = {
+                    distance: route.distance, // meters
+                    duration: route.duration, // seconds
+                    geometry: route.geometry, // GeoJSON for route drawing
+                    mode: mode
+                };
+
+                // Cache the result
+                travelDistances.set(cacheKey, result);
+
+                return result;
+            }
+        } catch (error) {
+            console.error('Tema Story Map: Error fetching travel distance:', error);
+        }
+
+        return null;
     }
 
     /**
@@ -1257,7 +1346,9 @@
     }
 
     /**
+    /**
      * Add Google Places markers to map
+     * Uses Font Awesome icon for consistency with curated POIs
      * @param {Object} mapInstance - Map instance
      * @param {string} chapterId - Chapter ID
      * @param {Array} places - Array of place objects from API
@@ -1279,33 +1370,31 @@
             wrapper.setAttribute('data-chapter-id', chapterId);
             wrapper.setAttribute('data-place-id', place.placeId);
 
-            // Create circular image container with dynamic size (slightly smaller for Google Places)
-            const imageSize = Math.max(30, getMarkerSize(mapInstance.getZoom()) * 0.85);
-            const imageContainer = document.createElement('div');
-            imageContainer.className = 'marker-image-container';
-            imageContainer.style.width = imageSize + 'px';
-            imageContainer.style.height = imageSize + 'px';
-            imageContainer.style.borderRadius = '50%';
-            imageContainer.style.overflow = 'hidden';
-            imageContainer.style.border = '2px solid white';
-            imageContainer.style.flexShrink = '0';
-            imageContainer.style.transition = 'transform 0.2s ease, width 0.3s ease, height 0.3s ease';
-            imageContainer.style.backgroundColor = '#EF4444';
-            imageContainer.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+            // Create circular icon container with dynamic size (slightly smaller for Google Places)
+            const iconSize = Math.max(30, getMarkerSize(mapInstance.getZoom()) * 0.85);
+            const iconContainer = document.createElement('div');
+            iconContainer.className = 'marker-image-container marker-icon-container';
+            iconContainer.style.width = iconSize + 'px';
+            iconContainer.style.height = iconSize + 'px';
+            iconContainer.style.borderRadius = '50%';
+            iconContainer.style.overflow = 'hidden';
+            iconContainer.style.border = '2px solid white';
+            iconContainer.style.flexShrink = '0';
+            iconContainer.style.transition = 'transform 0.2s ease, width 0.3s ease, height 0.3s ease';
+            iconContainer.style.backgroundColor = '#9CA3AF'; // Gray for Google Places (to distinguish from curated)
+            iconContainer.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+            iconContainer.style.display = 'flex';
+            iconContainer.style.alignItems = 'center';
+            iconContainer.style.justifyContent = 'center';
 
-            // Add photo or icon
-            if (place.photoReference) {
-                const photoUrl = getPhotoUrl(place.photoReference, 100);
-                if (photoUrl) {
-                    imageContainer.style.backgroundImage = 'url(' + photoUrl + ')';
-                    imageContainer.style.backgroundSize = 'cover';
-                    imageContainer.style.backgroundPosition = 'center';
-                } else {
-                    imageContainer.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;color:white;font-size:16px;">📍</div>';
-                }
-            } else {
-                imageContainer.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;color:white;font-size:16px;">📍</div>';
-            }
+            // Create Font Awesome icon element - use location-dot for Google Places
+            const iconEl = document.createElement('i');
+            iconEl.className = 'fa-solid fa-location-dot';
+            iconEl.style.color = 'white';
+            // Dynamic icon size: 18px for large markers (48px), 12px for small markers (24px)
+            iconEl.style.fontSize = (iconSize >= 48) ? '18px' : '12px';
+            iconEl.style.transition = 'font-size 0.3s ease';
+            iconContainer.appendChild(iconEl);
 
             // Create info card
             const infoCard = document.createElement('div');
@@ -1379,12 +1468,12 @@
 
             infoCard.appendChild(metaRow);
 
-            wrapper.appendChild(imageContainer);
+            wrapper.appendChild(iconContainer);
             wrapper.appendChild(infoCard);
 
             // Hover effects
             wrapper.addEventListener('mouseenter', function() {
-                imageContainer.style.transform = 'scale(1.1)';
+                iconContainer.style.transform = 'scale(1.1)';
                 wrapper.style.zIndex = '45';
                 wrapper.style.filter = 'drop-shadow(0 4px 8px rgba(0,0,0,0.4))';
                 infoCard.style.opacity = '1';
@@ -1394,7 +1483,7 @@
             });
 
             wrapper.addEventListener('mouseleave', function() {
-                imageContainer.style.transform = 'scale(1)';
+                iconContainer.style.transform = 'scale(1)';
                 wrapper.style.zIndex = '5';
                 wrapper.style.filter = 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))';
                 infoCard.removeAttribute('data-force-visible');
@@ -1985,7 +2074,9 @@
         mapInstance.fitBounds(bounds, {
             padding: 100,
             duration: 1000,
-            maxZoom: 14
+            maxZoom: 14,
+            pitch: 45,
+            bearing: -30
         });
     }
 
@@ -2095,18 +2186,21 @@
                 return;
             }
 
-            // Initialize Mapbox map for this chapter
+            // Initialize Mapbox map for this chapter with 3D buildings
             const chapterMap = new mapboxgl.Map({
                 container: mapContainer.id,
                 style: 'mapbox://styles/mapbox/light-v11',
                 center: CONFIG.DEFAULT_CENTER,
                 zoom: CONFIG.DEFAULT_ZOOM,
-                minZoom: 11,
-                maxZoom: 16
+                minZoom: CONFIG.MIN_ZOOM,
+                maxZoom: 18,
+                pitch: 45,           // Tilt angle for 3D view
+                bearing: -30,        // Rotation angle
+                antialias: true      // Smoother 3D rendering
             });
 
             // Add navigation controls
-            chapterMap.addControl(new mapboxgl.NavigationControl(), 'top-right');
+            chapterMap.addControl(new mapboxgl.NavigationControl({ showCompass: true }), 'top-right');
 
             // Store map instance on container
             mapContainer._mapboxInstance = chapterMap;
@@ -2123,6 +2217,41 @@
                         chapterMap.setLayoutProperty(layer.id, 'visibility', 'none');
                     }
                 });
+
+                // Add 3D building layer
+                const labelLayerId = layers.find(
+                    (layer) => layer.type === 'symbol' && layer.layout['text-field']
+                );
+
+                chapterMap.addLayer(
+                    {
+                        'id': '3d-buildings',
+                        'source': 'composite',
+                        'source-layer': 'building',
+                        'filter': ['==', 'extrude', 'true'],
+                        'type': 'fill-extrusion',
+                        'minzoom': 14,
+                        'paint': {
+                            'fill-extrusion-color': '#aaa',
+                            'fill-extrusion-height': [
+                                'interpolate',
+                                ['linear'],
+                                ['zoom'],
+                                14, 0,
+                                14.5, ['get', 'height']
+                            ],
+                            'fill-extrusion-base': [
+                                'interpolate',
+                                ['linear'],
+                                ['zoom'],
+                                14, 0,
+                                14.5, ['get', 'min_height']
+                            ],
+                            'fill-extrusion-opacity': 0.33
+                        }
+                    },
+                    labelLayerId ? labelLayerId.id : undefined
+                );
 
                 // Add property marker if start location exists
                 if (startLocation) {
@@ -2141,9 +2270,10 @@
 
         });
 
-        // After all maps initialized, setup hover tracking
+        // After all maps initialized, setup hover tracking and progressive activation
         setTimeout(function() {
             initPOIHoverTracking();
+            initProgressiveMarkerActivation();
         }, 1000);
     }
 
@@ -2354,7 +2484,9 @@
                     mapInstance.fitBounds(bounds, {
                         padding: 120,
                         duration: 1200,
-                        maxZoom: 16
+                        maxZoom: 16,
+                        pitch: 45,
+                        bearing: -30
                     });
                 } else {
                     // Fallback: just fly to POI if no start location
@@ -2362,6 +2494,8 @@
                         center: lngLat,
                         zoom: 16,
                         duration: 1200,
+                        pitch: 45,
+                        bearing: -30,
                         essential: true
                     });
                 }
@@ -2374,10 +2508,10 @@
 
                 // Draw route on this map if we have start location
                 if (startLocation) {
-                    getWalkingDistance(lngLat).then(function(walking) {
-                        if (walking && walking.geometry) {
+                    getTravelDistance(lngLat, currentTravelMode).then(function(travelData) {
+                        if (travelData && travelData.geometry) {
                             setTimeout(function() {
-                                drawRouteOnMap(mapInstance, walking.geometry, walking.duration);
+                                drawRouteOnMap(mapInstance, travelData.geometry, travelData.duration);
                             }, 400);
                         }
                     });
@@ -2450,7 +2584,9 @@
                     mapInstance.fitBounds(bounds, {
                         padding: 120,
                         duration: 1200,
-                        maxZoom: 16
+                        maxZoom: 16,
+                        pitch: 45,
+                        bearing: -30
                     });
                 } else {
                     // Fallback: just fly to place if no start location
@@ -2458,16 +2594,18 @@
                         center: lngLat,
                         zoom: 16,
                         duration: 1200,
+                        pitch: 45,
+                        bearing: -30,
                         essential: true
                     });
                 }
 
                 // Draw route on this map if we have start location
                 if (startLocation) {
-                    getWalkingDistance(lngLat).then(function(walking) {
-                        if (walking && walking.geometry) {
+                    getTravelDistance(lngLat, currentTravelMode).then(function(travelData) {
+                        if (travelData && travelData.geometry) {
                             setTimeout(function() {
-                                drawRouteOnMap(mapInstance, walking.geometry, walking.duration);
+                                drawRouteOnMap(mapInstance, travelData.geometry, travelData.duration);
                             }, 400);
                         }
                     });
@@ -2494,36 +2632,63 @@
     };
 
     /**
-     * Initialize Intersection Observer for scroll tracking
-     * NOTE: With per-chapter maps, scroll tracking is not needed since each map
-     * is independent and always shows its chapter's markers. This is kept for
-     * potential future use but disabled.
+     * Initialize Progressive Marker Activation
+     * Markers start in compact state and activate permanently when their
+     * corresponding POI content scrolls into the center of the viewport.
+     * Property markers are always fully visible as reference points.
      */
-    function initScrollTracking() {
-        // DISABLED: Not needed with per-chapter map architecture
-        // Each chapter has its own map that shows its markers independently
-        return;
-
-        /* Original scroll tracking code preserved but disabled
-        const chapters = document.querySelectorAll('.chapter');
+    function initProgressiveMarkerActivation() {
+        const chapters = document.querySelectorAll('.chapter[data-chapter-id]');
 
         if (chapters.length === 0) {
             return;
         }
 
-        // Chapter observer for map updates - using viewport as root (null)
-        const chapterObserverOptions = {
-            root: null, // null means viewport
-            rootMargin: '-40% 0px -40% 0px', // Trigger when chapter crosses center of viewport
-            threshold: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0] // Multiple thresholds for better tracking
+        // Observer options: trigger when POI enters center ~30% of viewport
+        const observerOptions = {
+            root: null, // viewport
+            rootMargin: '-35% 0px -35% 0px', // Center 30% triggers activation
+            threshold: 0.1 // 10% of element visible in center zone
         };
 
-        observer = new IntersectionObserver(handleIntersection, chapterObserverOptions);
-
         chapters.forEach(function(chapter) {
-            observer.observe(chapter);
+            const chapterId = chapter.getAttribute('data-chapter-id');
+            
+            // Find all POI items in this chapter
+            const poiItems = chapter.querySelectorAll('.poi-list-item[data-poi-coords], .poi-list-card[data-poi-coords]');
+            
+            if (poiItems.length === 0) {
+                return;
+            }
+
+            // Create observer for this chapter
+            const observer = new IntersectionObserver(function(entries) {
+                entries.forEach(function(entry) {
+                    if (entry.isIntersecting) {
+                        // POI element is in center zone - activate its marker
+                        const poiElement = entry.target;
+                        const markerWrapper = poiMarkerMap.get(poiElement);
+                        
+                        if (markerWrapper && markerWrapper.classList.contains('marker-compact')) {
+                            // Activate marker permanently
+                            markerWrapper.classList.remove('marker-compact');
+                            markerWrapper.classList.add('marker-activated');
+                            
+                            // Unobserve since activation is permanent
+                            observer.unobserve(poiElement);
+                        }
+                    }
+                });
+            }, observerOptions);
+
+            // Observe all POI items in this chapter
+            poiItems.forEach(function(item) {
+                observer.observe(item);
+            });
+
+            // Store observer reference for cleanup if needed
+            chapterObservers.set(chapterId, observer);
         });
-        */
     }
 
     /**
@@ -3185,7 +3350,9 @@
                     map.fitBounds(bounds, {
                         padding: 120,
                         duration: 1200,
-                        maxZoom: 16
+                        maxZoom: 16,
+                        pitch: 45,
+                        bearing: -30
                     });
                 } else {
                     // Fallback: just fly to POI if no start location
@@ -3193,6 +3360,8 @@
                         center: poi.coords,
                         zoom: 16,
                         duration: 1200,
+                        pitch: 45,
+                        bearing: -30,
                         essential: true
                     });
                 }
@@ -3251,7 +3420,9 @@
 
             mapInstance.fitBounds(bounds, {
                 padding: CONFIG.FIT_BOUNDS_PADDING,
-                duration: 1000
+                duration: 1000,
+                pitch: 45,
+                bearing: -30
             });
         }
     }
@@ -3820,6 +3991,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             initMap();
             initServersidePoiButtons();
+            initTravelModeListener();
             // Initialize Places API integration after a short delay
             setTimeout(function() {
                 initPlacesApiIntegration();
@@ -3828,10 +4000,51 @@
     } else {
         initMap();
         initServersidePoiButtons();
+        initTravelModeListener();
         // Initialize Places API integration after a short delay
         setTimeout(function() {
             initPlacesApiIntegration();
         }, 2000);
+    }
+
+    /**
+     * Listen for travel mode changes from sticky nav
+     */
+    function initTravelModeListener() {
+        document.addEventListener('travelModeChanged', async function(event) {
+            const newMode = event.detail.mode;
+            console.log('[Map] Travel mode changed to:', newMode);
+            currentTravelMode = newMode;
+
+            // Find the currently active/hovered POI and update its route
+            const activePOI = document.querySelector('.poi-list-item.active, .poi-list-item:hover');
+            if (activePOI) {
+                const coordsAttr = activePOI.dataset.poiCoords;
+                if (coordsAttr) {
+                    try {
+                        const coords = JSON.parse(coordsAttr);
+                        const destination = Array.isArray(coords) ? [coords[1], coords[0]] : [coords.lng, coords.lat];
+                        
+                        // Find the map for this POI
+                        const chapter = activePOI.closest('.chapter');
+                        if (chapter) {
+                            const mapContainer = chapter.querySelector('.chapter-map');
+                            if (mapContainer && mapContainer._mapboxInstance) {
+                                const mapInstance = mapContainer._mapboxInstance;
+                                
+                                // Fetch new route with selected mode
+                                const travelData = await getTravelDistance(destination, newMode);
+                                if (travelData && travelData.geometry) {
+                                    drawRouteOnMap(mapInstance, travelData.geometry, travelData.duration);
+                                }
+                            }
+                        }
+                    } catch (e) {
+                        console.warn('[Map] Error updating route for mode change:', e);
+                    }
+                }
+            }
+        });
     }
 
 })();

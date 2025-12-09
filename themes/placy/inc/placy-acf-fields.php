@@ -239,6 +239,108 @@ function placy_register_native_point_fields() {
                 'type' => 'textarea',
                 'instructions' => 'Private notes for internal use only',
             ),
+            
+            // Tab: Transport/API Integrations
+            array(
+                'key' => 'field_native_tab_transport',
+                'label' => 'Transport/API',
+                'type' => 'tab',
+            ),
+            array(
+                'key' => 'field_native_entur_stopplace_id',
+                'label' => 'Entur StopPlace ID',
+                'name' => 'entur_stopplace_id',
+                'type' => 'text',
+                'instructions' => 'StopPlace ID fra Entur (format: NSR:StopPlace:xxxxx). Finn ID på <a href="https://stoppested.entur.org" target="_blank">stoppested.entur.org</a>. Eksempel: NSR:StopPlace:41620 (Hesthagen)',
+                'placeholder' => 'NSR:StopPlace:41620',
+            ),
+            array(
+                'key' => 'field_native_entur_quay_id',
+                'label' => 'Entur Quay ID (valgfri)',
+                'name' => 'entur_quay_id',
+                'type' => 'text',
+                'instructions' => 'For å kun vise én retning, oppgi Quay ID (format: NSR:Quay:xxxxx). La stå tom for å vise alle retninger.',
+                'placeholder' => 'NSR:Quay:xxxxx',
+            ),
+            array(
+                'key' => 'field_native_entur_group_by_direction',
+                'label' => 'Grupper per retning',
+                'name' => 'entur_group_by_direction',
+                'type' => 'true_false',
+                'instructions' => 'Vis avganger gruppert per retning/plattform (anbefalt for holdeplasser med flere retninger)',
+                'ui' => 1,
+                'default_value' => 1,
+            ),
+            array(
+                'key' => 'field_native_entur_transport_mode',
+                'label' => 'Transportmiddel',
+                'name' => 'entur_transport_mode',
+                'type' => 'select',
+                'instructions' => 'Valgfri - Filtrer avganger på transportmiddel.',
+                'choices' => array(
+                    '' => 'Alle transportmiddel',
+                    'rail' => 'Tog',
+                    'bus' => 'Buss',
+                    'coach' => 'Ekspressbuss',
+                    'water' => 'Båt/Ferge',
+                    'metro' => 'T-bane',
+                    'tram' => 'Trikk',
+                ),
+                'default_value' => '',
+                'allow_null' => 1,
+                'ui' => 1,
+            ),
+            array(
+                'key' => 'field_native_entur_line_filter',
+                'label' => 'Linjefilter',
+                'name' => 'entur_line_filter',
+                'type' => 'text',
+                'instructions' => 'Valgfri - Vis kun avganger for spesifikke linjer. Kommaseparert liste av linjenummer. Eksempel: FB73 eller 1,2,3',
+                'placeholder' => 'FB73',
+            ),
+            array(
+                'key' => 'field_native_show_live_departures',
+                'label' => 'Vis Live Avganger',
+                'name' => 'show_live_departures',
+                'type' => 'true_false',
+                'instructions' => 'Aktiver for å vise sanntids avgangsinformasjon fra Entur i POI-kortet',
+                'ui' => 1,
+                'default_value' => 0,
+            ),
+            array(
+                'key' => 'field_native_bysykkel_station_id',
+                'label' => 'Trondheim Bysykkel Station ID',
+                'name' => 'bysykkel_station_id',
+                'type' => 'text',
+                'instructions' => 'Station ID fra Trondheim Bysykkel. Eksempel: 5430 (Jernbanebrua)',
+                'placeholder' => '5430',
+            ),
+            array(
+                'key' => 'field_native_show_bike_availability',
+                'label' => 'Vis Ledig Bysykkel',
+                'name' => 'show_bike_availability',
+                'type' => 'true_false',
+                'instructions' => 'Aktiver for å vise antall ledige sykler i sanntid',
+                'ui' => 1,
+                'default_value' => 0,
+            ),
+            array(
+                'key' => 'field_native_hyre_station_id',
+                'label' => 'Hyre Station ID',
+                'name' => 'hyre_station_id',
+                'type' => 'text',
+                'instructions' => 'Station ID fra Hyre (format: HYR:Station:xxxx). Finn ID via /wp-json/placy/v1/hyre/stations?region=norge_trondheim',
+                'placeholder' => 'HYR:Station:c21af781-24dd-4bcf-bfce-07fae61f4114',
+            ),
+            array(
+                'key' => 'field_native_show_hyre_availability',
+                'label' => 'Vis Ledig Hyre',
+                'name' => 'show_hyre_availability',
+                'type' => 'true_false',
+                'instructions' => 'Aktiver for å vise antall ledige biler fra Hyre i sanntid',
+                'ui' => 1,
+                'default_value' => 0,
+            ),
         ),
         'location' => array(
             array(
@@ -436,6 +538,195 @@ function placy_register_google_point_fields() {
         'label_placement' => 'top',
         'instruction_placement' => 'label',
         'active' => true,
+    ) );
+}
+
+/**
+ * Register ACF fields for Placy Categories taxonomy
+ * Adds icon field for category markers on map
+ */
+add_action( 'acf/init', 'placy_register_category_taxonomy_fields' );
+function placy_register_category_taxonomy_fields() {
+    if ( ! function_exists( 'acf_add_local_field_group' ) ) {
+        return;
+    }
+    
+    acf_add_local_field_group( array(
+        'key' => 'group_placy_category_taxonomy',
+        'title' => 'Category Settings',
+        'fields' => array(
+            array(
+                'key' => 'field_category_icon',
+                'label' => 'Font Awesome Icon',
+                'name' => 'category_icon',
+                'type' => 'text',
+                'instructions' => 'Skriv inn Font Awesome ikon-klasse (f.eks. <code>fa-bus</code>, <code>fa-utensils</code>, <code>fa-coffee</code>). Se alle ikoner på <a href="https://fontawesome.com/icons" target="_blank">fontawesome.com/icons</a>',
+                'placeholder' => 'fa-location-dot',
+                'prepend' => 'fa-solid',
+            ),
+            array(
+                'key' => 'field_category_color',
+                'label' => 'Icon Background Color',
+                'name' => 'category_color',
+                'type' => 'color_picker',
+                'instructions' => 'Bakgrunnsfarge for ikon-markøren på kartet',
+                'default_value' => '#6366F1',
+            ),
+        ),
+        'location' => array(
+            array(
+                array(
+                    'param' => 'taxonomy',
+                    'operator' => '==',
+                    'value' => 'placy_categories',
+                ),
+            ),
+        ),
+        'menu_order' => 0,
+        'position' => 'normal',
+        'style' => 'default',
+        'label_placement' => 'top',
+        'instruction_placement' => 'label',
+        'active' => true,
+    ) );
+}
+
+/**
+ * Get category icon for a POI
+ * Returns the Font Awesome icon class from the first category term
+ * 
+ * @param int $post_id The POI post ID
+ * @return array Array with 'icon' and 'color' keys, or defaults if not set
+ */
+function placy_get_poi_category_icon( $post_id ) {
+    $default = array(
+        'icon' => 'fa-location-dot',
+        'color' => '#6366F1',
+    );
+    
+    // Get placy_categories terms for this post
+    $terms = get_the_terms( $post_id, 'placy_categories' );
+    
+    if ( ! $terms || is_wp_error( $terms ) ) {
+        return $default;
+    }
+    
+    // Get the first term with an icon set
+    foreach ( $terms as $term ) {
+        $icon = get_field( 'category_icon', 'placy_categories_' . $term->term_id );
+        $color = get_field( 'category_color', 'placy_categories_' . $term->term_id );
+        
+        if ( $icon ) {
+            return array(
+                'icon' => $icon,
+                'color' => $color ? $color : $default['color'],
+            );
+        }
+    }
+    
+    return $default;
+}
+
+/**
+ * Register ACF fields for Travel Calculator Block
+ */
+add_action( 'acf/init', 'placy_register_travel_calculator_fields' );
+function placy_register_travel_calculator_fields() {
+    if ( ! function_exists( 'acf_add_local_field_group' ) ) {
+        return;
+    }
+    
+    acf_add_local_field_group( array(
+        'key' => 'group_travel_calculator',
+        'title' => 'Travel Calculator Settings',
+        'fields' => array(
+            array(
+                'key' => 'field_travel_calc_transport_mode',
+                'label' => 'Transportmiddel',
+                'name' => 'transport_mode',
+                'type' => 'select',
+                'choices' => array(
+                    'cycling' => '🚴 Sykkel',
+                    'walking' => '🚶 Gange',
+                    'driving' => '🚗 Bil',
+                ),
+                'default_value' => 'cycling',
+                'return_format' => 'value',
+            ),
+            array(
+                'key' => 'field_travel_calc_custom_title',
+                'label' => 'Egendefinert tittel (valgfri)',
+                'name' => 'custom_title',
+                'type' => 'text',
+                'instructions' => 'La stå tom for standard tittel basert på transportmiddel og eiendomsnavn.',
+                'placeholder' => 'F.eks. "Beregn sykkeltid til kontoret"',
+            ),
+            array(
+                'key' => 'field_travel_calc_custom_placeholder',
+                'label' => 'Egendefinert placeholder (valgfri)',
+                'name' => 'custom_placeholder',
+                'type' => 'text',
+                'instructions' => 'Placeholder-tekst i søkefeltet.',
+                'placeholder' => 'Skriv inn adressen din...',
+            ),
+            array(
+                'key' => 'field_travel_calc_quick_areas',
+                'label' => 'Hurtigknapper (områder)',
+                'name' => 'quick_areas',
+                'type' => 'repeater',
+                'instructions' => 'Legg til typiske startområder som hurtigknapper. Brukeren kan klikke på disse istedenfor å skrive inn adresse.',
+                'min' => 0,
+                'max' => 5,
+                'layout' => 'table',
+                'button_label' => 'Legg til område',
+                'sub_fields' => array(
+                    array(
+                        'key' => 'field_travel_calc_area_name',
+                        'label' => 'Områdenavn',
+                        'name' => 'area_name',
+                        'type' => 'text',
+                        'placeholder' => 'F.eks. Midtbyen',
+                        'required' => 1,
+                        'wrapper' => array(
+                            'width' => '30',
+                        ),
+                    ),
+                    array(
+                        'key' => 'field_travel_calc_area_lat',
+                        'label' => 'Breddegrad (lat)',
+                        'name' => 'area_lat',
+                        'type' => 'number',
+                        'placeholder' => '63.4305',
+                        'step' => 'any',
+                        'required' => 1,
+                        'wrapper' => array(
+                            'width' => '35',
+                        ),
+                    ),
+                    array(
+                        'key' => 'field_travel_calc_area_lng',
+                        'label' => 'Lengdegrad (lng)',
+                        'name' => 'area_lng',
+                        'type' => 'number',
+                        'placeholder' => '10.3951',
+                        'step' => 'any',
+                        'required' => 1,
+                        'wrapper' => array(
+                            'width' => '35',
+                        ),
+                    ),
+                ),
+            ),
+        ),
+        'location' => array(
+            array(
+                array(
+                    'param' => 'block',
+                    'operator' => '==',
+                    'value' => 'acf/travel-calculator',
+                ),
+            ),
+        ),
     ) );
 }
 

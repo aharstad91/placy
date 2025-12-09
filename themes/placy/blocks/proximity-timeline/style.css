@@ -1,0 +1,175 @@
+/* Proximity Timeline Block Styles - Compact Version */
+
+.proximity-timeline-block {
+    padding: 2rem 0;
+}
+
+.proximity-timeline-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1a202c;
+    margin: 0 0 0.25rem 0;
+}
+
+.proximity-timeline-subtitle {
+    font-size: 0.9375rem;
+    color: #64748b;
+    margin-bottom: 1.5rem;
+    font-style: italic;
+}
+
+/* Timeline Container */
+.proximity-timeline-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+/* Cards Row */
+.proximity-timeline-cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+}
+
+/* Individual Card */
+.proximity-timeline-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.proximity-timeline-card:hover {
+    border-color: #76908D;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* Travel Time Badge */
+.timeline-travel-time {
+    display: flex !important;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.75rem;
+    color: #64748b;
+    margin-bottom: 0.5rem;
+    padding: 0.25rem 0.5rem;
+    background: #f2f2f2;
+    border-radius: 0.25rem;
+    width: fit-content;
+}
+
+.timeline-travel-time .poi-travel-icon {
+    display: flex;
+    align-items: center;
+    font-size: 0.875rem;
+}
+
+.timeline-travel-time .poi-travel-time-text {
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.timeline-card-title {
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: #1a202c;
+    margin: 0 0 0.375rem 0;
+    line-height: 1.3;
+}
+
+.timeline-card-description {
+    font-size: 0.8125rem;
+    color: #64748b;
+    line-height: 1.5;
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Timeline Line */
+.proximity-timeline-line {
+    position: relative;
+    margin-top: 1.25rem;
+    padding-top: 0.75rem;
+}
+
+.timeline-track {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #e5e7eb;
+}
+
+/* Timeline Markers */
+.proximity-timeline-markers {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+}
+
+.timeline-marker {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+}
+
+.marker-dot {
+    width: 10px;
+    height: 10px;
+    background: #76908D;
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 0 0 2px #76908D;
+    position: absolute;
+    top: -0.75rem;
+    transform: translateY(-50%);
+}
+
+.marker-dash {
+    width: 16px;
+    height: 2px;
+    background: #94a3b8;
+    margin-top: 0.5rem;
+    border-radius: 1px;
+}
+
+/* Footer */
+.proximity-timeline-footer {
+    margin-top: 1.5rem;
+    font-size: 0.875rem;
+    color: #76908D;
+    font-style: italic;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .proximity-timeline-cards,
+    .proximity-timeline-markers {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 640px) {
+    .proximity-timeline-cards,
+    .proximity-timeline-markers {
+        grid-template-columns: 1fr;
+    }
+    
+    .proximity-timeline-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .timeline-mode-label {
+        margin-top: 0.5rem;
+    }
+}

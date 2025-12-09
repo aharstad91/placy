@@ -68,6 +68,16 @@ if ( ! defined( 'ABSPATH' ) ) {
         </section>
     <?php endif; ?>
 
+    <!-- Sticky TOC Navigation Bar -->
+    <nav class="sticky-toc-nav" id="sticky-toc-nav">
+        <div class="sticky-toc-title">
+            <?php the_title(); ?>
+        </div>
+        <div class="sticky-toc-inner">
+            <!-- Will be populated by JavaScript from chapter-wrapper blocks -->
+        </div>
+    </nav>
+
     <!-- Main Content Wrapper (scrollable container) -->
     <div class="main-content-wrapper">
         <div class="tema-story-container" data-bg-color="<?php echo esc_attr( $container_bg_color ); ?>">

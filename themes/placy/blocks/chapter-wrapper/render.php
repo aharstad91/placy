@@ -16,6 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 $chapter_id = isset( $attributes['chapterId'] ) && ! empty( $attributes['chapterId'] ) ? $attributes['chapterId'] : '';
 $chapter_anchor = isset( $attributes['chapterAnchor'] ) && ! empty( $attributes['chapterAnchor'] ) ? $attributes['chapterAnchor'] : '';
 $chapter_title = isset( $attributes['chapterTitle'] ) && ! empty( $attributes['chapterTitle'] ) ? $attributes['chapterTitle'] : '';
+$chapter_nav_label = isset( $attributes['chapterNavLabel'] ) && ! empty( $attributes['chapterNavLabel'] ) ? $attributes['chapterNavLabel'] : '';
 
 // If no chapter ID is set, generate one based on block ID
 if ( empty( $chapter_id ) ) {
@@ -57,13 +58,18 @@ $places_min_rating = isset( $attributes['placesMinRating'] ) ? $attributes['plac
 $places_min_reviews = isset( $attributes['placesMinReviews'] ) ? $attributes['placesMinReviews'] : 50;
 $places_exclude_types = isset( $attributes['placesExcludeTypes'] ) ? $attributes['placesExcludeTypes'] : array( 'lodging' );
 
+// Get map visibility setting
+$show_map = isset( $attributes['showMap'] ) ? $attributes['showMap'] : true;
+
 // Build data attributes array
 $data_attributes = array(
-    'class'                => 'chapter chapter-with-map',
+    'class'                => $show_map ? 'chapter chapter-with-map' : 'chapter chapter-no-map',
     'id'                   => esc_attr( $chapter_anchor ),
     'data-chapter-id'      => esc_attr( $chapter_id ),
     'data-chapter-anchor'  => esc_attr( $chapter_anchor ),
     'data-chapter-title'   => esc_attr( $chapter_title ),
+    'data-chapter-nav-label' => esc_attr( $chapter_nav_label ),
+    'data-show-map'        => $show_map ? 'true' : 'false',
     'data-places-enabled'  => $places_enabled ? 'true' : 'false',
     'data-places-category' => esc_attr( $places_category ),
     'data-places-keyword'  => esc_attr( $places_keyword ),
@@ -81,22 +87,30 @@ $wrapper_attributes = get_block_wrapper_attributes( $data_attributes );
 <section <?php echo $wrapper_attributes; ?>>
     <?php if ( ! empty( $chapter_title ) ) : ?>
         <div class="chapter-title-header">
-            <span class="chapter-title-label" <?php if ( ! empty( $progress ) ) echo 'data-progress="(' . esc_attr( $progress ) . ')"'; ?>>
-                <?php echo esc_html( $chapter_title ); ?>
-            </span>
+            <?php if ( ! empty( $chapter_number ) ) : ?>
+                <span class="chapter-number-badge"><?php echo esc_html( $chapter_number ); ?></span>
+            <?php endif; ?>
+            <h2 class="chapter-title-text"><?php echo esc_html( $chapter_title ); ?></h2>
         </div>
     <?php endif; ?>
-    <div class="chapter-grid">
-        <div class="chapter-content">
-            <?php echo $content; ?>
-        </div>
-        <div class="chapter-map-column p-6 rounded-lg bg-white">
-            <div class="chapter-map-wrapper">
-                <div id="<?php echo esc_attr( 'map-' . $chapter_id ); ?>" 
-                     class="tema-story-map chapter-map" 
-                     data-chapter-id="<?php echo esc_attr( $chapter_id ); ?>">
+    
+    <?php if ( $show_map ) : ?>
+        <div class="chapter-grid">
+            <div class="chapter-content">
+                <?php echo $content; ?>
+            </div>
+            <div class="chapter-map-column p-6 rounded-lg bg-white">
+                <div class="chapter-map-wrapper">
+                    <div id="<?php echo esc_attr( 'map-' . $chapter_id ); ?>" 
+                         class="tema-story-map chapter-map" 
+                         data-chapter-id="<?php echo esc_attr( $chapter_id ); ?>">
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+    <?php else : ?>
+        <div class="chapter-content-full">
+            <?php echo $content; ?>
+        </div>
+    <?php endif; ?>
 </section>

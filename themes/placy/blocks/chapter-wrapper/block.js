@@ -16,12 +16,18 @@
         'core/quote',
         'core/spacer',
         'core/group',
+        'core/columns',
+        'core/column',
         'acf/poi-list',
         'placy/poi-list-dynamic',
         'acf/poi-highlight',
         'acf/poi-gallery',
         'acf/image-column',
         'acf/proximity-filter',
+        'acf/travel-calculator',
+        'acf/chapter-index',
+        'acf/proximity-timeline',
+        'acf/travel-mode-selector',
     ];
 
     // Template for new chapters
@@ -195,6 +201,23 @@
                                     setAttributes({ chapterTitle: value });
                                 },
                                 placeholder: 'Michelin & Fine Dining',
+                            }),
+                            el(TextControl, {
+                                label: 'Nav Label (kort)',
+                                help: 'Kort label for sticky TOC-navbar (f.eks. "Transport", "Bygget")',
+                                value: attributes.chapterNavLabel || '',
+                                onChange: function (value) {
+                                    setAttributes({ chapterNavLabel: value });
+                                },
+                                placeholder: 'Transport',
+                            }),
+                            el(ToggleControl, {
+                                label: 'Vis kart',
+                                help: 'Vis kart ved siden av kapittelinnholdet',
+                                checked: attributes.showMap !== false,
+                                onChange: function (value) {
+                                    setAttributes({ showMap: value });
+                                }
                             })
                         ),
                         el(

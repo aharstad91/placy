@@ -1,0 +1,33 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "placy/travel-mode-selector",
+  "title": "Travel Mode Selector",
+  "category": "placy-content",
+  "description": "Display travel mode buttons (walk/bike/drive) that sync with POI cards and timelines.",
+  "keywords": ["travel", "mode", "walk", "bike", "drive", "transport"],
+  "acf": {
+    "mode": "preview",
+    "renderTemplate": "template.php"
+  },
+  "supports": {
+    "anchor": true,
+    "align": false,
+    "customClassName": true
+  },
+  "attributes": {
+    "showLabel": {
+      "type": "boolean",
+      "default": true
+    },
+    "labelText": {
+      "type": "string",
+      "default": "VISER GANGTID FRA TEKNOSTALLEN"
+    }
+  },
+  "example": {
+    "attributes": {
+      "showLabel": true
+    }
+  }
+}

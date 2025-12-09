@@ -187,9 +187,23 @@ if ( $places_enabled ) {
                     // Get featured image URL
                     $featured_image = get_the_post_thumbnail_url( $poi->ID, 'large' );
                     
-                    // Get editorial text if available
+                    // Get category icon for map marker
+                    $category_icon = placy_get_poi_category_icon( $poi->ID );
+                    
+                    // Get description - check editorial_text, then ACF description field (Native Points), then post_content
                     $editorial_text = get_field( 'editorial_text', $poi->ID );
-                    $content = $editorial_text ? $editorial_text : apply_filters( 'the_content', get_post_field( 'post_content', $poi->ID ) );
+                    $acf_description = get_field( 'description', $poi->ID );
+                    $post_content = get_post_field( 'post_content', $poi->ID );
+                    
+                    if ( $editorial_text ) {
+                        $content = $editorial_text;
+                    } elseif ( $acf_description ) {
+                        $content = $acf_description;
+                    } elseif ( $post_content ) {
+                        $content = apply_filters( 'the_content', $post_content );
+                    } else {
+                        $content = '';
+                    }
                     $excerpt = get_the_excerpt( $poi->ID );
                 ?>
                     <article 
@@ -214,6 +228,8 @@ if ( $places_enabled ) {
                         <?php if ( $coords ) : ?>
                             data-poi-coords="<?php echo $coords; ?>"
                         <?php endif; ?>
+                        data-poi-icon="<?php echo esc_attr( $category_icon['icon'] ); ?>"
+                        data-poi-icon-color="<?php echo esc_attr( $category_icon['color'] ); ?>"
                         <?php if ( $featured_image ) : ?>
                             data-poi-image="<?php echo esc_url( $featured_image ); ?>"
                         <?php endif; ?>
@@ -306,9 +322,7 @@ if ( $places_enabled ) {
                                             <?php endif; ?>
                                             
                                             <div class="flex items-center gap-2 text-gray-600">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                                                </svg>
+                                                <span class="poi-travel-icon"><i class="fas fa-walking"></i></span>
                                                 <span class="poi-walking-time text-sm font-medium">
                                                     Beregner...
                                                 </span>
@@ -358,11 +372,11 @@ if ( $places_enabled ) {
                                 </div>
                                 <!-- Bottom row: Tekst -->
                                 <?php if ( $content ) : ?>
-                                    <div class="poi-description text-sm text-gray-600 line-clamp-2">
+                                    <div class="poi-description text-sm text-gray-600">
                                         <?php echo wp_kses_post( $content ); ?>
                                     </div>
                                 <?php elseif ( $excerpt ) : ?>
-                                    <div class="poi-description text-sm text-gray-600 line-clamp-2">
+                                    <div class="poi-description text-sm text-gray-600">
                                         <?php echo esc_html( $excerpt ); ?>
                                     </div>
                                 <?php endif; ?>

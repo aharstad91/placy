@@ -9,7 +9,10 @@
   "keywords": ["chapter", "kapittel", "tema", "story"],
   "supports": {
     "align": false,
-    "html": false
+    "html": false,
+    "layout": {
+      "allowEditing": true
+    }
   },
   "attributes": {
     "chapterId": {
@@ -21,6 +24,10 @@
       "default": ""
     },
     "chapterTitle": {
+      "type": "string",
+      "default": ""
+    },
+    "chapterNavLabel": {
       "type": "string",
       "default": ""
     },
@@ -51,6 +58,10 @@
     "placesExcludeTypes": {
       "type": "array",
       "default": ["lodging"]
+    },
+    "showMap": {
+      "type": "boolean",
+      "default": true
     }
   },
   "editorScript": "file:./block.js",

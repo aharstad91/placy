@@ -1,0 +1,310 @@
+.travel-calculator-block {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+}
+
+.travel-calc-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.travel-calc-icon {
+    font-size: 1.5rem;
+    color: #6366f1;
+}
+
+.travel-calc-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0;
+    line-height: 1.4;
+}
+
+.travel-calc-input-wrapper {
+    position: relative;
+}
+
+/* Quick area buttons */
+.travel-calc-quick-areas {
+    margin-bottom: 0.75rem;
+}
+
+.travel-calc-quick-label {
+    display: block;
+    font-size: 0.85rem;
+    color: #64748b;
+    margin-bottom: 0.5rem;
+}
+
+.travel-calc-quick-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.travel-calc-quick-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 9999px;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.travel-calc-quick-btn:hover {
+    border-color: #6366f1;
+    color: #6366f1;
+    background: #f5f3ff;
+}
+
+.travel-calc-quick-btn.active {
+    background: #6366f1;
+    border-color: #6366f1;
+    color: white;
+}
+
+.travel-calc-or-divider {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 0.75rem 0;
+    color: #94a3b8;
+    font-size: 0.8rem;
+}
+
+.travel-calc-or-divider::before,
+.travel-calc-or-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #e2e8f0;
+}
+
+.travel-calc-input-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.travel-calc-input-icon {
+    position: absolute;
+    left: 1rem;
+    color: #94a3b8;
+    font-size: 1rem;
+    pointer-events: none;
+}
+
+.travel-calc-input {
+    width: 100%;
+    padding: 0.875rem 2.5rem 0.875rem 2.75rem;
+    font-size: 1rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: white;
+    color: #1e293b;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.travel-calc-input:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.travel-calc-input::placeholder {
+    color: #94a3b8;
+}
+
+.travel-calc-clear {
+    position: absolute;
+    right: 0.75rem;
+    background: none;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 0.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+}
+
+.travel-calc-clear:hover {
+    color: #64748b;
+}
+
+.travel-calc-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    z-index: 100;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.travel-calc-suggestion {
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: #475569;
+    border-bottom: 1px solid #f1f5f9;
+    transition: background-color 0.15s;
+}
+
+.travel-calc-suggestion:last-child {
+    border-bottom: none;
+}
+
+.travel-calc-suggestion:hover,
+.travel-calc-suggestion.active {
+    background: #f1f5f9;
+}
+
+.travel-calc-suggestion-name {
+    font-weight: 500;
+    color: #1e293b;
+}
+
+.travel-calc-suggestion-address {
+    font-size: 0.8rem;
+    color: #94a3b8;
+    margin-top: 0.125rem;
+}
+
+.travel-calc-result {
+    margin-top: 1rem;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    border-radius: 8px;
+    color: white;
+    overflow: hidden;
+}
+
+.travel-calc-result-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 1rem;
+}
+
+.travel-calc-result-text {
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+.travel-calc-result-text strong {
+    font-weight: 700;
+}
+
+/* Route Map */
+.travel-calc-map-container {
+    position: relative;
+    background: #e2e8f0;
+}
+
+.travel-calc-map {
+    width: 100%;
+    height: 200px;
+    display: none;
+}
+
+.travel-calc-marker {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+}
+
+.travel-calc-marker-start {
+    color: #22c55e;
+    font-size: 12px;
+}
+
+.travel-calc-marker-start i {
+    background: white;
+    border-radius: 50%;
+    padding: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.travel-calc-marker-dest {
+    color: #6366f1;
+    font-size: 24px;
+}
+
+.travel-calc-marker-dest i {
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+}
+
+/* Google Maps Link */
+.travel-calc-google-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: background 0.2s;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.travel-calc-google-link:hover {
+    background: rgba(255, 255, 255, 0.25);
+    color: white;
+}
+
+.travel-calc-google-link i {
+    font-size: 0.75rem;
+}
+
+.travel-calc-loading {
+    margin-top: 1rem;
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    color: #64748b;
+    font-size: 0.9rem;
+}
+
+.travel-calc-error {
+    margin-top: 1rem;
+    padding: 0.75rem 1rem;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    color: #dc2626;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Dark mode / editor preview adjustments */
+.block-editor-block-list__block .travel-calculator-block {
+    margin: 1rem 0;
+}

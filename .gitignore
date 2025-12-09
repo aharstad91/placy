@@ -1,6 +1,9 @@
 # Exclude uploads directory
 uploads/
 
+# Exclude default WordPress themes
+themes/twentytwenty*/
+
 # Exclude ALL plugins by default
 plugins/*
 

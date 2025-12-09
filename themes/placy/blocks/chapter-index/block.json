@@ -1,0 +1,20 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 2,
+  "name": "placy/chapter-index",
+  "title": "Kapittel Indeks",
+  "category": "layout",
+  "icon": "list-view",
+  "description": "Navigasjonspiller for seksjoner innenfor et kapittel",
+  "keywords": ["index", "indeks", "navigation", "kapittel", "chapter"],
+  "supports": {
+    "align": false,
+    "anchor": true,
+    "html": false
+  },
+  "style": "file:./style.css",
+  "acf": {
+    "mode": "preview",
+    "renderTemplate": "template.php"
+  }
+}

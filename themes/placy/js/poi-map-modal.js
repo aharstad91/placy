@@ -7,7 +7,8 @@
 
 // Global storage for POI map data and Mapbox instances
 window.placyPOIMaps = window.placyPOIMaps || {};
-window.placyMapboxInstance = null;
+window.placyMapboxInstances = window.placyMapboxInstances || {}; // Store multiple instances by blockId
+window.placyMapboxInstance = null; // Keep for modal compatibility
 
 /**
  * Initialize all POI map blocks on page load
@@ -96,8 +97,9 @@ function initializeMapInline(blockId, mapData, poiSlug) {
     // Create inline map container
     const mapContainer = document.createElement('div');
     mapContainer.className = 'inline-map-container';
+    const containerId = `mapbox-container-inline-${blockId}`;
     mapContainer.innerHTML = `
-        <div id="mapbox-container-inline" style="width: 100%; height: 100%;"></div>
+        <div id="${containerId}" style="width: 100%; height: 100%;"></div>
         <div class="map-blur-overlay"></div>
         <div class="expansion-overlay"></div>
         <button class="map-cta-button" onclick="activateInlineMap('${blockId}')">
@@ -113,7 +115,7 @@ function initializeMapInline(blockId, mapData, poiSlug) {
 
     // Initialize map immediately but keep it blurred/disabled
     setTimeout(function() {
-        initializeMapboxMapInline(mapData, poiSlug, true); // true = keep markers hidden initially
+        initializeMapboxMapInline(blockId, mapData, poiSlug, true); // true = keep markers hidden initially
     }, 50);
 }
 
@@ -138,20 +140,23 @@ function activateInlineMap(blockId) {
     // Activate the map (starts expansion animation)
     mapContainer.classList.add('map-activated');
 
+    // Get the map instance for this block
+    const mapInstance = window.placyMapboxInstances[blockId];
+
     // Enable map interaction and resize after expansion completes
-    if (window.placyMapboxInstance) {
+    if (mapInstance) {
         setTimeout(function() {
             // Resize map to fill expanded container
-            window.placyMapboxInstance.resize();
+            mapInstance.resize();
 
             // Enable all map interactions
-            window.placyMapboxInstance.scrollZoom.enable();
-            window.placyMapboxInstance.boxZoom.enable();
-            window.placyMapboxInstance.dragPan.enable();
-            window.placyMapboxInstance.dragRotate.enable();
-            window.placyMapboxInstance.keyboard.enable();
-            window.placyMapboxInstance.doubleClickZoom.enable();
-            window.placyMapboxInstance.touchZoomRotate.enable();
+            mapInstance.scrollZoom.enable();
+            mapInstance.boxZoom.enable();
+            mapInstance.dragPan.enable();
+            mapInstance.dragRotate.enable();
+            mapInstance.keyboard.enable();
+            mapInstance.doubleClickZoom.enable();
+            mapInstance.touchZoomRotate.enable();
 
             // Hide expansion overlay after resize
             if (expansionOverlay) {
@@ -183,11 +188,17 @@ function closeInlineMap(blockId) {
 
     // Remove active class
     blockElement.classList.remove('map-active');
+    
+    // Remove activated state from map container
+    const mapContainer = blockElement.querySelector('.inline-map-container');
+    if (mapContainer) {
+        mapContainer.classList.remove('map-activated');
+    }
 
-    // Destroy Mapbox instance
-    if (window.placyMapboxInstance) {
-        window.placyMapboxInstance.remove();
-        window.placyMapboxInstance = null;
+    // Destroy Mapbox instance for this block
+    if (window.placyMapboxInstances[blockId]) {
+        window.placyMapboxInstances[blockId].remove();
+        delete window.placyMapboxInstances[blockId];
     }
 
 }
@@ -288,11 +299,12 @@ function initializeMapboxMap(mapData, poiSlug, containerId) {
 /**
  * Initialize Mapbox Map Inline (Desktop)
  *
+ * @param {string} blockId - Unique block ID
  * @param {Object} mapData - Map data with Points
  * @param {string} poiSlug - Optional Point slug to highlight
  * @param {boolean} hideMarkers - Hide markers initially
  */
-function initializeMapboxMapInline(mapData, poiSlug, hideMarkers) {
+function initializeMapboxMapInline(blockId, mapData, poiSlug, hideMarkers) {
     if (typeof mapboxgl === 'undefined') {
         console.error('Mapbox GL JS is not loaded');
         return;
@@ -304,10 +316,10 @@ function initializeMapboxMapInline(mapData, poiSlug, hideMarkers) {
         return;
     }
 
-    // Destroy previous map instance if exists
-    if (window.placyMapboxInstance) {
-        window.placyMapboxInstance.remove();
-        window.placyMapboxInstance = null;
+    // Destroy previous map instance for this block if exists
+    if (window.placyMapboxInstances[blockId]) {
+        window.placyMapboxInstances[blockId].remove();
+        delete window.placyMapboxInstances[blockId];
     }
 
     // Calculate center from points
@@ -325,9 +337,12 @@ function initializeMapboxMapInline(mapData, poiSlug, hideMarkers) {
         return;
     }
 
+    // Use unique container ID per block
+    const containerId = `mapbox-container-inline-${blockId}`;
+
     // Create map centered on points
     const map = new mapboxgl.Map({
-        container: 'mapbox-container-inline',
+        container: containerId,
         style: placyMapbox.style || 'mapbox://styles/mapbox/streets-v12',
         center: [centerLng, centerLat],
         zoom: 13,
@@ -345,7 +360,8 @@ function initializeMapboxMapInline(mapData, poiSlug, hideMarkers) {
         map.touchZoomRotate.disable();
     }
 
-    window.placyMapboxInstance = map;
+    // Store map instance by blockId
+    window.placyMapboxInstances[blockId] = map;
 
     // Add navigation controls
     map.addControl(new mapboxgl.NavigationControl(), 'top-right');

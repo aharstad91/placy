@@ -29,9 +29,20 @@ if ( ! $pois || empty( $pois ) ) {
         $poi_id = $poi->ID;
         $title = get_the_title( $poi_id );
         
-        // Get editorial text if available, otherwise use post content
+        // Get description - check editorial_text, then ACF description field (Native Points), then post_content
         $editorial_text = get_field( 'editorial_text', $poi_id );
-        $content = $editorial_text ? $editorial_text : apply_filters( 'the_content', get_post_field( 'post_content', $poi_id ) );
+        $acf_description = get_field( 'description', $poi_id );
+        $post_content = get_post_field( 'post_content', $poi_id );
+        
+        if ( $editorial_text ) {
+            $content = $editorial_text;
+        } elseif ( $acf_description ) {
+            $content = $acf_description;
+        } elseif ( $post_content ) {
+            $content = apply_filters( 'the_content', $post_content );
+        } else {
+            $content = '';
+        }
         
         $featured_image = get_the_post_thumbnail_url( $poi_id, 'medium_large' );
         
@@ -47,6 +58,9 @@ if ( ! $pois || empty( $pois ) ) {
             $coords = sprintf( '[%s,%s]', esc_attr( $lat ), esc_attr( $lng ) );
         }
         
+        // Get category icon for map marker
+        $category_icon = placy_get_poi_category_icon( $poi_id );
+        
         // Get walking time if available
         $walking_time = get_post_meta( $poi_id, 'walking_time', true );
         
@@ -54,6 +68,7 @@ if ( ! $pois || empty( $pois ) ) {
         $entur_stopplace_id = get_field( 'entur_stopplace_id', $poi_id );
         $entur_quay_id = get_field( 'entur_quay_id', $poi_id );
         $entur_transport_mode = get_field( 'entur_transport_mode', $poi_id );
+        $entur_line_filter = get_field( 'entur_line_filter', $poi_id );
         $show_live_departures = get_field( 'show_live_departures', $poi_id );
         
         // Get Bysykkel integration data
@@ -82,6 +97,8 @@ if ( ! $pois || empty( $pois ) ) {
              <?php if ( $coords ) : ?>
                 data-poi-coords="<?php echo $coords; ?>"
              <?php endif; ?>
+             data-poi-icon="<?php echo esc_attr( $category_icon['icon'] ); ?>"
+             data-poi-icon-color="<?php echo esc_attr( $category_icon['color'] ); ?>"
              <?php if ( $featured_image ) : ?>
                 data-poi-image="<?php echo esc_url( $featured_image ); ?>"
              <?php endif; ?>
@@ -91,10 +108,13 @@ if ( ! $pois || empty( $pois ) ) {
                 <?php if ( $entur_quay_id ) : ?>
                     data-entur-quay-id="<?php echo esc_attr( $entur_quay_id ); ?>"
                 <?php endif; ?>
-                        <?php if ( $entur_transport_mode ) : ?>
-                            data-entur-transport-mode="<?php echo esc_attr( $entur_transport_mode ); ?>"
-                        <?php endif; ?>
-                    <?php endif; ?>
+                <?php if ( $entur_transport_mode ) : ?>
+                    data-entur-transport-mode="<?php echo esc_attr( $entur_transport_mode ); ?>"
+                <?php endif; ?>
+                <?php if ( $entur_line_filter ) : ?>
+                    data-entur-line-filter="<?php echo esc_attr( $entur_line_filter ); ?>"
+                <?php endif; ?>
+             <?php endif; ?>
                     <?php if ( $bysykkel_station_id && $show_bike_availability ) : ?>
                         data-bysykkel-station-id="<?php echo esc_attr( $bysykkel_station_id ); ?>"
                         data-show-bike-availability="1"
@@ -119,25 +139,36 @@ if ( ! $pois || empty( $pois ) ) {
         <?php endif; ?>
         
         <div class="poi-gallery-content p-6">
-
-            <?php 
-            // Get point_type terms
-            $point_types = get_the_terms( $poi_id, 'point_type' );
-            if ( $point_types && ! is_wp_error( $point_types ) ) :
-            ?>
-                <div class="flex items-center gap-2 mb-3">
-                    <?php foreach ( $point_types as $term ) : ?>
-                        <span class="inline-block px-2 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded">
-                            <?php echo esc_html( $term->name ); ?>
-                        </span>
-                    <?php endforeach; ?>
-                </div>
-            <?php endif; ?>
-
-            <h3 class="text-xl font-bold mb-3 text-gray-900">
-                <?php echo esc_html( $title ); ?>
-            </h3>
             
+            <!-- POI Icon and Title Row -->
+            <div class="flex items-start gap-3 mb-3">
+                <?php if ( ! empty( $category_icon['icon'] ) ) : ?>
+                    <div class="poi-card-icon flex-shrink-0 flex items-center justify-center" 
+                         style="width: 48px; height: 48px; border-radius: 5px; background-color: <?php echo esc_attr( $category_icon['color'] ); ?>;">
+                        <i class="fa-solid <?php echo esc_attr( $category_icon['icon'] ); ?>" style="color: white; font-size: 18px;"></i>
+                    </div>
+                <?php endif; ?>
+                
+                <div class="flex-1 min-w-0">
+                    <h3 class="text-xl font-bold text-gray-900 leading-tight">
+                        <?php echo esc_html( $title ); ?>
+                    </h3>
+                    
+                    <?php 
+                    // Get point_type terms
+                    $point_types = get_the_terms( $poi_id, 'point_type' );
+                    if ( $point_types && ! is_wp_error( $point_types ) ) :
+                    ?>
+                        <div class="flex items-center gap-2 mt-1">
+                            <?php foreach ( $point_types as $term ) : ?>
+                                <span class="inline-block px-2 py-0.5 text-xs font-medium text-gray-500 bg-gray-100 rounded">
+                                    <?php echo esc_html( $term->name ); ?>
+                                </span>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
 
             
             <div class="flex items-center justify-between gap-4 mb-3">
@@ -190,9 +221,7 @@ if ( ! $pois || empty( $pois ) ) {
                 <?php endif; ?>
                 
                 <div class="flex items-center gap-2 text-gray-600">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
+                    <span class="poi-travel-icon"><i class="fas fa-walking"></i></span>
                     <span class="text-sm font-medium poi-walking-time">
                         <?php if ( $walking_time ) : ?>
                             <?php echo esc_html( $walking_time ); ?> min

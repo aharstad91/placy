@@ -545,6 +545,240 @@
         filters.forEach(filter => {
             new ProximityFilter(filter);
         });
+
+        // Initialize sticky mode selector (works independently)
+        initStickyModeSelector();
+
+        // Listen for travel mode changes from proximity-timeline blocks
+        document.addEventListener('travelModeChanged', (e) => {
+            const newMode = e.detail?.mode;
+            if (newMode && ['walk', 'bike', 'drive'].includes(newMode)) {
+                console.log('[Proximity Filter] Received travelModeChanged event, mode:', newMode);
+                
+                // Update proximity filter state
+                if (ProximityFilterState.getProjectCoords()) {
+                    ProximityFilterState.setMode(newMode);
+                }
+                
+                // Update all POI travel times directly
+                updatePOITravelTimes(newMode);
+            }
+        });
+    }
+
+    /**
+     * Update all POI travel time displays with new mode
+     * Called when external scripts change travel mode
+     */
+    function updatePOITravelTimes(mode) {
+        const speeds = { walk: 5, bike: 15, drive: 40 };
+        const modeText = { walk: 'gange', bike: 'sykkel', drive: 'bil' };
+        const modeIcon = { 
+            walk: '<i class="fas fa-walking"></i>', 
+            bike: '<i class="fas fa-bicycle"></i>', 
+            drive: '<i class="fas fa-car"></i>' 
+        };
+
+        // Get project coordinates
+        let projectCoords = ProximityFilterState.getProjectCoords();
+        
+        if (!projectCoords && typeof placyMapConfig !== 'undefined' && placyMapConfig.startLocation) {
+            projectCoords = {
+                lng: placyMapConfig.startLocation[0],
+                lat: placyMapConfig.startLocation[1]
+            };
+        }
+
+        if (!projectCoords) {
+            console.warn('[Proximity Filter] No project coordinates for travel time update');
+            return;
+        }
+
+        const allPOIs = document.querySelectorAll('[data-poi-coords]');
+        console.log('[Proximity Filter] Updating', allPOIs.length, 'POIs to mode:', mode);
+
+        allPOIs.forEach(poiCard => {
+            const coordsAttr = poiCard.dataset.poiCoords;
+            if (!coordsAttr) return;
+
+            try {
+                const coords = JSON.parse(coordsAttr);
+                const poiCoords = Array.isArray(coords) 
+                    ? { lat: coords[0], lng: coords[1] }
+                    : coords;
+
+                // Calculate travel time using Haversine formula
+                const R = 6371;
+                const dLat = (poiCoords.lat - projectCoords.lat) * Math.PI / 180;
+                const dLon = (poiCoords.lng - projectCoords.lng) * Math.PI / 180;
+                const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                          Math.cos(projectCoords.lat * Math.PI / 180) * Math.cos(poiCoords.lat * Math.PI / 180) *
+                          Math.sin(dLon / 2) * Math.sin(dLon / 2);
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+                const distance = R * c;
+                const travelTime = Math.ceil((distance / speeds[mode]) * 60);
+
+                // Update all possible travel time elements
+                const walkingTimeEl = poiCard.querySelector('.poi-walking-time');
+                if (walkingTimeEl) {
+                    walkingTimeEl.textContent = `${travelTime} min ${modeText[mode]}`;
+                }
+
+                const travelTimeText = poiCard.querySelector('.poi-travel-time-text');
+                if (travelTimeText) {
+                    travelTimeText.textContent = `${travelTime} min ${modeText[mode]}`;
+                }
+
+                const travelIcon = poiCard.querySelector('.poi-travel-icon');
+                if (travelIcon) {
+                    travelIcon.innerHTML = modeIcon[mode];
+                }
+            } catch (e) {
+                console.warn('[Proximity Filter] Error updating POI travel time:', e);
+            }
+        });
+    }
+
+    /**
+     * Initialize sticky mode selector in top nav
+     * Works independently of proximity-filter-block
+     */
+    function initStickyModeSelector() {
+        const stickyModeSelector = document.getElementById('sticky-mode-selector');
+        if (!stickyModeSelector) return;
+
+        const modeBtns = stickyModeSelector.querySelectorAll('.sticky-mode-btn');
+        let currentMode = 'walk';
+        
+        // Get project coordinates from placyMapConfig or proximity state
+        const getProjectCoords = () => {
+            // Try proximity filter state first
+            const stateCoords = ProximityFilterState.getProjectCoords();
+            if (stateCoords) return stateCoords;
+            
+            // Fallback to placyMapConfig (from map script)
+            if (typeof placyMapConfig !== 'undefined' && placyMapConfig.startLocation) {
+                return {
+                    lng: placyMapConfig.startLocation[0],
+                    lat: placyMapConfig.startLocation[1]
+                };
+            }
+            
+            return null;
+        };
+
+        // Speed in km/h for each mode
+        const speeds = { walk: 5, bike: 15, drive: 40 };
+
+        // Calculate travel time using Haversine formula
+        const calculateTravelTime = (poiCoords, projectCoords, mode) => {
+            const R = 6371; // Earth radius in km
+            const dLat = (poiCoords.lat - projectCoords.lat) * Math.PI / 180;
+            const dLon = (poiCoords.lng - projectCoords.lng) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                      Math.cos(projectCoords.lat * Math.PI / 180) * Math.cos(poiCoords.lat * Math.PI / 180) *
+                      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            const distance = R * c;
+            return Math.ceil((distance / speeds[mode]) * 60);
+        };
+
+        // Mode text and icon mapping
+        const modeText = { walk: 'gange', bike: 'sykkel', drive: 'bil' };
+        const modeIcon = { 
+            walk: '<i class="fas fa-walking"></i>', 
+            bike: '<i class="fas fa-bicycle"></i>', 
+            drive: '<i class="fas fa-car"></i>' 
+        };
+
+        // Update all POI travel time texts
+        const updateAllTravelTimes = (mode) => {
+            const projectCoords = getProjectCoords();
+            if (!projectCoords) {
+                console.warn('[Sticky Mode] No project coordinates available');
+                return;
+            }
+
+            const allPOIs = document.querySelectorAll('[data-poi-coords]');
+            console.log('[Sticky Mode] Updating', allPOIs.length, 'POIs to mode:', mode);
+
+            allPOIs.forEach(poiCard => {
+                const coordsAttr = poiCard.dataset.poiCoords;
+                if (!coordsAttr) return;
+
+                try {
+                    const coords = JSON.parse(coordsAttr);
+                    const poiCoords = Array.isArray(coords) 
+                        ? { lat: coords[0], lng: coords[1] }
+                        : coords;
+
+                    const travelTime = calculateTravelTime(poiCoords, projectCoords, mode);
+
+                    // Update .poi-walking-time elements
+                    const walkingTimeEl = poiCard.querySelector('.poi-walking-time');
+                    if (walkingTimeEl) {
+                        walkingTimeEl.textContent = `${travelTime} min ${modeText[mode]}`;
+                    }
+
+                    // Update .poi-travel-time-text elements (poi-highlight blocks)
+                    const travelTimeText = poiCard.querySelector('.poi-travel-time-text');
+                    if (travelTimeText) {
+                        travelTimeText.textContent = `${travelTime} min ${modeText[mode]}`;
+                    }
+
+                    // Update travel icon
+                    const travelIcon = poiCard.querySelector('.poi-travel-icon');
+                    if (travelIcon) {
+                        travelIcon.innerHTML = modeIcon[mode];
+                    }
+                } catch (e) {
+                    console.warn('[Sticky Mode] Error parsing coords:', e);
+                }
+            });
+        };
+
+        // Bind click events
+        modeBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const mode = btn.dataset.mode;
+                
+                // Update sticky buttons
+                modeBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                currentMode = mode;
+
+                // Update POI travel times directly
+                updateAllTravelTimes(mode);
+                
+                // Dispatch global event for other scripts (e.g., map routes)
+                document.dispatchEvent(new CustomEvent('travelModeChanged', { 
+                    detail: { mode: mode } 
+                }));
+                
+                // Also update proximity filter state if it exists
+                if (ProximityFilterState.getProjectCoords()) {
+                    ProximityFilterState.setMode(mode);
+                }
+            });
+        });
+
+        // Sync with proximity filter state changes
+        const originalSetMode = ProximityFilterState.setMode.bind(ProximityFilterState);
+        ProximityFilterState.setMode = function(mode) {
+            originalSetMode(mode);
+            // Update sticky buttons
+            modeBtns.forEach(b => {
+                if (b.dataset.mode === mode) {
+                    b.classList.add('active');
+                } else {
+                    b.classList.remove('active');
+                }
+            });
+        };
+
+        console.log('[Sticky Mode] Selector initialized');
     }
 
     // Initialize when DOM is ready

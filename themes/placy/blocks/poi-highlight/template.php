@@ -99,11 +99,20 @@ $walking_time = get_post_meta( $poi_id, 'walking_time', true );
 $entur_stopplace_id = get_field( 'entur_stopplace_id', $poi_id );
 $entur_quay_id = get_field( 'entur_quay_id', $poi_id );
 $entur_transport_mode = get_field( 'entur_transport_mode', $poi_id );
+$entur_group_by_direction = get_field( 'entur_group_by_direction', $poi_id );
+$entur_line_filter = get_field( 'entur_line_filter', $poi_id );
 $show_live_departures = get_field( 'show_live_departures', $poi_id );
 
 // Get Bysykkel integration data
 $bysykkel_station_id = get_field( 'bysykkel_station_id', $poi_id );
 $show_bike_availability = get_field( 'show_bike_availability', $poi_id );
+
+// Get Hyre integration data
+$hyre_station_id = get_field( 'hyre_station_id', $poi_id );
+$show_hyre_availability = get_field( 'show_hyre_availability', $poi_id );
+
+// Get category icon for map marker
+$category_icon = placy_get_poi_category_icon( $poi_id );
 ?>
 
 <article class="poi-list-item poi-highlight p-6 mb-8 border border-gray-200 rounded-lg" 
@@ -127,22 +136,32 @@ $show_bike_availability = get_field( 'show_bike_availability', $poi_id );
          <?php if ( $coords ) : ?>
             data-poi-coords="<?php echo esc_attr( $coords ); ?>"
          <?php endif; ?>
+         data-poi-icon="<?php echo esc_attr( $category_icon['icon'] ); ?>"
+         data-poi-icon-color="<?php echo esc_attr( $category_icon['color'] ); ?>"
          <?php if ( $featured_image ) : ?>
             data-poi-image="<?php echo esc_url( $featured_image ); ?>"
          <?php endif; ?>
          <?php if ( $entur_stopplace_id && $show_live_departures ) : ?>
             data-entur-stopplace-id="<?php echo esc_attr( $entur_stopplace_id ); ?>"
             data-show-live-departures="1"
+            data-entur-group-by-direction="<?php echo $entur_group_by_direction ? '1' : '0'; ?>"
             <?php if ( $entur_quay_id ) : ?>
                 data-entur-quay-id="<?php echo esc_attr( $entur_quay_id ); ?>"
             <?php endif; ?>
             <?php if ( $entur_transport_mode ) : ?>
                 data-entur-transport-mode="<?php echo esc_attr( $entur_transport_mode ); ?>"
             <?php endif; ?>
+            <?php if ( $entur_line_filter ) : ?>
+                data-entur-line-filter="<?php echo esc_attr( $entur_line_filter ); ?>"
+            <?php endif; ?>
          <?php endif; ?>
          <?php if ( $bysykkel_station_id && $show_bike_availability ) : ?>
             data-bysykkel-station-id="<?php echo esc_attr( $bysykkel_station_id ); ?>"
             data-show-bike-availability="1"
+         <?php endif; ?>
+         <?php if ( $hyre_station_id && $show_hyre_availability ) : ?>
+            data-hyre-station-id="<?php echo esc_attr( $hyre_station_id ); ?>"
+            data-show-hyre-availability="1"
          <?php endif; ?>>
     
     <?php if ( $featured_image && $secondary_image ) : ?>
