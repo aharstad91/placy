@@ -15,9 +15,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 $default_time = get_field( 'default_time' ) ?: '10';
 $default_mode = get_field( 'default_mode' ) ?: 'walk';
 
+// Layout fields (col-span)
+$col_d = get_field( 'layout_col_span_desktop' ) ?: '12';
+$col_m = get_field( 'layout_col_span_mobile' ) ?: '12';
+$layout_classes = sprintf( 'pl-col-d-%s pl-col-m-%s', esc_attr( $col_d ), esc_attr( $col_m ) );
+
 // Get block wrapper attributes
 $block_id = 'proximity-filter-' . $block['id'];
-$class_name = 'proximity-filter-block';
+$class_name = 'proximity-filter-block pl-chapter-block ' . $layout_classes;
 
 if ( ! empty( $block['className'] ) ) {
     $class_name .= ' ' . $block['className'];

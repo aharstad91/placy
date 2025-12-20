@@ -56,6 +56,7 @@ function placy_enqueue_scripts() {
     wp_enqueue_style( 'placy-style', get_stylesheet_uri(), array(), '1.0.0' );
     wp_enqueue_style( 'placy-tailwind', get_template_directory_uri() . '/css/tailwind-output.css', array(), '1.0.0' );
     wp_enqueue_style( 'placy-custom', get_template_directory_uri() . '/css/styles.css', array(), '1.0.0' );
+    wp_enqueue_style( 'placy-layout-chapters', get_template_directory_uri() . '/css/layout-chapters.css', array(), '1.0.0' );
     
     // Enqueue Font Awesome 6 for category icons
     wp_enqueue_style( 'font-awesome', 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css', array(), '6.5.1' );

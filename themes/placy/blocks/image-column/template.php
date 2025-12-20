@@ -15,9 +15,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 $image_1 = get_field( 'image_1' );
 $image_2 = get_field( 'image_2' );
 
+// Layout fields (col-span)
+$col_d = get_field( 'layout_col_span_desktop' ) ?: '12';
+$col_m = get_field( 'layout_col_span_mobile' ) ?: '12';
+$layout_classes = sprintf( 'pl-col-d-%s pl-col-m-%s', esc_attr( $col_d ), esc_attr( $col_m ) );
+
 // Get block wrapper attributes
 $block_id = 'image-column-' . $block['id'];
-$class_name = 'image-column-block';
+$class_name = 'image-column-block pl-chapter-block ' . $layout_classes;
 
 if ( ! empty( $block['className'] ) ) {
     $class_name .= ' ' . $block['className'];

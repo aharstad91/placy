@@ -17,6 +17,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 // Get ACF fields
 $index_items = get_field( 'index_items' );
 
+// Layout fields (col-span)
+$col_d = get_field( 'layout_col_span_desktop' ) ?: '12';
+$col_m = get_field( 'layout_col_span_mobile' ) ?: '12';
+$layout_classes = sprintf( 'pl-col-d-%s pl-col-m-%s', esc_attr( $col_d ), esc_attr( $col_m ) );
+
 // If no items, don't render anything
 if ( empty( $index_items ) ) {
     return;
@@ -24,7 +29,7 @@ if ( empty( $index_items ) ) {
 
 // Get block wrapper attributes
 $wrapper_attributes = get_block_wrapper_attributes( array(
-    'class' => 'chapter-index',
+    'class' => 'chapter-index pl-chapter-block ' . $layout_classes,
 ) );
 
 ?>

@@ -59,7 +59,7 @@ $foreword_image = get_field( 'story_foreword_image' );
 <section class="story-foreword-section" style="background-color: <?php echo esc_attr( $container_bg_color ); ?>;">
     <div class="story-foreword-container mx-auto px-12" style="max-width: 1920px;">
         <?php if ( $foreword_text ) : ?>
-            <div class="story-foreword-text prose prose-lg">
+            <div class="story-foreword-text">
                 <?php echo wp_kses_post( $foreword_text ); ?>
             </div>
         <?php endif; ?>
@@ -93,7 +93,7 @@ $foreword_image = get_field( 'story_foreword_image' );
 
 <main id="main-content" class="site-main single-story" style="background-color: <?php echo esc_attr( $container_bg_color ); ?>;">
     <article id="post-<?php the_ID(); ?>" <?php post_class(); ?>>
-        <div class="entry-content mx-auto px-12 py-8 prose prose-lg" style="max-width: 1920px;">
+        <div class="entry-content mx-auto px-12 py-8" style="max-width: 1920px;">
             <?php the_content(); ?>
         </div>
     </article>

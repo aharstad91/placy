@@ -1472,3 +1472,164 @@ if ( function_exists( 'acf_add_local_field_group' ) ) {
         'instruction_placement' => 'label',
     ) );
 }
+
+/**
+ * Register Chapter Layout Fields (Col Span)
+ * 
+ * Shared layout fields for all chapter content blocks.
+ * Controls desktop and mobile column spans in 12-col grid.
+ */
+if ( function_exists( 'acf_add_local_field_group' ) ) {
+    acf_add_local_field_group( array(
+        'key' => 'group_chapter_layout_col_span',
+        'title' => 'Layout (Kolonne-bredde)',
+        'fields' => array(
+            array(
+                'key' => 'field_layout_col_span_desktop',
+                'label' => 'Desktop bredde (kolonner)',
+                'name' => 'layout_col_span_desktop',
+                'type' => 'select',
+                'instructions' => 'Velg bredde på desktop (12-kol grid)',
+                'required' => 0,
+                'choices' => array(
+                    '12' => '12 - Full bredde',
+                    '9'  => '9 - 3/4 bredde',
+                    '8'  => '8 - 2/3 bredde',
+                    '6'  => '6 - Halv bredde',
+                    '4'  => '4 - 1/3 bredde',
+                    '3'  => '3 - 1/4 bredde',
+                ),
+                'default_value' => '12',
+                'wrapper' => array(
+                    'width' => '50',
+                ),
+            ),
+            array(
+                'key' => 'field_layout_col_span_mobile',
+                'label' => 'Mobil bredde (kolonner)',
+                'name' => 'layout_col_span_mobile',
+                'type' => 'select',
+                'instructions' => 'Velg bredde på mobil',
+                'required' => 0,
+                'choices' => array(
+                    '12' => '12 - Full bredde',
+                    '6'  => '6 - Halv bredde',
+                ),
+                'default_value' => '12',
+                'wrapper' => array(
+                    'width' => '50',
+                ),
+            ),
+        ),
+        'location' => array(
+            array(
+                array(
+                    'param' => 'block',
+                    'operator' => '==',
+                    'value' => 'acf/chapter-heading',
+                ),
+            ),
+            array(
+                array(
+                    'param' => 'block',
+                    'operator' => '==',
+                    'value' => 'acf/chapter-text',
+                ),
+            ),
+            array(
+                array(
+                    'param' => 'block',
+                    'operator' => '==',
+                    'value' => 'acf/chapter-image',
+                ),
+            ),
+            array(
+                array(
+                    'param' => 'block',
+                    'operator' => '==',
+                    'value' => 'acf/chapter-list',
+                ),
+            ),
+            array(
+                array(
+                    'param' => 'block',
+                    'operator' => '==',
+                    'value' => 'acf/image-column',
+                ),
+            ),
+            array(
+                array(
+                    'param' => 'block',
+                    'operator' => '==',
+                    'value' => 'acf/proximity-filter',
+                ),
+            ),
+            array(
+                array(
+                    'param' => 'block',
+                    'operator' => '==',
+                    'value' => 'acf/chapter-index',
+                ),
+            ),
+            array(
+                array(
+                    'param' => 'block',
+                    'operator' => '==',
+                    'value' => 'acf/proximity-timeline',
+                ),
+            ),
+            array(
+                array(
+                    'param' => 'block',
+                    'operator' => '==',
+                    'value' => 'acf/travel-mode-selector',
+                ),
+            ),
+        ),
+        'menu_order' => 100,
+        'position' => 'side',
+        'style' => 'default',
+        'label_placement' => 'top',
+        'instruction_placement' => 'label',
+    ) );
+}
+
+/**
+ * Register Chapter Wrapper Layout Fields
+ * 
+ * Controls map visibility and chapter layout mode.
+ */
+if ( function_exists( 'acf_add_local_field_group' ) ) {
+    acf_add_local_field_group( array(
+        'key' => 'group_chapter_wrapper_layout',
+        'title' => 'Chapter Layout',
+        'fields' => array(
+            array(
+                'key' => 'field_chapter_wrapper_has_map',
+                'label' => 'Vis kart',
+                'name' => 'has_map',
+                'type' => 'true_false',
+                'instructions' => 'Aktiver for å vise kart ved siden av innholdet',
+                'required' => 0,
+                'default_value' => 1,
+                'ui' => 1,
+                'ui_on_text' => 'Ja',
+                'ui_off_text' => 'Nei',
+            ),
+        ),
+        'location' => array(
+            array(
+                array(
+                    'param' => 'block',
+                    'operator' => '==',
+                    'value' => 'acf/chapter-wrapper',
+                ),
+            ),
+        ),
+        'menu_order' => 0,
+        'position' => 'side',
+        'style' => 'default',
+        'label_placement' => 'top',
+        'instruction_placement' => 'label',
+    ) );
+}

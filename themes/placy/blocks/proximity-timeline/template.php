@@ -20,6 +20,11 @@ $subtitle = get_field( 'timeline_subtitle' );
 $items = get_field( 'timeline_items' );
 $footer_text = get_field( 'footer_text' );
 
+// Layout fields (col-span)
+$col_d = get_field( 'layout_col_span_desktop' ) ?: '12';
+$col_m = get_field( 'layout_col_span_mobile' ) ?: '12';
+$layout_classes = sprintf( 'pl-col-d-%s pl-col-m-%s', esc_attr( $col_d ), esc_attr( $col_m ) );
+
 // If no items, don't render
 if ( empty( $items ) ) {
     if ( is_admin() ) {
@@ -42,7 +47,7 @@ if ( $post ) {
 
 // Block wrapper
 $wrapper_attributes = get_block_wrapper_attributes( array(
-    'class' => 'proximity-timeline-block',
+    'class' => 'proximity-timeline-block pl-chapter-block ' . $layout_classes,
 ) );
 ?>
 

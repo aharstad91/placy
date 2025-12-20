@@ -19,6 +19,11 @@ $columns         = get_field( 'columns' ) ?: '1';
 $spacing_top     = get_field( 'spacing_top' ) ?: 'none';
 $spacing_bottom  = get_field( 'spacing_bottom' ) ?: 'md';
 
+// Layout fields (col-span)
+$col_d = get_field( 'layout_col_span_desktop' ) ?: '12';
+$col_m = get_field( 'layout_col_span_mobile' ) ?: '12';
+$layout_classes = sprintf( 'pl-col-d-%s pl-col-m-%s', esc_attr( $col_d ), esc_attr( $col_m ) );
+
 // If no items, show placeholder in admin
 if ( empty( $items ) ) {
     if ( is_admin() ) {
@@ -37,6 +42,7 @@ $classes = array(
     'pl-chapter-block--cols-' . $columns,
     'pl-space-top-' . $spacing_top,
     'pl-space-bottom-' . $spacing_bottom,
+    $layout_classes,
 );
 
 $wrapper_class = esc_attr( implode( ' ', $classes ) );

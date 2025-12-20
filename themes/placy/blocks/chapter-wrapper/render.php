@@ -61,9 +61,15 @@ $places_exclude_types = isset( $attributes['placesExcludeTypes'] ) ? $attributes
 // Get map visibility setting
 $show_map = isset( $attributes['showMap'] ) ? $attributes['showMap'] : true;
 
+// Build chapter class based on map setting (new 12-col grid system)
+// Keep 'chapter' class for backward compatibility with existing JS (chapter-nav.js, tema-story-map-multi.js, proximity-filter.js)
+$chapter_class = $show_map 
+    ? 'chapter pl-chapter pl-chapter--with-map' 
+    : 'chapter pl-chapter pl-chapter--no-map';
+
 // Build data attributes array
 $data_attributes = array(
-    'class'                => $show_map ? 'chapter chapter-with-map' : 'chapter chapter-no-map',
+    'class'                => $chapter_class,
     'id'                   => esc_attr( $chapter_anchor ),
     'data-chapter-id'      => esc_attr( $chapter_id ),
     'data-chapter-anchor'  => esc_attr( $chapter_anchor ),
@@ -86,7 +92,7 @@ $wrapper_attributes = get_block_wrapper_attributes( $data_attributes );
 
 <section <?php echo $wrapper_attributes; ?>>
     <?php if ( ! empty( $chapter_title ) ) : ?>
-        <div class="chapter-title-header">
+        <div class="chapter-title-header pl-col-d-12 pl-col-m-12">
             <?php if ( ! empty( $chapter_number ) ) : ?>
                 <span class="chapter-number-badge"><?php echo esc_html( $chapter_number ); ?></span>
             <?php endif; ?>
@@ -95,22 +101,20 @@ $wrapper_attributes = get_block_wrapper_attributes( $data_attributes );
     <?php endif; ?>
     
     <?php if ( $show_map ) : ?>
-        <div class="chapter-grid">
-            <div class="chapter-content">
-                <?php echo $content; ?>
-            </div>
-            <div class="chapter-map-column p-6 rounded-lg bg-white">
-                <div class="chapter-map-wrapper">
-                    <div id="<?php echo esc_attr( 'map-' . $chapter_id ); ?>" 
-                         class="tema-story-map chapter-map" 
-                         data-chapter-id="<?php echo esc_attr( $chapter_id ); ?>">
-                    </div>
-                </div>
-            </div>
-        </div>
-    <?php else : ?>
-        <div class="chapter-content-full">
+        <!-- Chapter WITH Map - 12-col grid layout -->
+        <div class="pl-chapter__content">
             <?php echo $content; ?>
         </div>
+        <aside class="pl-chapter__map">
+            <div class="chapter-map-wrapper">
+                <div id="<?php echo esc_attr( 'map-' . $chapter_id ); ?>" 
+                     class="tema-story-map chapter-map" 
+                     data-chapter-id="<?php echo esc_attr( $chapter_id ); ?>">
+                </div>
+            </div>
+        </aside>
+    <?php else : ?>
+        <!-- Chapter WITHOUT Map - 12-col grid, content spans full width -->
+        <?php echo $content; ?>
     <?php endif; ?>
 </section>

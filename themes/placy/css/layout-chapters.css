@@ -1,0 +1,214 @@
+/**
+ * Chapter Layout Grid System
+ * 
+ * 12-column grid system for chapter-wrapper and Placy Content blocks.
+ * 
+ * @package Placy
+ * @since 1.0.0
+ */
+
+/* ---------------------------------------------------------------------
+ * CSS Variables
+ * --------------------------------------------------------------------- */
+:root {
+    --pl-chapter-gap: 1.5rem;
+    --pl-chapter-gap-mobile: 1rem;
+    --pl-chapter-content-max-width: 100%;
+}
+
+/* ---------------------------------------------------------------------
+ * Base Chapter Grid (12-col)
+ * --------------------------------------------------------------------- */
+.pl-chapter {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: var(--pl-chapter-gap);
+    width: 100%;
+}
+
+/* All direct children of pl-chapter should default to full width unless they have col-span */
+.pl-chapter > *:not([class*="pl-col-d-"]):not(.pl-chapter__content):not(.pl-chapter__map) {
+    grid-column: 1 / -1;
+}
+
+/* ---------------------------------------------------------------------
+ * Desktop Column Spans (12-col grid)
+ * --------------------------------------------------------------------- */
+.pl-col-d-1  { grid-column: span 1; }
+.pl-col-d-2  { grid-column: span 2; }
+.pl-col-d-3  { grid-column: span 3; }
+.pl-col-d-4  { grid-column: span 4; }
+.pl-col-d-5  { grid-column: span 5; }
+.pl-col-d-6  { grid-column: span 6; }
+.pl-col-d-7  { grid-column: span 7; }
+.pl-col-d-8  { grid-column: span 8; }
+.pl-col-d-9  { grid-column: span 9; }
+.pl-col-d-10 { grid-column: span 10; }
+.pl-col-d-11 { grid-column: span 11; }
+.pl-col-d-12 { grid-column: span 12; }
+
+/* Full width shorthand */
+.pl-col-d-full { grid-column: 1 / -1; }
+
+/* ---------------------------------------------------------------------
+ * Mobile Column Spans
+ * --------------------------------------------------------------------- */
+@media (max-width: 767px) {
+    .pl-chapter {
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+        gap: var(--pl-chapter-gap-mobile);
+    }
+    
+    /* Mobile spans */
+    .pl-col-m-3  { grid-column: span 3; }
+    .pl-col-m-4  { grid-column: span 4; }
+    .pl-col-m-6  { grid-column: span 6; }
+    .pl-col-m-12 { grid-column: 1 / -1; }
+    
+    /* Full width shorthand */
+    .pl-col-m-full { grid-column: 1 / -1; }
+}
+
+/* ---------------------------------------------------------------------
+ * Chapter With Map Layout
+ * --------------------------------------------------------------------- */
+.pl-chapter--with-map {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: var(--pl-chapter-gap);
+}
+
+/* Content area (left side) - nested 12-col grid */
+.pl-chapter__content {
+    grid-column: span 6;
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: var(--pl-chapter-gap);
+    align-content: start;
+}
+
+/* All direct children of pl-chapter__content should default to full width */
+.pl-chapter__content > *:not([class*="pl-col-d-"]) {
+    grid-column: 1 / -1;
+}
+
+/* Map area (right side) */
+.pl-chapter__map {
+    grid-column: span 6;
+    position: sticky;
+    top: 1rem;
+    height: calc(100vh - 2rem);
+    min-height: 400px;
+}
+
+.pl-chapter__map .chapter-map {
+    width: 100%;
+    height: 100%;
+    border-radius: 0.5rem;
+}
+
+/* Mobile: stack content and map */
+@media (max-width: 767px) {
+    .pl-chapter--with-map {
+        gap: var(--pl-chapter-gap-mobile);
+    }
+    
+    .pl-chapter__content {
+        grid-column: 1 / -1;
+        gap: var(--pl-chapter-gap-mobile);
+    }
+    
+    .pl-chapter__map {
+        grid-column: 1 / -1;
+        position: relative;
+        top: auto;
+        height: 50vh;
+        min-height: 300px;
+        order: -1; /* Map on top on mobile */
+    }
+}
+
+/* ---------------------------------------------------------------------
+ * Chapter Without Map Layout
+ * --------------------------------------------------------------------- */
+.pl-chapter--no-map {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: var(--pl-chapter-gap);
+}
+
+@media (max-width: 767px) {
+    .pl-chapter--no-map {
+        gap: var(--pl-chapter-gap-mobile);
+    }
+}
+
+/* ---------------------------------------------------------------------
+ * Block Base Styles
+ * --------------------------------------------------------------------- */
+/* Ensure all chapter blocks are grid items - lower specificity so col-span can override */
+.pl-chapter-block:not([class*="pl-col-d-"]) {
+    /* Default: full width if no col-span specified */
+    grid-column: span 12;
+}
+
+/* Spacer block special handling */
+.pl-chapter-block--spacer {
+    grid-column: 1 / -1; /* Always full width */
+}
+
+/* ---------------------------------------------------------------------
+ * Legacy Support
+ * 
+ * These classes ensure existing chapter-wrapper layouts continue to work
+ * while we transition to the new system.
+ * --------------------------------------------------------------------- */
+.chapter-with-map .chapter-grid {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: var(--pl-chapter-gap);
+}
+
+.chapter-with-map .chapter-content {
+    grid-column: span 6;
+}
+
+.chapter-with-map .chapter-map-column {
+    grid-column: span 6;
+}
+
+@media (max-width: 767px) {
+    .chapter-with-map .chapter-content,
+    .chapter-with-map .chapter-map-column {
+        grid-column: 1 / -1;
+    }
+    
+    .chapter-with-map .chapter-map-column {
+        order: -1;
+    }
+}
+
+/* ---------------------------------------------------------------------
+ * Utility Classes
+ * --------------------------------------------------------------------- */
+/* Center content within column */
+.pl-col-center {
+    justify-self: center;
+}
+
+/* Start/End positioning */
+.pl-col-start {
+    justify-self: start;
+}
+
+.pl-col-end {
+    justify-self: end;
+}
+
+/* Column offset classes (optional) */
+.pl-offset-d-1 { grid-column-start: 2; }
+.pl-offset-d-2 { grid-column-start: 3; }
+.pl-offset-d-3 { grid-column-start: 4; }
+.pl-offset-d-4 { grid-column-start: 5; }
+.pl-offset-d-5 { grid-column-start: 6; }
+.pl-offset-d-6 { grid-column-start: 7; }

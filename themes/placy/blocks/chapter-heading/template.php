@@ -21,6 +21,11 @@ $spacing_top     = get_field( 'spacing_top' ) ?: 'none';
 $spacing_bottom  = get_field( 'spacing_bottom' ) ?: 'md';
 $anchor_id       = get_field( 'anchor_id' );
 
+// Layout fields (col-span)
+$col_d = get_field( 'layout_col_span_desktop' ) ?: '12';
+$col_m = get_field( 'layout_col_span_mobile' ) ?: '12';
+$layout_classes = sprintf( 'pl-col-d-%s pl-col-m-%s', esc_attr( $col_d ), esc_attr( $col_m ) );
+
 // If no heading text, show placeholder in admin
 if ( empty( $heading_text ) ) {
     if ( is_admin() ) {
@@ -39,6 +44,7 @@ $classes = array(
     'pl-align-' . $align,
     'pl-space-top-' . $spacing_top,
     'pl-space-bottom-' . $spacing_bottom,
+    $layout_classes,
 );
 
 // Build wrapper attributes
