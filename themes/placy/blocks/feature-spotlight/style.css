@@ -1,0 +1,447 @@
+/**
+ * Feature Spotlight Block Styles
+ * 
+ * Apple-style expandable feature cards with smooth animations
+ * 
+ * @package Placy
+ * @since 1.0.0
+ */
+
+/* ==========================================================================
+   Container
+   ========================================================================== */
+
+.feature-spotlight {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    border-radius: 24px;
+    background: #000;
+    color: #fff;
+}
+
+/* Height modes */
+.feature-spotlight--height-66 {
+    height: 66vh;
+    min-height: 500px;
+    max-height: 900px;
+}
+
+.feature-spotlight--height-75 {
+    height: 75vh;
+    min-height: 550px;
+    max-height: 1000px;
+}
+
+.feature-spotlight--height-auto {
+    min-height: 500px;
+}
+
+/* ==========================================================================
+   Background Layer
+   ========================================================================== */
+
+.feature-spotlight__bg {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+}
+
+.feature-spotlight__bg-image {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-repeat: no-repeat;
+    opacity: 0;
+    transition: opacity 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+    will-change: opacity;
+}
+
+.feature-spotlight__bg-image.is-active {
+    opacity: 1;
+}
+
+.feature-spotlight__bg-overlay {
+    position: absolute;
+    inset: 0;
+    /* No overlay - images handle their own contrast */
+    background: transparent;
+    pointer-events: none;
+}
+
+/* ==========================================================================
+   Content Layer
+   ========================================================================== */
+
+.feature-spotlight__content {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 48px;
+}
+
+.feature-spotlight--height-auto .feature-spotlight__content {
+    min-height: 500px;
+}
+
+/* Header */
+.feature-spotlight__header {
+    margin-bottom: 32px;
+}
+
+.feature-spotlight__title {
+    font-size: clamp(28px, 4vw, 48px);
+    font-weight: 700;
+    line-height: 1.1;
+    margin: 0 0 8px;
+    color: #fff;
+}
+
+.feature-spotlight__subtitle {
+    font-size: clamp(16px, 2vw, 20px);
+    font-weight: 400;
+    line-height: 1.4;
+    margin: 0;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+/* ==========================================================================
+   Main Area
+   ========================================================================== */
+
+.feature-spotlight__main {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    min-height: 0;
+    position: relative;
+}
+
+/* ==========================================================================
+   Navigation Arrows
+   ========================================================================== */
+
+.feature-spotlight__arrows {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 10;
+    margin-left: -8px;
+}
+
+.feature-spotlight__arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.feature-spotlight__arrow:hover:not(.is-disabled) {
+    background: rgba(255, 255, 255, 0.25);
+    transform: scale(1.1);
+}
+
+.feature-spotlight__arrow:active:not(.is-disabled) {
+    transform: scale(0.95);
+}
+
+.feature-spotlight__arrow.is-disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+/* ==========================================================================
+   Items List
+   ========================================================================== */
+
+.feature-spotlight__list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 420px;
+    padding-left: 48px;
+}
+
+.feature-spotlight--scrollable .feature-spotlight__list {
+    max-height: 100%;
+    overflow-y: auto;
+    padding-right: 16px;
+}
+
+/* Custom scrollbar for scrollable mode */
+.feature-spotlight--scrollable .feature-spotlight__list::-webkit-scrollbar {
+    width: 4px;
+}
+
+.feature-spotlight--scrollable .feature-spotlight__list::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+}
+
+.feature-spotlight--scrollable .feature-spotlight__list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 2px;
+}
+
+/* ==========================================================================
+   Item (Pill / Card)
+   ========================================================================== */
+
+.feature-spotlight__item {
+    position: relative;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.08);
+    border: none;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    transition: all 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+    will-change: transform, background;
+}
+
+.feature-spotlight__item:hover:not(.is-active) {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+/* Active state (Card) */
+.feature-spotlight__item.is-active {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 20px;
+}
+
+/* ==========================================================================
+   Item Button (Pill)
+   ========================================================================== */
+
+.feature-spotlight__item-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 16px 20px;
+    border: none;
+    background: transparent;
+    color: #fff;
+    font-size: 17px;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+}
+
+.feature-spotlight__item-btn:focus {
+    outline: none;
+}
+
+.feature-spotlight__item-btn:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.5);
+    outline-offset: 2px;
+    border-radius: 12px;
+}
+
+.feature-spotlight__item-label {
+    flex: 1;
+}
+
+/* Close button */
+.feature-spotlight__item-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    font-size: 12px;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: all 0.2s ease;
+}
+
+.feature-spotlight__item.is-active .feature-spotlight__item-close {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.feature-spotlight__item-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* ==========================================================================
+   Item Panel (Expanded Content)
+   ========================================================================== */
+
+.feature-spotlight__item-panel {
+    overflow: hidden;
+}
+
+.feature-spotlight__item-panel[hidden] {
+    display: none;
+}
+
+.feature-spotlight__item-content {
+    padding: 0 24px 20px;
+}
+
+/* Title prefix */
+.feature-spotlight__item-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.9);
+    margin: 0 0 8px;
+    letter-spacing: -0.01em;
+}
+
+/* Body text */
+.feature-spotlight__item-body {
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.75);
+}
+
+.feature-spotlight__item-body p {
+    margin: 0 0 8px;
+}
+
+.feature-spotlight__item-body p:last-child {
+    margin-bottom: 0;
+}
+
+/* Media image */
+.feature-spotlight__item-media {
+    margin-top: 16px;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.feature-spotlight__item-media img {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+/* Footnote */
+.feature-spotlight__item-footnote {
+    margin: 12px 0 0;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
+
+@media (max-width: 1024px) {
+    .feature-spotlight__content {
+        padding: 32px;
+    }
+    
+    .feature-spotlight__list {
+        max-width: 380px;
+        padding-left: 40px;
+    }
+}
+
+@media (max-width: 768px) {
+    .feature-spotlight--height-66,
+    .feature-spotlight--height-75 {
+        height: auto;
+        min-height: auto;
+        max-height: none;
+    }
+    
+    .feature-spotlight__bg-overlay {
+        background: linear-gradient(
+            180deg,
+            rgba(0, 0, 0, 0.7) 0%,
+            rgba(0, 0, 0, 0.85) 100%
+        );
+    }
+    
+    .feature-spotlight__content {
+        padding: 24px;
+        min-height: auto;
+    }
+    
+    .feature-spotlight__header {
+        margin-bottom: 24px;
+    }
+    
+    .feature-spotlight__main {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .feature-spotlight__arrows {
+        display: none;
+    }
+    
+    .feature-spotlight__list {
+        max-width: 100%;
+        padding-left: 0;
+    }
+    
+    .feature-spotlight__item-btn {
+        padding: 14px 16px;
+        font-size: 15px;
+    }
+    
+    .feature-spotlight__item.is-active .feature-spotlight__item-btn {
+        padding: 16px 16px 10px;
+    }
+    
+    .feature-spotlight__item-content {
+        padding: 0 16px 16px;
+    }
+}
+
+/* ==========================================================================
+   Reduced Motion
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+    .feature-spotlight__bg-image,
+    .feature-spotlight__item,
+    .feature-spotlight__item-btn,
+    .feature-spotlight__arrows,
+    .feature-spotlight__arrow,
+    .feature-spotlight__item-close {
+        transition: none;
+    }
+    
+    .feature-spotlight__item:hover:not(.is-active) {
+        transform: none;
+    }
+    
+    .feature-spotlight__arrow:hover:not(.is-disabled),
+    .feature-spotlight__arrow:active:not(.is-disabled) {
+        transform: none;
+    }
+}
+
+/* ==========================================================================
+   Editor Preview Styles
+   ========================================================================== */
+
+.editor-styles-wrapper .feature-spotlight {
+    margin: 20px 0;
+}
+
+.feature-spotlight-placeholder {
+    min-height: 200px;
+}

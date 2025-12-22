@@ -1,0 +1,16 @@
+{
+  "name": "acf/focus-panel",
+  "title": "Focus Panel",
+  "description": "Apple-inspirert sentrert modal/drawer med blur-overlay for detaljert innhold",
+  "category": "placy-content",
+  "icon": "external",
+  "keywords": ["focus", "panel", "modal", "drawer", "les mer", "read more", "overlay", "popup", "detail"],
+  "acf": {
+    "mode": "preview",
+    "renderTemplate": "template.php"
+  },
+  "supports": {
+    "align": false,
+    "anchor": true
+  }
+}

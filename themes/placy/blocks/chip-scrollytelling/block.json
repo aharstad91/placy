@@ -1,0 +1,16 @@
+{
+  "name": "acf/chip-scrollytelling",
+  "title": "Chip Scrollytelling",
+  "description": "Apple-inspired sticky scrollytelling with segmented control (M5/M4 Pro/M4 Max style)",
+  "category": "placy-content",
+  "icon": "slides",
+  "keywords": ["chip", "scrollytelling", "sticky", "apple", "progress", "segmented", "tabs"],
+  "acf": {
+    "mode": "preview",
+    "renderTemplate": "template.php"
+  },
+  "supports": {
+    "align": ["wide", "full"],
+    "anchor": true
+  }
+}

@@ -216,6 +216,12 @@ require_once get_template_directory() . '/inc/placy-admin.php';
 require_once get_template_directory() . '/inc/placy-bulk-import.php';
 
 /**
+ * Include ACF Block Field Groups
+ */
+require_once get_template_directory() . '/inc/acf-chip-scrollytelling.php';
+require_once get_template_directory() . '/inc/acf-focus-panel.php';
+
+/**
  * Include Entur API integration
  */
 require_once get_template_directory() . '/inc/entur-integration.php';
@@ -555,6 +561,60 @@ function placy_register_acf_blocks() {
                 'align' => false,
             ),
             'enqueue_style'     => get_template_directory_uri() . '/css/chapter-blocks.css',
+        ) );
+        
+        // Register Feature Spotlight block
+        acf_register_block_type( array(
+            'name'              => 'feature-spotlight',
+            'title'             => __( 'Feature Spotlight', 'placy' ),
+            'description'       => __( 'Apple-stil "Ta en nærmere titt" komponent med ekspanderbare kort og bakgrunnsbilder', 'placy' ),
+            'render_template'   => get_template_directory() . '/blocks/feature-spotlight/template.php',
+            'category'          => 'placy-content',
+            'icon'              => 'visibility',
+            'keywords'          => array( 'feature', 'spotlight', 'apple', 'cards', 'expand', 'nærmere', 'titt' ),
+            'mode'              => 'preview',
+            'supports'          => array(
+                'align' => array( 'wide', 'full' ),
+                'anchor' => true,
+            ),
+            'enqueue_style'     => get_template_directory_uri() . '/blocks/feature-spotlight/style.css',
+            'enqueue_script'    => get_template_directory_uri() . '/blocks/feature-spotlight/script.js',
+        ) );
+        
+        // Register Chip Scrollytelling block
+        acf_register_block_type( array(
+            'name'              => 'chip-scrollytelling',
+            'title'             => __( 'Chip Scrollytelling', 'placy' ),
+            'description'       => __( 'Apple-inspirert sticky scrollytelling med segmented control', 'placy' ),
+            'render_template'   => get_template_directory() . '/blocks/chip-scrollytelling/template.php',
+            'category'          => 'placy-content',
+            'icon'              => 'slides',
+            'keywords'          => array( 'chip', 'scrollytelling', 'sticky', 'apple', 'progress', 'tabs', 'm5' ),
+            'mode'              => 'preview',
+            'supports'          => array(
+                'align' => array( 'wide', 'full' ),
+                'anchor' => true,
+            ),
+            'enqueue_style'     => get_template_directory_uri() . '/blocks/chip-scrollytelling/style.css',
+            'enqueue_script'    => get_template_directory_uri() . '/blocks/chip-scrollytelling/script.js',
+        ) );
+        
+        // Register Focus Panel block
+        acf_register_block_type( array(
+            'name'              => 'focus-panel',
+            'title'             => __( 'Focus Panel', 'placy' ),
+            'description'       => __( 'Apple-inspirert sentrert modal/drawer med blur-overlay for detaljert innhold', 'placy' ),
+            'render_template'   => get_template_directory() . '/blocks/focus-panel/template.php',
+            'category'          => 'placy-content',
+            'icon'              => 'external',
+            'keywords'          => array( 'focus', 'panel', 'modal', 'drawer', 'les mer', 'read more', 'overlay', 'popup' ),
+            'mode'              => 'preview',
+            'supports'          => array(
+                'align' => false,
+                'anchor' => true,
+            ),
+            'enqueue_style'     => get_template_directory_uri() . '/blocks/focus-panel/style.css',
+            'enqueue_script'    => get_template_directory_uri() . '/blocks/focus-panel/script.js',
         ) );
     }
 }

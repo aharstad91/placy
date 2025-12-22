@@ -1,0 +1,16 @@
+{
+  "name": "acf/feature-spotlight",
+  "title": "Feature Spotlight",
+  "description": "Apple-style 'Ta en nærmere titt' component with expandable feature cards and background images",
+  "category": "placy-content",
+  "icon": "visibility",
+  "keywords": ["feature", "spotlight", "apple", "cards", "expand", "nærmere", "titt"],
+  "acf": {
+    "mode": "preview",
+    "renderTemplate": "template.php"
+  },
+  "supports": {
+    "align": ["wide", "full"],
+    "anchor": true
+  }
+}

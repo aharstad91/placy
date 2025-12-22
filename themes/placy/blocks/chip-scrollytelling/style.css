@@ -1,0 +1,566 @@
+/**
+ * Chip Scrollytelling - TRUE pinned scrollytelling CSS
+ *
+ * KEY ARCHITECTURE:
+ * 1. .chip-scrolly (section) has height = stepsCount * 100vh
+ * 2. .chip-scrolly__scene is position:sticky, stays pinned
+ * 3. All step content pre-rendered, crossfade via [data-active-step="N"] selectors
+ * 4. NO class toggling per element - root data attribute drives everything
+ *
+ * @package Placy
+ * @since 1.0.0
+ */
+
+/* ==========================================================================
+   CSS Custom Properties
+   ========================================================================== */
+
+.chip-scrolly {
+    /* Controlled via inline style from PHP */
+    --steps-height-vh: 300;
+    --scene-height-vh: 100;
+    --scene-max-width: 1680px;
+    --steps-count: 3;
+    
+    /* Default glow colors (overridden inline) */
+    --glow-color-0: #2b6cff;
+    --glow-color-1: #6a7dff;
+    --glow-color-2: #b15cff;
+    
+    /* Layout tokens */
+    --card-radius: 28px;
+    --card-padding: 48px;
+    --content-gap: 24px;
+    
+    /* Color tokens - LIGHT MODE (dark text on light background) */
+    --bg-dark: transparent;
+    --bg-card: transparent;
+    --text-primary: #1d1d1f;
+    --text-secondary: rgba(0, 0, 0, 0.7);
+    --text-muted: rgba(0, 0, 0, 0.5);
+    --border-subtle: rgba(0, 0, 0, 0.1);
+    --chip-bg: rgba(0, 0, 0, 0.04);
+    --chip-bg-active: rgba(0, 0, 0, 0.08);
+    --chip-border: rgba(0, 0, 0, 0.1);
+    --chip-border-active: rgba(0, 0, 0, 0.2);
+    
+    /* Animation tokens */
+    --ease-spring: cubic-bezier(0.2, 0.8, 0.2, 1);
+    --duration-fast: 150ms;
+    --duration-normal: 300ms;
+    --duration-slow: 450ms;
+}
+
+/* ==========================================================================
+   OUTER WRAPPER - Creates scroll distance
+   This is what makes it scrollytelling, not a tab component.
+   ========================================================================== */
+
+.chip-scrolly {
+    /* HEIGHT IS CRITICAL: This creates the scroll distance */
+    height: calc(var(--steps-height-vh) * 1vh);
+    position: relative;
+    color: var(--text-primary);
+}
+
+/* ==========================================================================
+   STICKY SCENE - Stays pinned while scrolling
+   ========================================================================== */
+
+.chip-scrolly__scene {
+    position: sticky;
+    top: 0;
+    height: calc(var(--scene-height-vh) * 1vh);
+    min-height: 500px;
+    max-height: 100vh;
+    
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+}
+
+/* ==========================================================================
+   CARD
+   ========================================================================== */
+
+.chip-scrolly__card {
+    position: relative;
+    display: flex;
+    width: 100%;
+    max-width: var(--scene-max-width);
+    height: 670px;
+    border-radius: var(--card-radius);
+    overflow: hidden;
+}
+
+/* Glow effect - color changes based on data-active-step
+.chip-scrolly__glow {
+    position: absolute;
+    inset: -100px;
+    opacity: 0.15;
+    filter: blur(80px);
+    pointer-events: none;
+    z-index: 0;
+    transition: background var(--duration-slow) var(--ease-spring);
+} */
+
+/* Glow color per step (driven by root data attribute) */
+.chip-scrolly[data-active-step="0"] .chip-scrolly__glow {
+    background: radial-gradient(ellipse 60% 50% at 30% 50%, var(--glow-color-0) 0%, transparent 60%);
+}
+.chip-scrolly[data-active-step="1"] .chip-scrolly__glow {
+    background: radial-gradient(ellipse 60% 50% at 30% 50%, var(--glow-color-1) 0%, transparent 60%);
+}
+.chip-scrolly[data-active-step="2"] .chip-scrolly__glow {
+    background: radial-gradient(ellipse 60% 50% at 30% 50%, var(--glow-color-2) 0%, transparent 60%);
+}
+
+/* ==========================================================================
+   VISUAL STACK - All images pre-rendered, stacked, CSS crossfades
+   ========================================================================== */
+
+.chip-scrolly__visual-stack {
+    position: relative;
+    flex: 0 0 58%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background: transparent;
+    z-index: 1;
+}
+
+.chip-scrolly__visual-item {
+    /* All items stacked on top of each other */
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    padding: var(--card-padding);
+    
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    /* Hidden by default */
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    
+    /* Crossfade transition */
+    transition: 
+        opacity var(--duration-normal) var(--ease-spring),
+        transform var(--duration-normal) var(--ease-spring);
+}
+
+.chip-scrolly__visual-item img {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    border-radius: 12px;
+}
+
+/* Show active visual based on root data attribute */
+.chip-scrolly[data-active-step="0"] .chip-scrolly__visual-item[data-step="0"],
+.chip-scrolly[data-active-step="1"] .chip-scrolly__visual-item[data-step="1"],
+.chip-scrolly[data-active-step="2"] .chip-scrolly__visual-item[data-step="2"],
+.chip-scrolly[data-active-step="3"] .chip-scrolly__visual-item[data-step="3"],
+.chip-scrolly[data-active-step="4"] .chip-scrolly__visual-item[data-step="4"] {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: scale(1);
+}
+
+/* ==========================================================================
+   CONTENT STACK
+   ========================================================================== */
+
+.chip-scrolly__content-stack {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: var(--card-padding);
+    overflow: hidden;
+    z-index: 1;
+}
+
+/* ==========================================================================
+   SEGMENTED CONTROL (Chips)
+   Clicks = jump to scroll position (secondary interaction)
+   ========================================================================== */
+
+.chip-scrolly__segmented {
+    display: flex;
+    gap: 8px;
+    padding: 6px;
+    background: var(--chip-bg);
+    border: 1px solid var(--chip-border);
+    border-radius: 100px;
+    margin-bottom: var(--content-gap);
+    width: fit-content;
+}
+
+.chip-scrolly__chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 18px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 100px;
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    outline: none;
+    
+    transition: 
+        background var(--duration-fast) var(--ease-spring),
+        border-color var(--duration-fast) var(--ease-spring),
+        color var(--duration-fast) var(--ease-spring),
+        box-shadow var(--duration-fast) var(--ease-spring);
+}
+
+.chip-scrolly__chip:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.chip-scrolly__chip:focus-visible {
+    box-shadow: 0 0 0 2px var(--glow-color-0);
+}
+
+.chip-scrolly__chip-icon {
+    flex-shrink: 0;
+    opacity: 0.7;
+}
+
+/* Active chip state - driven by root data attribute */
+.chip-scrolly[data-active-step="0"] .chip-scrolly__chip[data-step="0"],
+.chip-scrolly[data-active-step="1"] .chip-scrolly__chip[data-step="1"],
+.chip-scrolly[data-active-step="2"] .chip-scrolly__chip[data-step="2"],
+.chip-scrolly[data-active-step="3"] .chip-scrolly__chip[data-step="3"],
+.chip-scrolly[data-active-step="4"] .chip-scrolly__chip[data-step="4"] {
+    background: var(--chip-bg-active);
+    border-color: var(--chip-border-active);
+    color: var(--text-primary);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.chip-scrolly[data-active-step="0"] .chip-scrolly__chip[data-step="0"] .chip-scrolly__chip-icon,
+.chip-scrolly[data-active-step="1"] .chip-scrolly__chip[data-step="1"] .chip-scrolly__chip-icon,
+.chip-scrolly[data-active-step="2"] .chip-scrolly__chip[data-step="2"] .chip-scrolly__chip-icon,
+.chip-scrolly[data-active-step="3"] .chip-scrolly__chip[data-step="3"] .chip-scrolly__chip-icon,
+.chip-scrolly[data-active-step="4"] .chip-scrolly__chip[data-step="4"] .chip-scrolly__chip-icon {
+    opacity: 1;
+}
+
+/* ==========================================================================
+   COPY STACK - All text pre-rendered, stacked, CSS crossfades
+   ========================================================================== */
+
+.chip-scrolly__copy-stack {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+}
+
+.chip-scrolly__step-copy {
+    /* All items stacked on top of each other */
+    position: absolute;
+    inset: 0;
+    
+    display: flex;
+    flex-direction: column;
+    
+    /* Hidden by default */
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    
+    /* Crossfade + subtle translate transition */
+    transition: 
+        opacity var(--duration-normal) var(--ease-spring),
+        transform var(--duration-normal) var(--ease-spring);
+    transform: translateY(8px);
+}
+
+/* Show active copy based on root data attribute */
+.chip-scrolly[data-active-step="0"] .chip-scrolly__step-copy[data-step="0"],
+.chip-scrolly[data-active-step="1"] .chip-scrolly__step-copy[data-step="1"],
+.chip-scrolly[data-active-step="2"] .chip-scrolly__step-copy[data-step="2"],
+.chip-scrolly[data-active-step="3"] .chip-scrolly__step-copy[data-step="3"],
+.chip-scrolly[data-active-step="4"] .chip-scrolly__step-copy[data-step="4"] {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateY(0);
+}
+
+/* ==========================================================================
+   TYPOGRAPHY
+   ========================================================================== */
+
+.chip-scrolly__headline {
+    font-size: clamp(28px, 4vw, 40px);
+    font-weight: 600;
+    line-height: 1.2;
+    margin: 0 0 16px;
+    letter-spacing: -0.02em;
+}
+
+.chip-scrolly__body {
+    font-size: 16px;
+    line-height: 1.6;
+    color: var(--text-secondary);
+    margin: 0 0 24px;
+    max-width: 420px;
+}
+
+/* ==========================================================================
+   KPIs
+   ========================================================================== */
+
+.chip-scrolly__kpis {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border-subtle);
+    margin: 0;
+    margin-top: auto;
+}
+
+.chip-scrolly__kpi {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.chip-scrolly__kpi dt {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+}
+
+.chip-scrolly__kpi dd {
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+/* ==========================================================================
+   CTA BUTTONS
+   ========================================================================== */
+
+.chip-scrolly__cta-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 32px;
+}
+
+.chip-scrolly__cta-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 24px;
+    background: var(--glow-color-0);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 500;
+    font-family: inherit;
+    border-radius: 100px;
+    text-decoration: none;
+    
+    transition: 
+        background var(--duration-fast) var(--ease-spring),
+        transform var(--duration-fast) var(--ease-spring),
+        box-shadow var(--duration-fast) var(--ease-spring);
+}
+
+.chip-scrolly__cta-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(43, 108, 255, 0.4);
+}
+
+.chip-scrolly__cta-btn:active {
+    transform: translateY(0);
+}
+
+.chip-scrolly__cta-btn svg {
+    transition: transform var(--duration-fast) var(--ease-spring);
+}
+
+.chip-scrolly__cta-btn:hover svg {
+    transform: translateX(4px);
+}
+
+.chip-scrolly__plus-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    background: var(--chip-bg);
+    border: 1px solid var(--chip-border);
+    border-radius: 50%;
+    color: var(--text-secondary);
+    text-decoration: none;
+    
+    transition: 
+        background var(--duration-fast) var(--ease-spring),
+        border-color var(--duration-fast) var(--ease-spring),
+        color var(--duration-fast) var(--ease-spring),
+        transform var(--duration-fast) var(--ease-spring);
+}
+
+.chip-scrolly__plus-btn:hover {
+    background: var(--chip-bg-active);
+    border-color: var(--chip-border-active);
+    color: var(--text-primary);
+    transform: scale(1.05);
+}
+
+/* ==========================================================================
+   REDUCED MOTION
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+    .chip-scrolly:not(.chip-scrolly--force-motion) .chip-scrolly__visual-item,
+    .chip-scrolly:not(.chip-scrolly--force-motion) .chip-scrolly__step-copy {
+        transition: opacity var(--duration-fast) linear;
+        transform: none !important;
+    }
+    
+    .chip-scrolly:not(.chip-scrolly--force-motion) .chip-scrolly__glow {
+        transition: none;
+    }
+}
+
+/* Force reduced motion regardless of preference */
+.chip-scrolly--reduce-motion .chip-scrolly__visual-item,
+.chip-scrolly--reduce-motion .chip-scrolly__step-copy {
+    transition: opacity var(--duration-fast) linear;
+    transform: none !important;
+}
+
+.chip-scrolly--reduce-motion .chip-scrolly__glow {
+    transition: none;
+}
+
+/* ==========================================================================
+   RESPONSIVE
+   ========================================================================== */
+
+@media (max-width: 1024px) {
+    .chip-scrolly__card {
+        flex-direction: column;
+        max-height: none;
+    }
+    
+    .chip-scrolly__visual-stack {
+        flex: 0 0 50%;
+        min-height: 280px;
+    }
+    
+    .chip-scrolly__content-stack {
+        flex: 1;
+        padding: 32px;
+    }
+    
+    .chip-scrolly__scene {
+        min-height: 700px;
+    }
+}
+
+@media (max-width: 768px) {
+    .chip-scrolly {
+        --card-padding: 24px;
+        --card-radius: 20px;
+    }
+    
+    .chip-scrolly__scene {
+        padding: 16px;
+        min-height: 600px;
+    }
+    
+    .chip-scrolly__segmented {
+        flex-wrap: wrap;
+        padding: 4px;
+        gap: 4px;
+    }
+    
+    .chip-scrolly__chip {
+        padding: 8px 14px;
+        font-size: 13px;
+    }
+    
+    .chip-scrolly__headline {
+        font-size: 24px;
+    }
+    
+    .chip-scrolly__body {
+        font-size: 15px;
+    }
+    
+    .chip-scrolly__kpis {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 24px;
+    }
+    
+    .chip-scrolly__cta-row {
+        flex-wrap: wrap;
+    }
+}
+
+@media (max-width: 480px) {
+    .chip-scrolly__visual-stack {
+        min-height: 200px;
+    }
+    
+    .chip-scrolly__content-stack {
+        padding: 20px;
+    }
+    
+    .chip-scrolly__segmented {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .chip-scrolly__chip {
+        flex: 1;
+        justify-content: center;
+        min-width: 0;
+    }
+    
+    .chip-scrolly__headline {
+        font-size: 22px;
+    }
+    
+    .chip-scrolly__cta-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* ==========================================================================
+   EDITOR PREVIEW
+   In editor, we don't want sticky behavior - show static
+   ========================================================================== */
+
+.editor-styles-wrapper .chip-scrolly {
+    height: auto !important;
+}
+
+.editor-styles-wrapper .chip-scrolly__scene {
+    position: relative !important;
+}

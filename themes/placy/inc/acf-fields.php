@@ -678,6 +678,206 @@ if ( function_exists( 'acf_add_local_field_group' ) ) {
 }
 
 /**
+ * Register Feature Spotlight Block Fields
+ * 
+ * Apple-style expandable feature cards with background images.
+ */
+if ( function_exists( 'acf_add_local_field_group' ) ) {
+    acf_add_local_field_group( array(
+        'key' => 'group_feature_spotlight_block',
+        'title' => 'Feature Spotlight Settings',
+        'fields' => array(
+            array(
+                'key' => 'field_feature_spotlight_title',
+                'label' => 'Tittel',
+                'name' => 'title',
+                'type' => 'text',
+                'instructions' => 'Hovedtittel for komponenten (f.eks. "Ta en nærmere titt.")',
+                'required' => 0,
+                'placeholder' => 'Ta en nærmere titt.',
+            ),
+            array(
+                'key' => 'field_feature_spotlight_subtitle',
+                'label' => 'Undertittel',
+                'name' => 'subtitle',
+                'type' => 'text',
+                'instructions' => 'Valgfri undertittel',
+                'required' => 0,
+            ),
+            array(
+                'key' => 'field_feature_spotlight_height_mode',
+                'label' => 'Høydemodus',
+                'name' => 'height_mode',
+                'type' => 'select',
+                'instructions' => 'Velg høyde på komponenten',
+                'required' => 0,
+                'choices' => array(
+                    '66vh' => '66vh (standard)',
+                    '75vh' => '75vh (høyere)',
+                    'auto' => 'Auto (tilpass innhold)',
+                ),
+                'default_value' => '66vh',
+            ),
+            array(
+                'key' => 'field_feature_spotlight_allow_scroll',
+                'label' => 'Tillat scroll i listen',
+                'name' => 'allow_list_scroll',
+                'type' => 'true_false',
+                'instructions' => 'Aktiver for å tillate scrolling i listen hvis den er for lang',
+                'required' => 0,
+                'default_value' => 0,
+                'ui' => 1,
+            ),
+            array(
+                'key' => 'field_feature_spotlight_initial_open',
+                'label' => 'Første åpne element',
+                'name' => 'initial_open_index',
+                'type' => 'number',
+                'instructions' => 'Indeks for hvilket element som skal være åpent ved lasting (0 = første). La stå tom for ingen åpne.',
+                'required' => 0,
+                'min' => 0,
+            ),
+            array(
+                'key' => 'field_feature_spotlight_show_close',
+                'label' => 'Vis lukkeknapp',
+                'name' => 'show_close',
+                'type' => 'true_false',
+                'instructions' => 'Vis X-knapp for å lukke aktivt element',
+                'required' => 0,
+                'default_value' => 1,
+                'ui' => 1,
+            ),
+            array(
+                'key' => 'field_feature_spotlight_show_arrows',
+                'label' => 'Vis navigasjonspiler',
+                'name' => 'show_arrows',
+                'type' => 'true_false',
+                'instructions' => 'Vis opp/ned piler for navigasjon mellom elementer',
+                'required' => 0,
+                'default_value' => 1,
+                'ui' => 1,
+            ),
+            array(
+                'key' => 'field_feature_spotlight_items',
+                'label' => 'Elementer',
+                'name' => 'items',
+                'type' => 'repeater',
+                'instructions' => 'Legg til elementer som skal vises i listen',
+                'required' => 1,
+                'min' => 1,
+                'max' => 10,
+                'layout' => 'block',
+                'button_label' => 'Legg til element',
+                'sub_fields' => array(
+                    array(
+                        'key' => 'field_feature_spotlight_item_label',
+                        'label' => 'Label',
+                        'name' => 'label',
+                        'type' => 'text',
+                        'instructions' => 'Tekst som vises i pill-knappen',
+                        'required' => 1,
+                        'wrapper' => array(
+                            'width' => '50',
+                        ),
+                    ),
+                    array(
+                        'key' => 'field_feature_spotlight_item_title_prefix',
+                        'label' => 'Tittel-prefix',
+                        'name' => 'title_prefix',
+                        'type' => 'text',
+                        'instructions' => 'Kort tittel i ekspandert kort (f.eks. "Tilkobling.")',
+                        'required' => 0,
+                        'wrapper' => array(
+                            'width' => '50',
+                        ),
+                    ),
+                    array(
+                        'key' => 'field_feature_spotlight_item_body',
+                        'label' => 'Brødtekst',
+                        'name' => 'body',
+                        'type' => 'textarea',
+                        'instructions' => 'Kort beskrivelse (2-5 linjer anbefalt)',
+                        'required' => 0,
+                        'rows' => 4,
+                    ),
+                    array(
+                        'key' => 'field_feature_spotlight_item_bg_image',
+                        'label' => 'Bakgrunnsbilde',
+                        'name' => 'bg_image',
+                        'type' => 'image',
+                        'instructions' => 'Bilde som vises på høyre side når elementet er aktivt',
+                        'required' => 1,
+                        'return_format' => 'array',
+                        'preview_size' => 'medium',
+                        'library' => 'all',
+                        'wrapper' => array(
+                            'width' => '50',
+                        ),
+                    ),
+                    array(
+                        'key' => 'field_feature_spotlight_item_bg_position',
+                        'label' => 'Bakgrunnsposisjon',
+                        'name' => 'bg_position',
+                        'type' => 'select',
+                        'instructions' => 'Hvor bildet skal posisjoneres',
+                        'required' => 0,
+                        'choices' => array(
+                            'right center' => 'Høyre senter (standard)',
+                            'center center' => 'Senter',
+                            'left center' => 'Venstre senter',
+                            'center top' => 'Senter topp',
+                            'center bottom' => 'Senter bunn',
+                        ),
+                        'default_value' => 'right center',
+                        'wrapper' => array(
+                            'width' => '50',
+                        ),
+                    ),
+                    array(
+                        'key' => 'field_feature_spotlight_item_media_image',
+                        'label' => 'Mediabilde i kort',
+                        'name' => 'media_image',
+                        'type' => 'image',
+                        'instructions' => 'Valgfritt bilde som vises inne i det ekspanderte kortet',
+                        'required' => 0,
+                        'return_format' => 'array',
+                        'preview_size' => 'thumbnail',
+                        'library' => 'all',
+                        'wrapper' => array(
+                            'width' => '50',
+                        ),
+                    ),
+                    array(
+                        'key' => 'field_feature_spotlight_item_footnote',
+                        'label' => 'Fotnote',
+                        'name' => 'footnote',
+                        'type' => 'text',
+                        'instructions' => 'Valgfri fotnote (f.eks. for referanser)',
+                        'required' => 0,
+                        'wrapper' => array(
+                            'width' => '50',
+                        ),
+                    ),
+                ),
+            ),
+        ),
+        'location' => array(
+            array(
+                array(
+                    'param' => 'block',
+                    'operator' => '==',
+                    'value' => 'acf/feature-spotlight',
+                ),
+            ),
+        ),
+        'menu_order' => 0,
+        'position' => 'normal',
+        'style' => 'default',
+        'label_placement' => 'top',
+        'instruction_placement' => 'label',
+    ) );
+}
+/**
  * Register Image Column Block Fields
  */
 if ( function_exists( 'acf_add_local_field_group' ) ) {

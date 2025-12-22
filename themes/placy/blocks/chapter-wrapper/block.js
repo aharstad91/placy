@@ -33,6 +33,9 @@
         'acf/chapter-image',
         'acf/chapter-list',
         'acf/chapter-spacer',
+        'acf/focus-panel',
+        'acf/chip-scrollytelling',
+        'acf/feature-spotlight',
     ];
 
     // Template for new chapters
