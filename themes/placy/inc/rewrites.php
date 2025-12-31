@@ -12,17 +12,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Add custom rewrite rules for customer/project and customer/project/story structure
+ * Add custom rewrite rules for customer/project structure
+ * URL format: /kunde-slug/prosjekt-slug/
  */
 function placy_custom_rewrites() {
-    // Pattern: customer-slug/project-slug/story-slug (for stories)
-    // Exclude tema-historie URLs
-    add_rewrite_rule(
-        '^(?!tema-historie)([^/]+)/([^/]+)/([^/]+)/?$',
-        'index.php?post_type=story&name=$matches[3]&customer_slug=$matches[1]&project_slug=$matches[2]',
-        'top'
-    );
-    
     // Pattern: customer-slug/project-slug (for projects)
     // Exclude tema-historie URLs
     add_rewrite_rule(
@@ -44,7 +37,8 @@ function placy_query_vars( $vars ) {
 add_filter( 'query_vars', 'placy_query_vars' );
 
 /**
- * Modify project and story permalinks to include customer/project slugs
+ * Modify project permalinks to include customer slug
+ * URL format: /kunde-slug/prosjekt-slug/
  */
 function placy_custom_permalinks( $post_link, $post ) {
     if ( $post->post_type === 'project' ) {
@@ -54,18 +48,6 @@ function placy_custom_permalinks( $post_link, $post ) {
             $customer_slug = $customer->post_name;
             $project_slug = $post->post_name;
             return home_url( "/{$customer_slug}/{$project_slug}/" );
-        }
-    }
-    
-    if ( $post->post_type === 'story' ) {
-        $customer = get_field( 'customer', $post->ID );
-        $project = get_field( 'project', $post->ID );
-        
-        if ( $customer && $project ) {
-            $customer_slug = $customer->post_name;
-            $project_slug = $project->post_name;
-            $story_slug = $post->post_name;
-            return home_url( "/{$customer_slug}/{$project_slug}/{$story_slug}/" );
         }
     }
 
@@ -88,9 +70,9 @@ register_activation_hook( __FILE__, 'placy_flush_rewrites' );
  */
 function placy_maybe_flush_rewrites() {
     $flush = get_option( 'placy_flush_rewrite_rules' );
-    if ( $flush !== 'done_v4' ) {
+    if ( $flush !== 'done_v5' ) {
         flush_rewrite_rules();
-        update_option( 'placy_flush_rewrite_rules', 'done_v4' );
+        update_option( 'placy_flush_rewrite_rules', 'done_v5' );
     }
 }
 add_action( 'init', 'placy_maybe_flush_rewrites', 999 );

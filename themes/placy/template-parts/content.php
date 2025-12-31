@@ -29,7 +29,7 @@
         </div>
     <?php endif; ?>
 
-    <div class="entry-content prose max-w-none">
+    <div class="entry-content">
         <?php
         if ( is_singular() ) :
             the_content();

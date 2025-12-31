@@ -173,10 +173,10 @@ function placy_register_graphql_types() {
         ),
     ) );
     
-    // Add PlacyPoints field to Story post type
-    register_graphql_field( 'Story', 'placyPoints', array(
+    // Add PlacyPoints field to Project post type
+    register_graphql_field( 'Project', 'placyPoints', array(
         'type' => array( 'list_of' => 'PlacyPoint' ),
-        'description' => 'All points associated with this story',
+        'description' => 'All points associated with this project',
         'resolve' => function( $post ) {
             return placy_get_story_points( $post->ID );
         },

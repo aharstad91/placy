@@ -1,0 +1,16 @@
+{
+  "name": "acf/poi-hyre",
+  "title": "POI Hyre (Single)",
+  "description": "Display a single Hyre car sharing station with live availability",
+  "category": "media",
+  "icon": "location",
+  "keywords": ["poi", "hyre", "car", "sharing"],
+  "acf": {
+    "mode": "preview",
+    "renderTemplate": "template.php"
+  },
+  "supports": {
+    "align": false,
+    "anchor": true
+  }
+}

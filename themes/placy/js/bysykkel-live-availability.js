@@ -41,8 +41,13 @@
      * Load availability for all POI cards on the page
      */
     async function loadAllAvailability() {
-        // Find all POI cards with Bysykkel data
-        const poiCards = document.querySelectorAll('[data-bysykkel-station-id][data-show-bike-availability="1"]');
+        // Find all POI cards with Bysykkel data (exclude new block structure which has its own script)
+        const allElements = document.querySelectorAll('[data-bysykkel-station-id][data-show-bike-availability="1"]');
+        
+        // Filter out elements that are handled by api-accordion.js or bysykkel-stations-block
+        const poiCards = Array.from(allElements).filter(function(el) {
+            return !el.closest('.bysykkel-stations-block') && !el.classList.contains('ns-api-card');
+        });
 
         if (poiCards.length === 0) {
             console.log('Bysykkel: No POIs with bike availability enabled');
@@ -176,8 +181,19 @@
             existingSection.remove();
         }
 
-        // Find where to insert availability (after description)
-        const contentDiv = poiCard.querySelector('.poi-card-content, .poi-content, .poi-highlight-content, .poi-list-content, .poi-gallery-content');
+        // Check if there's an accordion structure - if so, insert into accordion content
+        const accordionContent = poiCard.querySelector('.poi-api-accordion-content');
+        
+        // Find where to insert availability
+        let contentDiv;
+        if (accordionContent) {
+            // Insert into accordion content area
+            contentDiv = accordionContent;
+        } else {
+            // Fallback: insert after description (old behavior)
+            contentDiv = poiCard.querySelector('.poi-card-content, .poi-content, .poi-highlight-content, .poi-list-content, .poi-gallery-content');
+        }
+        
         if (!contentDiv) {
             console.warn('Bysykkel: Could not find content div to insert availability');
             return;

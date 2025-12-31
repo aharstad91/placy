@@ -126,6 +126,7 @@ function placy_get_entur_departures( $request ) {
         'timestamp' => current_time( 'H:i' ),
         'departures' => $result['departures'],
         'grouped' => $result['grouped'],
+        'all_routes' => $result['all_routes'] ?? array(),
     ) );
 }
 
@@ -265,6 +266,7 @@ function placy_transform_entur_response( $response, $transport_mode = null, $gro
         'stopplace_name' => '',
         'departures' => array(),
         'grouped' => array(),
+        'all_routes' => array(), // All unique route numbers served by this stop
     );
     
     if ( ! isset( $response['data']['stopPlace'] ) ) {
@@ -295,6 +297,7 @@ function placy_transform_entur_response( $response, $transport_mode = null, $gro
     
     $all_departures = array();
     $grouped_departures = array();
+    $unique_routes = array(); // Track unique route numbers
     
     foreach ( $calls as $call ) {
         // Skip cancelled departures
@@ -379,6 +382,11 @@ function placy_transform_entur_response( $response, $transport_mode = null, $gro
         
         $all_departures[] = $departure;
         
+        // Track unique route numbers
+        if ( $line_number && ! in_array( $line_number, $unique_routes, true ) ) {
+            $unique_routes[] = $line_number;
+        }
+        
         // Group by quay if requested
         if ( $group_by_direction && $quay_id ) {
             if ( ! isset( $grouped_departures[ $quay_id ] ) ) {
@@ -410,6 +418,10 @@ function placy_transform_entur_response( $response, $transport_mode = null, $gro
         return $a['relative_time'] - $b['relative_time'];
     } );
     $result['departures'] = array_slice( $all_departures, 0, 5 );
+    
+    // Sort and set all unique routes
+    sort( $unique_routes, SORT_NATURAL );
+    $result['all_routes'] = $unique_routes;
     
     // Convert grouped departures to indexed array and sort by first departure time
     $grouped_array = array_values( $grouped_departures );

@@ -1,0 +1,578 @@
+/**
+ * API Accordion Styles
+ * 
+ * Accordion component for displaying live API data
+ * (Entur departures, Bysykkel availability, Hyre cars)
+ * 
+ * Design matches Figma "Neighborhood Story" specifications
+ * Multiple accordions can be open simultaneously
+ */
+
+/* =========================================================================
+   POI CARD WITH API INTEGRATION
+   ========================================================================= */
+
+.ns-poi-card[data-has-api="true"],
+.ns-location-item[data-has-api="true"] {
+    cursor: default;
+}
+
+/* =========================================================================
+   API ACCORDION CARD
+   ========================================================================= */
+
+.ns-api-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    overflow: hidden;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    cursor: pointer;
+}
+
+.ns-api-card:hover {
+    border-color: #d1d5db;
+}
+
+.ns-api-card.is-open {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.ns-api-card--highlighted {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    background: #f0f7ff;
+}
+
+/* =========================================================================
+   ACCORDION HEADER (Always visible)
+   ========================================================================= */
+
+.ns-api-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.15s ease;
+}
+
+.ns-api-header:hover {
+    background-color: #fafafa;
+}
+
+/* Icon container */
+.ns-api-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* Icon variants */
+.ns-api-icon--entur {
+    background: #6366f1;
+    color: #fff;
+}
+
+.ns-api-icon--bysykkel {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+.ns-api-icon--hyre {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+.ns-api-icon svg,
+.ns-api-icon i {
+    width: 24px;
+    height: 24px;
+    font-size: 20px;
+}
+
+/* Content */
+.ns-api-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.ns-api-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 4px 0;
+    line-height: 1.3;
+}
+
+.ns-api-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #6b7280;
+}
+
+.ns-api-meta svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+}
+
+/* Right side actions */
+.ns-api-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+/* "Se på kart" button */
+.ns-api-map-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    background: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #374151;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+    position: relative;
+    z-index: 10;
+}
+
+.ns-api-map-btn:hover {
+    background: #e5e7eb;
+    border-color: #d1d5db;
+}
+
+.ns-api-map-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Expand/collapse chevron */
+.ns-api-toggle {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    color: #9ca3af;
+    transition: all 0.2s ease;
+}
+
+.ns-api-header:hover .ns-api-toggle {
+    background: #f3f4f6;
+    color: #6b7280;
+}
+
+.ns-api-toggle svg {
+    width: 20px;
+    height: 20px;
+    transition: transform 0.2s ease;
+}
+
+.ns-api-card.is-open .ns-api-toggle svg {
+    transform: rotate(180deg);
+}
+
+/* =========================================================================
+   ACCORDION BODY (Expandable content)
+   ========================================================================= */
+
+.ns-api-body {
+    display: none;
+    border-top: 1px solid #f3f4f6;
+    padding: 0;
+    background: #fff;
+}
+
+.ns-api-card.is-open .ns-api-body {
+    display: block;
+}
+
+/* =========================================================================
+   DEPARTURES LIST (Entur)
+   ========================================================================= */
+
+.ns-departures-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: #f9fafb;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.ns-departures-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #059669;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.ns-departures-status::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    background: #10b981;
+    border-radius: 50%;
+    animation: ns-pulse 2s infinite;
+}
+
+@keyframes ns-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.ns-departures-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.ns-departure-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid #f3f4f6;
+    transition: background-color 0.15s ease;
+}
+
+.ns-departure-row:last-child {
+    border-bottom: none;
+}
+
+.ns-departure-row:hover {
+    background: #fafafa;
+}
+
+/* Line number badge */
+.ns-departure-line {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 24px;
+    padding: 0 6px;
+    background: #374151;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+}
+
+/* Destination */
+.ns-departure-destination {
+    flex: 1;
+    font-size: 14px;
+    color: #374151;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Time info */
+.ns-departure-time {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.ns-departure-clock {
+    font-size: 14px;
+    font-weight: 600;
+    color: #111827;
+    font-variant-numeric: tabular-nums;
+}
+
+.ns-departure-relative {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+/* Realtime indicator */
+.ns-departure-realtime {
+    width: 8px;
+    height: 8px;
+    background: #10b981;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.ns-departure-realtime--scheduled {
+    background: #d1d5db;
+}
+
+/* =========================================================================
+   AVAILABILITY STATS (Bysykkel / Hyre)
+   ========================================================================= */
+
+.ns-availability-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: #f9fafb;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.ns-availability-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #059669;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.ns-availability-status::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    background: #10b981;
+    border-radius: 50%;
+}
+
+.ns-availability-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: #f3f4f6;
+}
+
+.ns-availability-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px 16px;
+    background: #fff;
+    text-align: center;
+}
+
+.ns-availability-number {
+    font-size: 32px;
+    font-weight: 700;
+    color: #111827;
+    line-height: 1;
+    margin-bottom: 4px;
+}
+
+.ns-availability-number--zero {
+    color: #9ca3af;
+}
+
+.ns-availability-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* =========================================================================
+   FOOTER
+   ========================================================================= */
+
+.ns-api-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    background: #fafafa;
+    border-top: 1px solid #f3f4f6;
+    font-size: 12px;
+    color: #9ca3af;
+}
+
+.ns-api-footer a {
+    color: #6366f1;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.ns-api-footer a:hover {
+    text-decoration: underline;
+}
+
+.ns-api-footer svg {
+    width: 12px;
+    height: 12px;
+}
+
+.ns-api-updated {
+    font-variant-numeric: tabular-nums;
+}
+
+/* =========================================================================
+   LOADING STATE
+   ========================================================================= */
+
+.ns-api-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 24px;
+    color: #6b7280;
+    font-size: 14px;
+}
+
+.ns-api-loading svg {
+    width: 20px;
+    height: 20px;
+    animation: ns-spin 1s linear infinite;
+}
+
+@keyframes ns-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* =========================================================================
+   ALL ROUTES SECTION (Bus stops)
+   ========================================================================= */
+
+.ns-all-routes {
+    padding: 16px;
+    background: #f9fafb;
+    border-top: 1px solid #f3f4f6;
+}
+
+.ns-routes-list {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.ns-route-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    height: 28px;
+    padding: 0 8px;
+    background: #374151;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+}
+
+.ns-atb-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 12px;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #374151;
+    text-decoration: none;
+    transition: all 0.15s ease;
+    margin-left: auto;
+}
+
+.ns-atb-link:hover {
+    background: #f3f4f6;
+    border-color: #d1d5db;
+}
+
+.ns-atb-link svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* =========================================================================
+   ERROR STATE
+   ========================================================================= */
+
+.ns-api-error {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 24px;
+    color: #ef4444;
+    font-size: 14px;
+}
+
+/* =========================================================================
+   RESPONSIVE
+   ========================================================================= */
+
+@media (max-width: 640px) {
+    .ns-api-header {
+        padding: 12px;
+    }
+
+    .ns-api-icon {
+        width: 40px;
+        height: 40px;
+    }
+
+    .ns-api-title {
+        font-size: 15px;
+    }
+
+    .ns-api-map-btn span {
+        display: none;
+    }
+
+    .ns-availability-number {
+        font-size: 28px;
+    }
+
+    .ns-departure-destination {
+        max-width: 140px;
+    }
+}
+
+/* =========================================================================
+   INTEGRATION WITH NS-LOCATION-ITEM
+   For use in chapter modals and global map modal
+   ========================================================================= */
+
+.ns-location-item.has-api-accordion {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 0;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.ns-location-item.has-api-accordion .ns-api-header {
+    border-radius: 0;
+}
+
+.ns-location-item.has-api-accordion:hover {
+    background: transparent;
+}

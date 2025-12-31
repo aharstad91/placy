@@ -1,0 +1,285 @@
+/**
+ * Master Map Modal - Additional Styles
+ * 
+ * Extends neighborhood-story.css for Master Map specific needs.
+ * All base modal styles come from ns-* classes.
+ *
+ * @package Placy
+ * @since 1.0.0
+ */
+
+/* =========================================================================
+   Master Map Specific Overrides
+   ========================================================================= */
+
+/* Master map uses full viewport */
+.ns-master-map {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    visibility: hidden;
+    opacity: 0;
+    transition: visibility 0s 0.3s, opacity 0.3s ease;
+}
+
+.ns-master-map.ns-modal-open {
+    visibility: visible;
+    opacity: 1;
+    transition-delay: 0s;
+}
+
+/* Master map content takes remaining space */
+.ns-master-map-content {
+    flex: 1;
+    display: flex;
+    min-height: 0;
+}
+
+/* Left panel for master map - consistent with other modals */
+.ns-master-map-list {
+    width: 50%;
+}
+
+/* Control label row with info icon */
+.ns-control-label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
+.ns-control-info {
+    color: var(--ns-text-light, #a3a3a3);
+    cursor: help;
+}
+
+.ns-control-info:hover {
+    color: var(--ns-text-muted, #737373);
+}
+
+/* Location item styling */
+.ns-location-item {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--ns-border-light, #f0f0f0);
+    transition: background-color 0.2s ease;
+}
+
+.ns-location-item:hover {
+    background-color: var(--ns-bg-subtle, #fafafa);
+}
+
+.ns-location-item.is-highlighted {
+    background-color: #ecfdf5;
+}
+
+.ns-location-item.is-dimmed {
+    opacity: 0.5;
+}
+
+.ns-location-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.ns-location-name {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--ns-text, #171717);
+    margin: 0 0 0.25rem;
+    line-height: 1.3;
+}
+
+.ns-location-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+}
+
+.ns-location-category {
+    font-weight: 600;
+    color: var(--ns-text-muted, #737373);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.ns-location-type {
+    color: var(--ns-text-light, #a3a3a3);
+}
+
+.ns-location-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.5rem;
+    margin-left: 1rem;
+}
+
+.ns-location-time {
+    font-size: 0.875rem;
+    color: var(--ns-text, #171717);
+    font-weight: 600;
+}
+
+.ns-location-time-unit {
+    font-weight: 400;
+    color: var(--ns-text-muted, #737373);
+}
+
+/* View in story button */
+.ns-btn-small {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    background: var(--ns-bg, #fff);
+    border: 1px solid var(--ns-border, #e5e5e5);
+    border-radius: var(--ns-radius-md, 0.375rem);
+    color: var(--ns-text, #171717);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.ns-btn-small:hover {
+    background: var(--ns-bg-subtle, #fafafa);
+    border-color: var(--ns-border-dark, #d4d4d4);
+}
+
+/* Locations section */
+.ns-master-map-locations {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+.ns-locations-list {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Map container */
+.ns-master-map-panel {
+    flex: 1;
+    min-width: 0;
+}
+
+.ns-map-container {
+    width: 100%;
+    height: 100%;
+}
+
+/* Modal footer */
+.ns-modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--ns-border, #e5e5e5);
+    background: var(--ns-bg-muted, #f5f5f5);
+    font-size: 0.875rem;
+}
+
+.ns-footer-label {
+    color: var(--ns-text-muted, #737373);
+}
+
+.ns-footer-count {
+    font-weight: 600;
+    color: var(--ns-text, #171717);
+    background: var(--ns-bg, #fff);
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--ns-radius-full, 9999px);
+    box-shadow: var(--ns-shadow-sm, 0 1px 2px rgba(0,0,0,0.05));
+}
+
+/* Empty state */
+.ns-empty-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+    color: var(--ns-text-muted, #737373);
+    font-size: 0.875rem;
+}
+
+/* =========================================================================
+   Map Markers - Standardized across all modals
+   ========================================================================= */
+
+.ns-map-marker {
+    width: 32px;
+    height: 32px;
+    background: var(--ns-primary, #1a1a1a);
+    border: 3px solid #fff;
+    border-radius: 50%;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ns-map-marker:hover {
+    transform: scale(1.15);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.ns-map-marker.is-highlighted {
+    background: var(--ns-accent, #059669);
+    transform: scale(1.1);
+}
+
+.ns-map-marker.is-dimmed {
+    background: #a3a3a3;
+    opacity: 0.6;
+}
+
+/* Marker popup */
+.ns-map-popup {
+    padding: 0.5rem 0.75rem;
+    font-family: inherit;
+}
+
+.ns-map-popup-name {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--ns-text, #171717);
+    margin-bottom: 0.125rem;
+}
+
+.ns-map-popup-category {
+    font-size: 0.75rem;
+    color: var(--ns-text-muted, #737373);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* =========================================================================
+   Responsive
+   ========================================================================= */
+
+@media (max-width: 1024px) {
+    .ns-master-map-list {
+        width: 360px;
+        min-width: 320px;
+    }
+}
+
+@media (max-width: 768px) {
+    .ns-master-map-content {
+        flex-direction: column;
+    }
+    
+    .ns-master-map-list {
+        width: 100%;
+        max-width: none;
+        height: 50vh;
+    }
+    
+    .ns-master-map-panel {
+        height: 50vh;
+    }
+}

@@ -7,35 +7,11 @@
     const { InspectorControls, InnerBlocks, useBlockProps } = blockEditor;
     const { PanelBody, TextControl, ToggleControl, SelectControl, RangeControl, CheckboxControl } = components;
 
-    // Allowed blocks inside chapter wrapper
+    // Allowed blocks inside chapter wrapper - minimal clean list
     const ALLOWED_BLOCKS = [
         'core/heading',
         'core/paragraph',
         'core/image',
-        'core/list',
-        'core/quote',
-        'core/spacer',
-        'core/group',
-        'core/columns',
-        'core/column',
-        'acf/poi-list',
-        'placy/poi-list-dynamic',
-        'acf/poi-highlight',
-        'acf/poi-gallery',
-        'acf/image-column',
-        'acf/proximity-filter',
-        'acf/travel-calculator',
-        'acf/chapter-index',
-        'acf/proximity-timeline',
-        'acf/travel-mode-selector',
-        'acf/chapter-heading',
-        'acf/chapter-text',
-        'acf/chapter-image',
-        'acf/chapter-list',
-        'acf/chapter-spacer',
-        'acf/focus-panel',
-        'acf/chip-scrollytelling',
-        'acf/feature-spotlight',
     ];
 
     // Template for new chapters
@@ -225,6 +201,14 @@
                                 checked: attributes.showMap !== false,
                                 onChange: function (value) {
                                     setAttributes({ showMap: value });
+                                }
+                            }),
+                            el(ToggleControl, {
+                                label: 'Bruk Mega-modal layout',
+                                help: 'Aktiverer POI-kort visning med "Se alle steder" mega-modal (NarrativeSection design)',
+                                checked: attributes.useMegaModal !== false,
+                                onChange: function (value) {
+                                    setAttributes({ useMegaModal: value });
                                 }
                             })
                         ),

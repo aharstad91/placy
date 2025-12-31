@@ -1,0 +1,16 @@
+{
+  "name": "acf/poi-entur",
+  "title": "POI Entur (Single)",
+  "description": "Display a single bus/transit POI with live Entur departures",
+  "category": "media",
+  "icon": "location",
+  "keywords": ["poi", "entur", "bus", "transit", "departures"],
+  "acf": {
+    "mode": "preview",
+    "renderTemplate": "template.php"
+  },
+  "supports": {
+    "align": false,
+    "anchor": true
+  }
+}

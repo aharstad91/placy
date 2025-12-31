@@ -90,45 +90,6 @@ function placy_register_project_post_type() {
 add_action( 'init', 'placy_register_project_post_type' );
 
 /**
- * Register Story Post Type
- */
-function placy_register_story_post_type() {
-    $labels = array(
-        'name'                  => 'Historier',
-        'singular_name'         => 'Historie',
-        'menu_name'             => 'Historier',
-        'add_new'               => 'Legg til ny',
-        'add_new_item'          => 'Legg til ny historie',
-        'edit_item'             => 'Rediger historie',
-        'new_item'              => 'Ny historie',
-        'view_item'             => 'Vis historie',
-        'search_items'          => 'Søk historier',
-        'not_found'             => 'Ingen historier funnet',
-        'not_found_in_trash'    => 'Ingen historier funnet i papirkurv',
-    );
-
-    $args = array(
-        'labels'                => $labels,
-        'public'                => true,
-        'has_archive'           => true,
-        'publicly_queryable'    => true,
-        'show_ui'               => true,
-        'show_in_menu'          => true,
-        'query_var'             => true,
-        'rewrite'               => false, // Use custom rewrite rules
-        'capability_type'       => 'post',
-        'hierarchical'          => false,
-        'menu_position'         => 22,
-        'menu_icon'             => 'dashicons-location',
-        'supports'              => array( 'title', 'editor', 'thumbnail', 'excerpt' ),
-        'show_in_rest'          => true,
-    );
-
-    register_post_type( 'story', $args );
-}
-add_action( 'init', 'placy_register_story_post_type' );
-
-/**
  * Register Native Point Post Type
  */
 function placy_register_native_point_post_type() {

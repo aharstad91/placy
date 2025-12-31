@@ -54,7 +54,8 @@ add_action( 'after_setup_theme', 'placy_theme_setup' );
 function placy_enqueue_scripts() {
         // Enqueue theme styles
     wp_enqueue_style( 'placy-style', get_stylesheet_uri(), array(), '1.0.0' );
-    wp_enqueue_style( 'placy-tailwind', get_template_directory_uri() . '/css/tailwind-output.css', array(), '1.0.0' );
+    wp_enqueue_style( 'placy-typography', get_template_directory_uri() . '/css/typography.css', array(), filemtime( get_template_directory() . '/css/typography.css' ) );
+    wp_enqueue_style( 'placy-tailwind', get_template_directory_uri() . '/css/tailwind-output.css', array( 'placy-typography' ), '1.0.0' );
     wp_enqueue_style( 'placy-custom', get_template_directory_uri() . '/css/styles.css', array(), '1.0.0' );
     wp_enqueue_style( 'placy-layout-chapters', get_template_directory_uri() . '/css/layout-chapters.css', array(), '1.0.0' );
     
@@ -74,25 +75,44 @@ function placy_enqueue_scripts() {
     // POI Map Modal script
     wp_enqueue_script( 'placy-poi-map-modal', get_template_directory_uri() . '/js/poi-map-modal.js', array(), '1.0.0', true );
     
-    // Tema Story styles and scripts (on theme-story AND story post types) - v2.3.4
-    if ( is_singular( 'theme-story' ) || is_singular( 'story' ) ) {
-        wp_enqueue_style( 'placy-tema-story', get_template_directory_uri() . '/css/tema-story.css', array(), '1.0.0' );
-        wp_enqueue_style( 'placy-chapter-wrapper', get_template_directory_uri() . '/blocks/chapter-wrapper/style.css', array(), '1.0.0' );
-        
-        // Temporarily force non-minified JS for development (icons update)
-        // TODO: Run minification and switch back to conditional
-        wp_enqueue_script( 'placy-tema-story-map', get_template_directory_uri() . '/js/tema-story-map-multi.js', array( 'mapbox-gl-js' ), '2.4.0', true );
-        
-        wp_enqueue_script( 'placy-chapter-nav', get_template_directory_uri() . '/js/chapter-nav.js', array(), '1.0.0', true );
-        wp_enqueue_script( 'placy-chapter-header', get_template_directory_uri() . '/js/chapter-header.js', array(), '1.0.0', true );
-        wp_enqueue_script( 'placy-chapter-index', get_template_directory_uri() . '/js/chapter-index.js', array(), '1.0.0', true );
-        wp_enqueue_script( 'placy-intro-parallax', get_template_directory_uri() . '/js/intro-parallax.js', array(), '1.0.0', true );
-        wp_enqueue_script( 'placy-container-gradient', get_template_directory_uri() . '/js/container-gradient.js', array(), '1.0.0', true );
-        wp_enqueue_script( 'placy-scroll-indicator', get_template_directory_uri() . '/js/scroll-indicator.js', array(), '1.0.0', true );
-        wp_enqueue_script( 'placy-proximity-filter', get_template_directory_uri() . '/js/proximity-filter.js', array(), '2.0.0', true );
+    // Story Chapter styles and scripts (on project post type)
+    if ( is_singular( 'project' ) ) {
+        // Live data scripts for mobility blocks
         wp_enqueue_script( 'placy-entur-live-departures', get_template_directory_uri() . '/js/entur-live-departures.js', array(), '1.0.0', true );
         wp_enqueue_script( 'placy-bysykkel-live-availability', get_template_directory_uri() . '/js/bysykkel-live-availability.js', array(), '1.0.0', true );
         wp_enqueue_script( 'placy-hyre-live-availability', get_template_directory_uri() . '/js/hyre-live-availability.js', array(), '1.0.0', true );
+        
+        // POI API Accordion toggle functionality
+        wp_enqueue_script( 'placy-poi-api-accordion', get_template_directory_uri() . '/js/poi-api-accordion.js', array(), '1.0.0', true );
+        
+        // Story Chapter Mega Modal CSS and JS (use filemtime for cache busting)
+        wp_enqueue_style( 'placy-chapter-mega-modal', get_template_directory_uri() . '/css/chapter-mega-modal.css', array(), filemtime( get_template_directory() . '/css/chapter-mega-modal.css' ) );
+        wp_enqueue_script( 'placy-chapter-mega-modal', get_template_directory_uri() . '/js/chapter-mega-modal.js', array( 'mapbox-gl-js' ), filemtime( get_template_directory() . '/js/chapter-mega-modal.js' ), true );
+        
+        // Project Sidebar CSS and JS (navigation + global settings)
+        wp_enqueue_style( 'placy-project-sidebar', get_template_directory_uri() . '/css/project-sidebar.css', array(), '1.0.0' );
+        wp_enqueue_script( 'placy-project-sidebar', get_template_directory_uri() . '/js/project-sidebar.js', array(), '1.0.0', true );
+        
+        // Neighborhood Story shared CSS (ns-* base classes)
+        wp_enqueue_style( 'placy-neighborhood-story', get_template_directory_uri() . '/css/neighborhood-story.css', array(), '1.0.0' );
+        
+        // Travel Controls shared component CSS
+        wp_enqueue_style( 'placy-travel-controls', get_template_directory_uri() . '/css/travel-controls.css', array( 'placy-neighborhood-story' ), '1.0.0' );
+        
+        // API Accordion component CSS and JS
+        wp_enqueue_style( 'placy-api-accordion', get_template_directory_uri() . '/css/api-accordion.css', array( 'placy-neighborhood-story' ), '1.0.0' );
+        wp_enqueue_script( 'placy-api-accordion', get_template_directory_uri() . '/js/api-accordion.js', array(), '1.0.0', true );
+        
+        // Master Map Modal CSS and JS (Open full map)
+        wp_enqueue_style( 'placy-master-map-modal', get_template_directory_uri() . '/css/master-map-modal.css', array( 'placy-neighborhood-story' ), '1.0.0' );
+        wp_enqueue_script( 'placy-master-map-modal', get_template_directory_uri() . '/js/master-map-modal.js', array( 'mapbox-gl-js' ), '1.0.0', true );
+        
+        // Localize for Mapbox access and REST API URLs
+        wp_localize_script( 'placy-chapter-mega-modal', 'placyMapbox', array(
+            'accessToken' => placy_get_mapbox_token(),
+            'restUrl' => esc_url_raw( rest_url( 'placy/v1/travel-calc' ) ),
+            'restBaseUrl' => esc_url_raw( rest_url( 'placy/v1' ) ),
+        ) );
         
         // Localize Entur script with REST API URL
         wp_localize_script( 'placy-entur-live-departures', 'enturSettings', array(
@@ -107,41 +127,6 @@ function placy_enqueue_scripts() {
         // Localize Hyre script with REST API URL
         wp_localize_script( 'placy-hyre-live-availability', 'hyreSettings', array(
             'restUrl' => esc_url_raw( rest_url( 'placy/v1/hyre/availability' ) ),
-        ) );
-        
-        // Get property data from related project
-        $project = get_field( 'project' );
-        $start_lat = null;
-        $start_lng = null;
-        $property_logo = null;
-        $property_background = null;
-        $property_label = null;
-        
-        if ( $project ) {
-            $start_lat = get_field( 'start_latitude', $project->ID );
-            $start_lng = get_field( 'start_longitude', $project->ID );
-            $property_logo = get_field( 'property_logo', $project->ID );
-            $property_background = get_field( 'property_background', $project->ID );
-            $property_label = get_field( 'property_label', $project->ID );
-        }
-        
-        $start_location = null;
-        
-        if ( $start_lat && $start_lng ) {
-            $start_location = array(
-                floatval( $start_lng ),
-                floatval( $start_lat )
-            );
-        }
-        
-        // Pass Mapbox token and start location to the script
-        wp_localize_script( 'placy-tema-story-map', 'placyMapConfig', array(
-            'mapboxToken' => placy_get_mapbox_token(),
-            'googlePlacesApiKey' => defined( 'GOOGLE_PLACES_API_KEY' ) ? GOOGLE_PLACES_API_KEY : '',
-            'startLocation' => $start_location,
-            'propertyLogo' => $property_logo,
-            'propertyBackground' => $property_background,
-            'propertyLabel' => $property_label ? $property_label : 'Eiendommen',
         ) );
     }
 }
@@ -220,6 +205,13 @@ require_once get_template_directory() . '/inc/placy-bulk-import.php';
  */
 require_once get_template_directory() . '/inc/acf-chip-scrollytelling.php';
 require_once get_template_directory() . '/inc/acf-focus-panel.php';
+require_once get_template_directory() . '/inc/acf-story-chapter.php'; // Story Chapter ACF Block
+require_once get_template_directory() . '/inc/acf-poi-api-blocks.php'; // POI API Blocks (Entur, Bysykkel, Hyre)
+
+/**
+ * Include Neighborhood Story controller (assets & config)
+ */
+require_once get_template_directory() . '/inc/neighborhood-story.php';
 
 /**
  * Include Entur API integration
@@ -241,10 +233,8 @@ require_once get_template_directory() . '/inc/hyre-integration.php';
  */
 require_once get_template_directory() . '/inc/mapbox-directions-api.php';
 
-/**
- * Include Tema Story block patterns
- */
-require_once get_template_directory() . '/inc/tema-story-patterns.php';
+// Legacy tema-story-patterns removed - Story Chapter blocks used instead
+// Note: Sidebar navigation and global settings use ACF fields, no extra include needed
 
 /**
  * Register custom block category for Placy blocks
@@ -274,6 +264,9 @@ function placy_enqueue_block_assets() {
         'poi-list-dynamic'  => '/blocks/poi-list-dynamic/style.css',
         'poi-highlight'     => '/blocks/poi-highlight/style.css',
         'poi-gallery'       => '/blocks/poi-gallery/style.css',
+        'poi-entur'         => '/blocks/poi-entur/style.css',
+        'poi-bysykkel'      => '/blocks/poi-bysykkel/style.css',
+        'poi-hyre'          => '/blocks/poi-hyre/style.css',
         'image-column'      => '/blocks/image-column/style.css',
         'proximity-filter'  => '/blocks/proximity-filter/style.css',
         'travel-mode-selector' => '/blocks/travel-mode-selector/style.css',
@@ -364,6 +357,57 @@ function placy_register_acf_blocks() {
                 'align' => false,
                 'anchor' => true,
             ),
+        ) );
+        
+        // Register POI Entur block
+        acf_register_block_type( array(
+            'name'              => 'poi-entur',
+            'title'             => __( 'POI Entur', 'placy' ),
+            'description'       => __( 'Velg én Entur-stoppeplass med live avganger', 'placy' ),
+            'render_template'   => get_template_directory() . '/blocks/poi-entur/template.php',
+            'category'          => 'placy-content',
+            'icon'              => 'bus',
+            'keywords'          => array( 'poi', 'entur', 'bus', 'transport', 'avganger' ),
+            'mode'              => 'preview',
+            'supports'          => array(
+                'align' => false,
+                'anchor' => true,
+            ),
+            'enqueue_style'     => get_template_directory_uri() . '/blocks/poi-entur/style.css',
+        ) );
+        
+        // Register POI Bysykkel block
+        acf_register_block_type( array(
+            'name'              => 'poi-bysykkel',
+            'title'             => __( 'POI Bysykkel', 'placy' ),
+            'description'       => __( 'Velg én Bysykkel-stasjon med live tilgjengelighet', 'placy' ),
+            'render_template'   => get_template_directory() . '/blocks/poi-bysykkel/template.php',
+            'category'          => 'placy-content',
+            'icon'              => 'admin-site',
+            'keywords'          => array( 'poi', 'bysykkel', 'sykkel', 'bike', 'trondheim' ),
+            'mode'              => 'preview',
+            'supports'          => array(
+                'align' => false,
+                'anchor' => true,
+            ),
+            'enqueue_style'     => get_template_directory_uri() . '/blocks/poi-bysykkel/style.css',
+        ) );
+        
+        // Register POI Hyre block
+        acf_register_block_type( array(
+            'name'              => 'poi-hyre',
+            'title'             => __( 'POI Hyre', 'placy' ),
+            'description'       => __( 'Velg én Hyre-stasjon med live bildeling tilgjengelighet', 'placy' ),
+            'render_template'   => get_template_directory() . '/blocks/poi-hyre/template.php',
+            'category'          => 'placy-content',
+            'icon'              => 'car',
+            'keywords'          => array( 'poi', 'hyre', 'car', 'bil', 'sharing', 'deling' ),
+            'mode'              => 'preview',
+            'supports'          => array(
+                'align' => false,
+                'anchor' => true,
+            ),
+            'enqueue_style'     => get_template_directory_uri() . '/blocks/poi-hyre/style.css',
         ) );
         
         // Register POI Gallery block
@@ -616,17 +660,67 @@ function placy_register_acf_blocks() {
             'enqueue_style'     => get_template_directory_uri() . '/blocks/focus-panel/style.css',
             'enqueue_script'    => get_template_directory_uri() . '/blocks/focus-panel/script.js',
         ) );
+        
+        // ===========================================
+        // MOBILITY BLOCKS - Transport/commute cards
+        // ===========================================
+        
+        // Register Bysykkel Stations block
+        acf_register_block_type( array(
+            'name'              => 'bysykkel-stations',
+            'title'             => __( 'Bysykkel Stasjoner', 'placy' ),
+            'description'       => __( 'Accordion-liste med Trondheim Bysykkel stasjoner og sanntids tilgjengelighet', 'placy' ),
+            'render_template'   => get_template_directory() . '/blocks/bysykkel-stations/template.php',
+            'category'          => 'placy-content',
+            'icon'              => 'admin-site-alt3',
+            'keywords'          => array( 'bysykkel', 'sykkel', 'bike', 'stasjoner', 'stations', 'transport' ),
+            'mode'              => 'preview',
+            'supports'          => array(
+                'align' => false,
+                'anchor' => true,
+            ),
+            'enqueue_style'     => get_template_directory_uri() . '/blocks/bysykkel-stations/style.css',
+            'enqueue_script'    => get_template_directory_uri() . '/blocks/bysykkel-stations/script.js',
+        ) );
+        
+        // Register Hyre Stations block
+        acf_register_block_type( array(
+            'name'              => 'hyre-stations',
+            'title'             => __( 'Hyre Stasjoner', 'placy' ),
+            'description'       => __( 'Accordion-liste med Hyre bildeling stasjoner og sanntids tilgjengelighet', 'placy' ),
+            'render_template'   => get_template_directory() . '/blocks/hyre-stations/template.php',
+            'category'          => 'placy-content',
+            'icon'              => 'car',
+            'keywords'          => array( 'hyre', 'bil', 'car', 'sharing', 'bildeling', 'transport' ),
+            'mode'              => 'preview',
+            'supports'          => array(
+                'align' => false,
+                'anchor' => true,
+            ),
+            'enqueue_style'     => get_template_directory_uri() . '/blocks/hyre-stations/style.css',
+            'enqueue_script'    => get_template_directory_uri() . '/blocks/hyre-stations/script.js',
+        ) );
+        
+        // Register Bus Stops block
+        acf_register_block_type( array(
+            'name'              => 'bus-stops',
+            'title'             => __( 'Buss Holdeplasser', 'placy' ),
+            'description'       => __( 'Accordion-liste med bussholdeplasser og sanntids avganger fra Entur', 'placy' ),
+            'render_template'   => get_template_directory() . '/blocks/bus-stops/template.php',
+            'category'          => 'placy-content',
+            'icon'              => 'admin-site-alt2',
+            'keywords'          => array( 'buss', 'bus', 'holdeplass', 'stops', 'transport', 'flybuss', 'entur' ),
+            'mode'              => 'preview',
+            'supports'          => array(
+                'align' => false,
+                'anchor' => true,
+            ),
+            'enqueue_style'     => get_template_directory_uri() . '/blocks/bus-stops/style.css',
+            'enqueue_script'    => get_template_directory_uri() . '/blocks/bus-stops/script.js',
+        ) );
     }
 }
 add_action( 'acf/init', 'placy_register_acf_blocks' );
-
-/**
- * Register Chapter Wrapper Block
- */
-function placy_register_chapter_wrapper_block() {
-    register_block_type( get_template_directory() . '/blocks/chapter-wrapper' );
-}
-add_action( 'init', 'placy_register_chapter_wrapper_block' );
 
 /**
  * Register POI List Dynamic Block
@@ -649,6 +743,17 @@ add_action( 'init', 'placy_register_poi_list_dynamic_block' );
  * Enqueue block editor styles and scripts (admin only)
  */
 function placy_block_editor_styles() {
+    // Enqueue Story Chapter editor styles
+    $story_chapter_editor_css = get_template_directory() . '/blocks/story-chapter/editor.css';
+    if ( file_exists( $story_chapter_editor_css ) ) {
+        wp_enqueue_style(
+            'placy-story-chapter-editor',
+            get_template_directory_uri() . '/blocks/story-chapter/editor.css',
+            array(),
+            filemtime( $story_chapter_editor_css )
+        );
+    }
+    
     // Enqueue POI List Dynamic block editor script (manual enqueue as fallback)
     $block_js = get_template_directory() . '/blocks/poi-list-dynamic/block.js';
     if ( file_exists( $block_js ) ) {
@@ -698,15 +803,6 @@ function placy_block_editor_styles() {
         'https://fonts.googleapis.com/css2?family=Figtree:wght@300;400;500;600;700;800&display=swap', 
         array(), 
         null 
-    );
-    
-    // Enqueue Chapter Wrapper block editor script
-    wp_enqueue_script(
-        'placy-chapter-wrapper-editor',
-        get_template_directory_uri() . '/blocks/chapter-wrapper/block.js',
-        array( 'wp-blocks', 'wp-element', 'wp-block-editor', 'wp-components' ),
-        '2.1.0', // Added travel-calculator to allowed blocks
-        true
     );
 }
 add_action( 'enqueue_block_editor_assets', 'placy_block_editor_styles' );

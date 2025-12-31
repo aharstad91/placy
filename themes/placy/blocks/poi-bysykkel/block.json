@@ -1,0 +1,16 @@
+{
+  "name": "acf/poi-bysykkel",
+  "title": "POI Bysykkel (Single)",
+  "description": "Display a single Trondheim Bysykkel station with live availability",
+  "category": "media",
+  "icon": "location",
+  "keywords": ["poi", "bysykkel", "bike", "bicycle"],
+  "acf": {
+    "mode": "preview",
+    "renderTemplate": "template.php"
+  },
+  "supports": {
+    "align": false,
+    "anchor": true
+  }
+}

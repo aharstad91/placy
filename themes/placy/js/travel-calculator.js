@@ -11,6 +11,9 @@
 (function() {
     'use strict';
 
+    // Track initialized blocks to avoid double-initialization
+    const initializedBlocks = new WeakSet();
+
     // Debounce helper
     function debounce(func, wait) {
         let timeout;
@@ -27,7 +30,12 @@
     // Initialize all travel calculators on the page
     function initTravelCalculators() {
         const calculators = document.querySelectorAll('.travel-calculator-block');
-        calculators.forEach(initCalculator);
+        calculators.forEach(function(calc) {
+            if (!initializedBlocks.has(calc)) {
+                initCalculator(calc);
+                initializedBlocks.add(calc);
+            }
+        });
     }
 
     function initCalculator(container) {
@@ -413,6 +421,8 @@
                 hideSuggestions();
             }
         });
+        
+        console.log('[TravelCalculator] Initialized for:', container.id || 'unknown block');
     }
 
     // Initialize on DOM ready
@@ -421,4 +431,39 @@
     } else {
         initTravelCalculators();
     }
+
+    // Watch for dynamically added travel calculator blocks (e.g., in modals)
+    const observer = new MutationObserver(function(mutations) {
+        let shouldInit = false;
+        mutations.forEach(function(mutation) {
+            mutation.addedNodes.forEach(function(node) {
+                if (node.nodeType === 1) {
+                    // Check if node is or contains a travel calculator block
+                    if (node.classList && node.classList.contains('travel-calculator-block')) {
+                        shouldInit = true;
+                    } else if (node.querySelectorAll) {
+                        const blocks = node.querySelectorAll('.travel-calculator-block');
+                        if (blocks.length > 0) {
+                            shouldInit = true;
+                        }
+                    }
+                }
+            });
+        });
+        if (shouldInit) {
+            initTravelCalculators();
+        }
+    });
+
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+
+    // Also re-initialize when modal opens (listen for specific events)
+    document.addEventListener('placy:modalOpen', initTravelCalculators);
+    document.addEventListener('placy:drawerOpen', initTravelCalculators);
+
+    // Expose globally for manual re-initialization
+    window.initTravelCalculators = initTravelCalculators;
 })();

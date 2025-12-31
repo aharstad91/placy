@@ -35,17 +35,31 @@ $is_in_chapter = strpos( $parent_classes, 'chapter' ) !== false;
 <div id="<?php echo esc_attr( $block_id ); ?>" class="<?php echo esc_attr( $class_name ); ?> w-full mb-6">
     <?php if ( $poi_items && is_array( $poi_items ) ) : ?>
         <div class="flex flex-col" <?php if ( $is_in_chapter ) echo 'data-chapter-poi-list="true"'; ?>>
-            <?php foreach ( $poi_items as $poi ) : 
+            <?php 
+            // Get project origin coordinates and ID once for all POIs
+            $origin_data = function_exists( 'placy_get_project_origin_data' ) 
+                ? placy_get_project_origin_data() 
+                : array( 'lat' => 63.4305, 'lng' => 10.3951, 'project_id' => null );
+            $origin = array( 'lat' => $origin_data['lat'], 'lng' => $origin_data['lng'] );
+            $project_id = $origin_data['project_id'];
+            
+            foreach ( $poi_items as $poi ) : 
                 // Get POI coordinates (works for both Native and Google Points)
                 $poi_coords = placy_get_poi_coordinates( $poi->ID );
                 $coords = '';
                 $lat = null;
                 $lng = null;
+                $travel_times = null;
                 
                 if ( $poi_coords ) {
                     $lat = $poi_coords['lat'];
                     $lng = $poi_coords['lng'];
                     $coords = sprintf( '[%s,%s]', esc_attr( $lat ), esc_attr( $lng ) );
+                    
+                    // Pre-calculate travel times for all modes
+                    if ( function_exists( 'placy_calculate_travel_times' ) ) {
+                        $travel_times = placy_calculate_travel_times( $origin['lat'], $origin['lng'], $lat, $lng, $poi->ID, $project_id );
+                    }
                 }
                 
                 // Get featured image URL - landscape format for card top
@@ -107,6 +121,9 @@ $is_in_chapter = strpos( $parent_classes, 'chapter' ) !== false;
                     ?>
                     <?php if ( $coords ) : ?>
                         data-poi-coords="<?php echo esc_attr( $coords ); ?>"
+                    <?php endif; ?>
+                    <?php if ( $travel_times ) : ?>
+                        data-travel-times='<?php echo esc_attr( wp_json_encode( $travel_times ) ); ?>'
                     <?php endif; ?>
                     data-poi-icon="<?php echo esc_attr( $category_icon['icon'] ); ?>"
                     data-poi-icon-color="<?php echo esc_attr( $category_icon['color'] ); ?>"
@@ -232,7 +249,13 @@ $is_in_chapter = strpos( $parent_classes, 'chapter' ) !== false;
                                         <div class="flex items-center gap-2 text-gray-600">
                                             <span class="poi-travel-icon"><i class="fas fa-walking"></i></span>
                                             <span class="poi-walking-time text-sm font-medium">
-                                                Beregner...
+                                                <?php 
+                                                if ( $travel_times ) {
+                                                    echo esc_html( $travel_times['walk'] ) . ' min';
+                                                } else {
+                                                    echo 'Beregner...';
+                                                }
+                                                ?>
                                             </span>
                                         </div>
                                     </div>
@@ -290,6 +313,8 @@ $is_in_chapter = strpos( $parent_classes, 'chapter' ) !== false;
                             <?php endif; ?>
                         </div>
                     </div>
+                    
+
                 </article>
             <?php endforeach; ?>
         </div>

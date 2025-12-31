@@ -246,6 +246,40 @@ function placy_register_native_point_fields() {
                 'label' => 'Transport/API',
                 'type' => 'tab',
             ),
+            // API Integration Selector
+            array(
+                'key' => 'field_native_api_integrations',
+                'label' => 'Aktive API-integrasjoner',
+                'name' => 'api_integrations',
+                'type' => 'checkbox',
+                'instructions' => 'Velg hvilke API-integrasjoner som skal aktiveres for dette punktet. Kun relevante felter vil vises.',
+                'choices' => array(
+                    'entur' => '🚌 Entur Kollektivtransport',
+                    'bysykkel' => '🚲 Trondheim Bysykkel',
+                    'hyre' => '🚗 Hyre (Bilutleie)',
+                ),
+                'layout' => 'horizontal',
+                'return_format' => 'value',
+            ),
+            
+            // Entur Accordion
+            array(
+                'key' => 'field_native_accordion_entur',
+                'label' => '🚌 Entur Kollektivtransport',
+                'type' => 'accordion',
+                'open' => 1,
+                'multi_expand' => 1,
+                'endpoint' => 0,
+                'conditional_logic' => array(
+                    array(
+                        array(
+                            'field' => 'field_native_api_integrations',
+                            'operator' => '==',
+                            'value' => 'entur',
+                        ),
+                    ),
+                ),
+            ),
             array(
                 'key' => 'field_native_entur_stopplace_id',
                 'label' => 'Entur StopPlace ID',
@@ -253,6 +287,15 @@ function placy_register_native_point_fields() {
                 'type' => 'text',
                 'instructions' => 'StopPlace ID fra Entur (format: NSR:StopPlace:xxxxx). Finn ID på <a href="https://stoppested.entur.org" target="_blank">stoppested.entur.org</a>. Eksempel: NSR:StopPlace:41620 (Hesthagen)',
                 'placeholder' => 'NSR:StopPlace:41620',
+                'conditional_logic' => array(
+                    array(
+                        array(
+                            'field' => 'field_native_api_integrations',
+                            'operator' => '==',
+                            'value' => 'entur',
+                        ),
+                    ),
+                ),
             ),
             array(
                 'key' => 'field_native_entur_quay_id',
@@ -261,6 +304,15 @@ function placy_register_native_point_fields() {
                 'type' => 'text',
                 'instructions' => 'For å kun vise én retning, oppgi Quay ID (format: NSR:Quay:xxxxx). La stå tom for å vise alle retninger.',
                 'placeholder' => 'NSR:Quay:xxxxx',
+                'conditional_logic' => array(
+                    array(
+                        array(
+                            'field' => 'field_native_api_integrations',
+                            'operator' => '==',
+                            'value' => 'entur',
+                        ),
+                    ),
+                ),
             ),
             array(
                 'key' => 'field_native_entur_group_by_direction',
@@ -270,6 +322,15 @@ function placy_register_native_point_fields() {
                 'instructions' => 'Vis avganger gruppert per retning/plattform (anbefalt for holdeplasser med flere retninger)',
                 'ui' => 1,
                 'default_value' => 1,
+                'conditional_logic' => array(
+                    array(
+                        array(
+                            'field' => 'field_native_api_integrations',
+                            'operator' => '==',
+                            'value' => 'entur',
+                        ),
+                    ),
+                ),
             ),
             array(
                 'key' => 'field_native_entur_transport_mode',
@@ -289,6 +350,15 @@ function placy_register_native_point_fields() {
                 'default_value' => '',
                 'allow_null' => 1,
                 'ui' => 1,
+                'conditional_logic' => array(
+                    array(
+                        array(
+                            'field' => 'field_native_api_integrations',
+                            'operator' => '==',
+                            'value' => 'entur',
+                        ),
+                    ),
+                ),
             ),
             array(
                 'key' => 'field_native_entur_line_filter',
@@ -297,6 +367,15 @@ function placy_register_native_point_fields() {
                 'type' => 'text',
                 'instructions' => 'Valgfri - Vis kun avganger for spesifikke linjer. Kommaseparert liste av linjenummer. Eksempel: FB73 eller 1,2,3',
                 'placeholder' => 'FB73',
+                'conditional_logic' => array(
+                    array(
+                        array(
+                            'field' => 'field_native_api_integrations',
+                            'operator' => '==',
+                            'value' => 'entur',
+                        ),
+                    ),
+                ),
             ),
             array(
                 'key' => 'field_native_show_live_departures',
@@ -306,6 +385,34 @@ function placy_register_native_point_fields() {
                 'instructions' => 'Aktiver for å vise sanntids avgangsinformasjon fra Entur i POI-kortet',
                 'ui' => 1,
                 'default_value' => 0,
+                'conditional_logic' => array(
+                    array(
+                        array(
+                            'field' => 'field_native_api_integrations',
+                            'operator' => '==',
+                            'value' => 'entur',
+                        ),
+                    ),
+                ),
+            ),
+            
+            // Bysykkel Accordion
+            array(
+                'key' => 'field_native_accordion_bysykkel',
+                'label' => '🚲 Trondheim Bysykkel',
+                'type' => 'accordion',
+                'open' => 0,
+                'multi_expand' => 1,
+                'endpoint' => 0,
+                'conditional_logic' => array(
+                    array(
+                        array(
+                            'field' => 'field_native_api_integrations',
+                            'operator' => '==',
+                            'value' => 'bysykkel',
+                        ),
+                    ),
+                ),
             ),
             array(
                 'key' => 'field_native_bysykkel_station_id',
@@ -314,6 +421,15 @@ function placy_register_native_point_fields() {
                 'type' => 'text',
                 'instructions' => 'Station ID fra Trondheim Bysykkel. Eksempel: 5430 (Jernbanebrua)',
                 'placeholder' => '5430',
+                'conditional_logic' => array(
+                    array(
+                        array(
+                            'field' => 'field_native_api_integrations',
+                            'operator' => '==',
+                            'value' => 'bysykkel',
+                        ),
+                    ),
+                ),
             ),
             array(
                 'key' => 'field_native_show_bike_availability',
@@ -323,6 +439,34 @@ function placy_register_native_point_fields() {
                 'instructions' => 'Aktiver for å vise antall ledige sykler i sanntid',
                 'ui' => 1,
                 'default_value' => 0,
+                'conditional_logic' => array(
+                    array(
+                        array(
+                            'field' => 'field_native_api_integrations',
+                            'operator' => '==',
+                            'value' => 'bysykkel',
+                        ),
+                    ),
+                ),
+            ),
+            
+            // Hyre Accordion
+            array(
+                'key' => 'field_native_accordion_hyre',
+                'label' => '🚗 Hyre (Bilutleie)',
+                'type' => 'accordion',
+                'open' => 0,
+                'multi_expand' => 1,
+                'endpoint' => 0,
+                'conditional_logic' => array(
+                    array(
+                        array(
+                            'field' => 'field_native_api_integrations',
+                            'operator' => '==',
+                            'value' => 'hyre',
+                        ),
+                    ),
+                ),
             ),
             array(
                 'key' => 'field_native_hyre_station_id',
@@ -331,6 +475,15 @@ function placy_register_native_point_fields() {
                 'type' => 'text',
                 'instructions' => 'Station ID fra Hyre (format: HYR:Station:xxxx). Finn ID via /wp-json/placy/v1/hyre/stations?region=norge_trondheim',
                 'placeholder' => 'HYR:Station:c21af781-24dd-4bcf-bfce-07fae61f4114',
+                'conditional_logic' => array(
+                    array(
+                        array(
+                            'field' => 'field_native_api_integrations',
+                            'operator' => '==',
+                            'value' => 'hyre',
+                        ),
+                    ),
+                ),
             ),
             array(
                 'key' => 'field_native_show_hyre_availability',
@@ -340,6 +493,22 @@ function placy_register_native_point_fields() {
                 'instructions' => 'Aktiver for å vise antall ledige biler fra Hyre i sanntid',
                 'ui' => 1,
                 'default_value' => 0,
+                'conditional_logic' => array(
+                    array(
+                        array(
+                            'field' => 'field_native_api_integrations',
+                            'operator' => '==',
+                            'value' => 'hyre',
+                        ),
+                    ),
+                ),
+            ),
+            // End accordion
+            array(
+                'key' => 'field_native_accordion_end',
+                'label' => '',
+                'type' => 'accordion',
+                'endpoint' => 1,
             ),
         ),
         'location' => array(
@@ -724,6 +893,216 @@ function placy_register_travel_calculator_fields() {
                     'param' => 'block',
                     'operator' => '==',
                     'value' => 'acf/travel-calculator',
+                ),
+            ),
+        ),
+    ) );
+    
+    // ===========================================
+    // BYSYKKEL STATIONS BLOCK FIELDS
+    // ===========================================
+    acf_add_local_field_group( array(
+        'key' => 'group_bysykkel_stations',
+        'title' => 'Bysykkel Stasjoner Settings',
+        'fields' => array(
+            array(
+                'key' => 'field_bysykkel_custom_title',
+                'label' => 'Tittel',
+                'name' => 'custom_title',
+                'type' => 'text',
+                'default_value' => 'Trondheim Bysykkel Stasjoner',
+                'placeholder' => 'F.eks. "Trondheim Bysykkel Stasjoner"',
+            ),
+            array(
+                'key' => 'field_bysykkel_stations',
+                'label' => 'Stasjoner',
+                'name' => 'stations',
+                'type' => 'repeater',
+                'instructions' => 'Legg til bysykkelstasjoner som skal vises.',
+                'min' => 0,
+                'max' => 10,
+                'layout' => 'block',
+                'button_label' => 'Legg til stasjon',
+                'sub_fields' => array(
+                    array(
+                        'key' => 'field_bysykkel_station_poi',
+                        'label' => 'Stasjon (POI)',
+                        'name' => 'station',
+                        'type' => 'post_object',
+                        'post_type' => array( 'placy_native_point' ),
+                        'return_format' => 'object',
+                        'required' => 1,
+                        'wrapper' => array(
+                            'width' => '60',
+                        ),
+                    ),
+                    array(
+                        'key' => 'field_bysykkel_walking_time',
+                        'label' => 'Gangtid',
+                        'name' => 'walking_time',
+                        'type' => 'text',
+                        'placeholder' => 'F.eks. "3 min"',
+                        'wrapper' => array(
+                            'width' => '40',
+                        ),
+                    ),
+                ),
+            ),
+        ),
+        'location' => array(
+            array(
+                array(
+                    'param' => 'block',
+                    'operator' => '==',
+                    'value' => 'acf/bysykkel-stations',
+                ),
+            ),
+        ),
+    ) );
+    
+    // ===========================================
+    // HYRE STATIONS BLOCK FIELDS
+    // ===========================================
+    acf_add_local_field_group( array(
+        'key' => 'group_hyre_stations',
+        'title' => 'Hyre Stasjoner Settings',
+        'fields' => array(
+            array(
+                'key' => 'field_hyre_section_title',
+                'label' => 'Seksjonstittel',
+                'name' => 'section_title',
+                'type' => 'text',
+                'default_value' => 'Bil, bildeling og taxi – fleksibilitet når du trenger det',
+            ),
+            array(
+                'key' => 'field_hyre_section_description',
+                'label' => 'Seksjonsbeskrivelse',
+                'name' => 'section_description',
+                'type' => 'textarea',
+                'rows' => 3,
+                'placeholder' => 'Kort beskrivelse av Hyre-tilbudet i området.',
+            ),
+            array(
+                'key' => 'field_hyre_stations',
+                'label' => 'Stasjoner',
+                'name' => 'stations',
+                'type' => 'repeater',
+                'instructions' => 'Legg til Hyre-stasjoner som skal vises.',
+                'min' => 0,
+                'max' => 10,
+                'layout' => 'block',
+                'button_label' => 'Legg til stasjon',
+                'sub_fields' => array(
+                    array(
+                        'key' => 'field_hyre_station_poi',
+                        'label' => 'Stasjon (POI)',
+                        'name' => 'station',
+                        'type' => 'post_object',
+                        'post_type' => array( 'placy_native_point' ),
+                        'return_format' => 'object',
+                        'required' => 1,
+                        'wrapper' => array(
+                            'width' => '60',
+                        ),
+                    ),
+                    array(
+                        'key' => 'field_hyre_walking_time',
+                        'label' => 'Gangtid',
+                        'name' => 'walking_time',
+                        'type' => 'text',
+                        'placeholder' => 'F.eks. "0 min gange"',
+                        'wrapper' => array(
+                            'width' => '40',
+                        ),
+                    ),
+                ),
+            ),
+        ),
+        'location' => array(
+            array(
+                array(
+                    'param' => 'block',
+                    'operator' => '==',
+                    'value' => 'acf/hyre-stations',
+                ),
+            ),
+        ),
+    ) );
+    
+    // ===========================================
+    // BUS STOPS BLOCK FIELDS
+    // ===========================================
+    acf_add_local_field_group( array(
+        'key' => 'group_bus_stops',
+        'title' => 'Buss Holdeplasser Settings',
+        'fields' => array(
+            array(
+                'key' => 'field_bus_section_title',
+                'label' => 'Seksjonstittel',
+                'name' => 'section_title',
+                'type' => 'text',
+                'default_value' => 'Buss og flybuss',
+            ),
+            array(
+                'key' => 'field_bus_section_description',
+                'label' => 'Seksjonsbeskrivelse',
+                'name' => 'section_description',
+                'type' => 'textarea',
+                'rows' => 3,
+                'placeholder' => 'Kort beskrivelse av busstilbudet i området.',
+            ),
+            array(
+                'key' => 'field_bus_stops',
+                'label' => 'Holdeplasser',
+                'name' => 'stops',
+                'type' => 'repeater',
+                'instructions' => 'Legg til bussholdeplasser som skal vises.',
+                'min' => 0,
+                'max' => 10,
+                'layout' => 'block',
+                'button_label' => 'Legg til holdeplass',
+                'sub_fields' => array(
+                    array(
+                        'key' => 'field_bus_stop_poi',
+                        'label' => 'Holdeplass (POI)',
+                        'name' => 'stop',
+                        'type' => 'post_object',
+                        'post_type' => array( 'placy_native_point' ),
+                        'return_format' => 'object',
+                        'required' => 1,
+                        'wrapper' => array(
+                            'width' => '40',
+                        ),
+                    ),
+                    array(
+                        'key' => 'field_bus_direction_label',
+                        'label' => 'Retningsetikett',
+                        'name' => 'direction_label',
+                        'type' => 'text',
+                        'placeholder' => 'F.eks. "fra sentrum" eller "til sentrum"',
+                        'wrapper' => array(
+                            'width' => '30',
+                        ),
+                    ),
+                    array(
+                        'key' => 'field_bus_walking_time',
+                        'label' => 'Gangtid',
+                        'name' => 'walking_time',
+                        'type' => 'text',
+                        'placeholder' => 'F.eks. "5 min gange"',
+                        'wrapper' => array(
+                            'width' => '30',
+                        ),
+                    ),
+                ),
+            ),
+        ),
+        'location' => array(
+            array(
+                array(
+                    'param' => 'block',
+                    'operator' => '==',
+                    'value' => 'acf/bus-stops',
                 ),
             ),
         ),

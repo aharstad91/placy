@@ -17,37 +17,66 @@ if ( ! defined( 'ABSPATH' ) ) {
 $transport_mode = get_field( 'transport_mode' ) ?: 'cycling';
 $custom_title = get_field( 'custom_title' );
 $custom_placeholder = get_field( 'custom_placeholder' );
-$quick_areas = get_field( 'quick_areas' ) ?: array();
+$quick_areas_raw = get_field( 'quick_areas' ) ?: array();
 
-// Get destination from project
-$project = get_field( 'project' );
+// Get destination coordinates using the centralized helper function
 $dest_lat = null;
 $dest_lng = null;
 $dest_name = 'destinasjonen';
 
-if ( $project ) {
-    $dest_lat = get_field( 'start_latitude', $project->ID );
-    $dest_lng = get_field( 'start_longitude', $project->ID );
-    $property_label = get_field( 'property_label', $project->ID );
-    if ( $property_label ) {
-        $dest_name = $property_label;
+// Use the standardized helper function that works for all blocks
+if ( function_exists( 'placy_get_project_origin_coordinates' ) ) {
+    $origin = placy_get_project_origin_coordinates();
+    $dest_lat = $origin['lat'];
+    $dest_lng = $origin['lng'];
+}
+
+// Filter out quick areas that have coordinates too close to the destination
+// This prevents 0 min / 0 km results when coordinates are incorrectly set
+$quick_areas = array();
+if ( ! empty( $quick_areas_raw ) && $dest_lat && $dest_lng ) {
+    foreach ( $quick_areas_raw as $area ) {
+        $area_lat = floatval( $area['area_lat'] ?? 0 );
+        $area_lng = floatval( $area['area_lng'] ?? 0 );
+        
+        // Calculate approximate distance (simple lat/lng difference)
+        // Skip areas that are within ~100m of destination
+        $lat_diff = abs( $area_lat - $dest_lat );
+        $lng_diff = abs( $area_lng - $dest_lng );
+        
+        // ~0.001 degrees is approximately 100m at this latitude
+        if ( $lat_diff > 0.001 || $lng_diff > 0.001 ) {
+            $quick_areas[] = $area;
+        }
+    }
+} elseif ( ! empty( $quick_areas_raw ) ) {
+    // If no destination coords, include all areas
+    $quick_areas = $quick_areas_raw;
+}
+
+// Get destination name from project
+global $post;
+$project = null;
+
+// First try to get project from the block field
+$block_project = get_field( 'project' );
+if ( $block_project ) {
+    $project = $block_project;
+}
+
+// Then try from the story/post's related project
+if ( ! $project && $post ) {
+    $story_project = get_field( 'project', $post->ID );
+    if ( $story_project ) {
+        $project = $story_project;
     }
 }
 
-// Fallback to current post if no project
-if ( ! $dest_lat || ! $dest_lng ) {
-    // Try to get from story's related project
-    global $post;
-    if ( $post ) {
-        $story_project = get_field( 'project', $post->ID );
-        if ( $story_project ) {
-            $dest_lat = get_field( 'start_latitude', $story_project->ID );
-            $dest_lng = get_field( 'start_longitude', $story_project->ID );
-            $property_label = get_field( 'property_label', $story_project->ID );
-            if ( $property_label ) {
-                $dest_name = $property_label;
-            }
-        }
+// Get the property label for the destination name
+if ( $project ) {
+    $property_label = get_field( 'property_label', $project->ID );
+    if ( $property_label ) {
+        $dest_name = $property_label;
     }
 }
 

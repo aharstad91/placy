@@ -12,7 +12,7 @@
         <h1 class="page-title text-3xl font-bold"><?php esc_html_e( 'Ingenting funnet', 'placy' ); ?></h1>
     </header>
 
-    <div class="page-content prose">
+    <div class="page-content">
         <?php
         if ( is_home() && current_user_can( 'publish_posts' ) ) :
             ?>

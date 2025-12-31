@@ -14,28 +14,20 @@ Text Domain: placy
 Tags: custom-logo, custom-menu, featured-images, threaded-comments, translation-ready
 */
 
-/* Theme styles are loaded from css/styles.css */
+/* 
+ * Base styles are in css/typography.css
+ * Theme-specific styles below
+ */
 
-.poi-list-item{
+.poi-list-item {
     background: #fff;
 }
-.chapter-map-column{
+
+.chapter-map-column {
     background: #fff;
 }
-.tema-story-content{
+
+.tema-story-content {
     display: grid;
     gap: 33vh;
-}
-h3.wp-block-heading {
-    font-size: 1.25rem;
-    line-height: 1.75rem;
-    margin-bottom: .75rem;
-    font-weight: 600;
-}
-a {
-    color: #bf5c00!important;
-    font-weight: 500;
-}
-a:hover{
-    text-decoration: underline;
 }

@@ -25,7 +25,15 @@ if ( ! $pois || empty( $pois ) ) {
 ?>
 
 <div class="poi-gallery grid grid-cols-2 gap-6 mb-8">
-    <?php foreach ( $pois as $poi ) : 
+    <?php 
+    // Get project origin coordinates and ID once for all POIs
+    $origin_data = function_exists( 'placy_get_project_origin_data' ) 
+        ? placy_get_project_origin_data() 
+        : array( 'lat' => 63.4305, 'lng' => 10.3951, 'project_id' => null );
+    $origin = array( 'lat' => $origin_data['lat'], 'lng' => $origin_data['lng'] );
+    $project_id = $origin_data['project_id'];
+    
+    foreach ( $pois as $poi ) : 
         $poi_id = $poi->ID;
         $title = get_the_title( $poi_id );
         
@@ -51,11 +59,17 @@ if ( ! $pois || empty( $pois ) ) {
         $coords = '';
         $lat = null;
         $lng = null;
+        $travel_times = null;
         
         if ( $poi_coords ) {
             $lat = $poi_coords['lat'];
             $lng = $poi_coords['lng'];
             $coords = sprintf( '[%s,%s]', esc_attr( $lat ), esc_attr( $lng ) );
+            
+            // Pre-calculate travel times for all modes
+            if ( function_exists( 'placy_calculate_travel_times' ) ) {
+                $travel_times = placy_calculate_travel_times( $origin['lat'], $origin['lng'], $lat, $lng, $poi_id, $project_id );
+            }
         }
         
         // Get category icon for map marker
@@ -96,6 +110,9 @@ if ( ! $pois || empty( $pois ) ) {
              ?>
              <?php if ( $coords ) : ?>
                 data-poi-coords="<?php echo $coords; ?>"
+             <?php endif; ?>
+             <?php if ( $travel_times ) : ?>
+                data-travel-times='<?php echo esc_attr( wp_json_encode( $travel_times ) ); ?>'
              <?php endif; ?>
              data-poi-icon="<?php echo esc_attr( $category_icon['icon'] ); ?>"
              data-poi-icon-color="<?php echo esc_attr( $category_icon['color'] ); ?>"
@@ -223,11 +240,15 @@ if ( ! $pois || empty( $pois ) ) {
                 <div class="flex items-center gap-2 text-gray-600">
                     <span class="poi-travel-icon"><i class="fas fa-walking"></i></span>
                     <span class="text-sm font-medium poi-walking-time">
-                        <?php if ( $walking_time ) : ?>
-                            <?php echo esc_html( $walking_time ); ?> min
-                        <?php else : ?>
-                            Beregner...
-                        <?php endif; ?>
+                        <?php 
+                        if ( $travel_times ) {
+                            echo esc_html( $travel_times['walk'] ) . ' min';
+                        } elseif ( $walking_time ) {
+                            echo esc_html( $walking_time ) . ' min';
+                        } else {
+                            echo 'Beregner...';
+                        }
+                        ?>
                     </span>
                 </div>
             </div>
@@ -259,7 +280,7 @@ if ( ! $pois || empty( $pois ) ) {
                 </div>
             <?php endif; ?>
             
-            <div class="poi-gallery-text prose prose-sm max-w-none mb-4 line-clamp-3">
+            <div class="poi-gallery-text mb-4 line-clamp-3">
                 <?php echo wp_kses_post( $content ); ?>
             </div>
             

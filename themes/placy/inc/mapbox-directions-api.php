@@ -165,8 +165,8 @@ function placy_geocode_proxy(WP_REST_Request $request) {
 
 /**
  * Directions proxy - calculate routes
- * Uses OpenRouteService for proper cycling/walking routes
- * Falls back to OSRM for driving
+ * Uses Mapbox Directions API first (best quality)
+ * Falls back to OpenRouteService, then OSRM
  */
 function placy_directions_proxy(WP_REST_Request $request) {
     $origin_lng = floatval($request->get_param('origin_lng'));
@@ -175,8 +175,17 @@ function placy_directions_proxy(WP_REST_Request $request) {
     $dest_lat = floatval($request->get_param('dest_lat'));
     $mode = $request->get_param('mode');
 
-    // Try OpenRouteService first for cycling/walking (proper bike routes)
-    // ORS has a free tier: 2000 requests/day
+    // Try Mapbox Directions API first (best quality routes)
+    $mapbox_token = defined('MAPBOX_ACCESS_TOKEN') ? MAPBOX_ACCESS_TOKEN : get_option('placy_mapbox_access_token', '');
+    
+    if (!empty($mapbox_token)) {
+        $result = placy_get_mapbox_directions($origin_lng, $origin_lat, $dest_lng, $dest_lat, $mode, $mapbox_token);
+        if ($result) {
+            return rest_ensure_response($result);
+        }
+    }
+
+    // Try OpenRouteService as fallback for cycling/walking
     $ors_api_key = defined('OPENROUTESERVICE_API_KEY') ? OPENROUTESERVICE_API_KEY : get_option('placy_ors_api_key', '');
     
     if (!empty($ors_api_key) && in_array($mode, ['cycling', 'walking'])) {
@@ -186,8 +195,67 @@ function placy_directions_proxy(WP_REST_Request $request) {
         }
     }
 
-    // Fallback to OSRM (works for driving, less accurate for cycling)
+    // Final fallback to OSRM
     return placy_get_osrm_directions($origin_lng, $origin_lat, $dest_lng, $dest_lat, $mode);
+}
+
+/**
+ * Get directions from Mapbox Directions API (best quality)
+ */
+function placy_get_mapbox_directions($origin_lng, $origin_lat, $dest_lng, $dest_lat, $mode, $access_token) {
+    // Map mode to Mapbox profile
+    $profiles = [
+        'cycling' => 'cycling',
+        'walking' => 'walking',
+        'driving' => 'driving',
+    ];
+    $profile = $profiles[$mode] ?? 'walking';
+
+    $coordinates = sprintf('%f,%f;%f,%f', $origin_lng, $origin_lat, $dest_lng, $dest_lat);
+    $url = 'https://api.mapbox.com/directions/v5/mapbox/' . $profile . '/' . $coordinates;
+    
+    $params = [
+        'access_token' => $access_token,
+        'geometries' => 'geojson',
+        'overview' => 'full',
+    ];
+
+    $url .= '?' . http_build_query($params);
+
+    $response = wp_remote_get($url, [
+        'timeout' => 10,
+        'headers' => [
+            'User-Agent' => 'Placy WordPress Theme',
+        ],
+    ]);
+
+    if (is_wp_error($response)) {
+        error_log('Mapbox Directions error: ' . $response->get_error_message());
+        return null;
+    }
+
+    $status_code = wp_remote_retrieve_response_code($response);
+    if ($status_code !== 200) {
+        error_log('Mapbox Directions HTTP error: ' . $status_code . ' - ' . wp_remote_retrieve_body($response));
+        return null;
+    }
+
+    $data = json_decode(wp_remote_retrieve_body($response), true);
+    
+    if (!$data || empty($data['routes']) || $data['code'] !== 'Ok') {
+        return null;
+    }
+
+    $route = $data['routes'][0];
+    
+    return [
+        'code' => 'Ok',
+        'routes' => [[
+            'distance' => $route['distance'], // meters
+            'duration' => $route['duration'], // seconds
+            'geometry' => $route['geometry'],
+        ]],
+    ];
 }
 
 /**
@@ -296,26 +364,12 @@ function placy_get_osrm_directions($origin_lng, $origin_lat, $dest_lng, $dest_la
     }
 
     // Convert OSRM response to Mapbox-compatible format
-    // Note: OSRM's public demo server may not have accurate cycling routes
-    // We calculate realistic travel times based on distance and typical speeds
+    // Use OSRM's duration directly - it provides accurate routing-based travel times
     $routes = [];
     foreach ($osrm_data['routes'] as $route) {
-        $distance = $route['distance']; // meters
-        
-        // Calculate realistic duration based on mode and typical speeds
-        $speeds = [
-            'bike' => 16,      // 16 km/h average cycling speed
-            'foot' => 5,       // 5 km/h average walking speed
-            'driving' => 35,   // 35 km/h average urban driving speed
-        ];
-        
-        $speed_kmh = $speeds[$profile] ?? 16;
-        $speed_ms = $speed_kmh / 3.6;
-        $calculated_duration = $distance / $speed_ms;
-        
         $routes[] = [
-            'distance' => $distance,
-            'duration' => $calculated_duration,
+            'distance' => $route['distance'], // meters
+            'duration' => $route['duration'], // seconds - use OSRM's calculated duration
             'geometry' => $route['geometry'] ?? null,
         ];
     }

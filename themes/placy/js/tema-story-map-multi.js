@@ -461,7 +461,8 @@
      * Parse POI data and add markers for a specific chapter
      */
     async function parseAndAddMarkersForChapter(mapInstance, chapterId) {
-        const chapter = document.querySelector(`.chapter[data-chapter-id="${chapterId}"]`);
+        // Try both .chapter and .chapter-wrapper-acf selectors
+        const chapter = document.querySelector(`.chapter[data-chapter-id="${chapterId}"], .chapter-wrapper-acf[data-chapter-id="${chapterId}"]`);
         if (!chapter) {
             console.warn(`Multi Map: Chapter ${chapterId} not found in DOM`);
             return;

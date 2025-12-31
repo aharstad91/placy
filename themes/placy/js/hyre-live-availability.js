@@ -35,7 +35,13 @@
      * Load availability for all POI cards on the page
      */
     async function loadAllAvailability() {
-        const poiCards = document.querySelectorAll('[data-hyre-station-id][data-show-hyre-availability="1"]');
+        // Find all POI cards with Hyre data (exclude new block structure which has its own script)
+        const allElements = document.querySelectorAll('[data-hyre-station-id][data-show-hyre-availability="1"]');
+        
+        // Filter out elements that are handled by api-accordion.js or hyre-stations-block
+        const poiCards = Array.from(allElements).filter(function(el) {
+            return !el.closest('.hyre-stations-block') && !el.classList.contains('ns-api-card');
+        });
 
         if (poiCards.length === 0) {
             console.log('Hyre: No POIs with car availability enabled');
@@ -178,7 +184,19 @@
     function displayAvailability(poiCard, data) {
         hideLoadingState(poiCard);
 
-        const contentDiv = poiCard.querySelector('.poi-card-content, .poi-content, .poi-highlight-content');
+        // Check if there's an accordion structure - if so, insert into accordion content
+        const accordionContent = poiCard.querySelector('.poi-api-accordion-content');
+        
+        // Find where to insert availability
+        let contentDiv;
+        if (accordionContent) {
+            // Insert into accordion content area
+            contentDiv = accordionContent;
+        } else {
+            // Fallback: insert after description (old behavior)
+            contentDiv = poiCard.querySelector('.poi-card-content, .poi-content, .poi-highlight-content');
+        }
+        
         if (!contentDiv) {
             console.warn('Hyre: Could not find content div');
             return;

@@ -295,7 +295,7 @@ $category_icon = placy_get_poi_category_icon( $poi_id );
             </div>
         <?php endif; ?>
         
-        <div class="poi-highlight-text prose prose-lg max-w-none">
+        <div class="poi-highlight-text">
             <?php echo wp_kses_post( $content ); ?>
         </div>
         

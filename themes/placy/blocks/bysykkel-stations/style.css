@@ -1,0 +1,192 @@
+/**
+ * Bysykkel Stations Block Styles
+ * 
+ * Accordion list with live availability for Trondheim Bysykkel stations.
+ */
+
+.bysykkel-stations-block {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+    border: 1px solid #e2e8f0;
+}
+
+.bysykkel-stations-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #6366f1;
+    margin: 0 0 1rem 0;
+}
+
+.bysykkel-stations-placeholder {
+    color: #94a3b8;
+    font-size: 0.875rem;
+    text-align: center;
+    padding: 2rem;
+    background: #f8fafc;
+    border-radius: 8px;
+}
+
+.bysykkel-stations-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.bysykkel-station-item {
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.bysykkel-station-item:last-child {
+    border-bottom: none;
+}
+
+.bysykkel-station-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 1rem 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.2s;
+}
+
+.bysykkel-station-header:hover {
+    background: #f8fafc;
+    margin: 0 -1rem;
+    padding: 1rem;
+    width: calc(100% + 2rem);
+}
+
+.bysykkel-station-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.bysykkel-station-name {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0;
+}
+
+.bysykkel-station-time {
+    font-size: 0.8125rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.bysykkel-station-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.bysykkel-map-btn {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.bysykkel-map-btn:hover {
+    background: #e2e8f0;
+    border-color: #cbd5e1;
+}
+
+.bysykkel-accordion-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #94a3b8;
+    transition: transform 0.2s;
+}
+
+.bysykkel-station-header[aria-expanded="true"] .bysykkel-accordion-icon {
+    transform: rotate(180deg);
+}
+
+.bysykkel-station-content {
+    padding: 0 0 1rem 0;
+}
+
+.bysykkel-station-content[hidden] {
+    display: none;
+}
+
+/* Availability display */
+.bysykkel-availability {
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.bysykkel-availability-loading {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #64748b;
+    font-size: 0.875rem;
+}
+
+.bysykkel-availability-loading .spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid #e2e8f0;
+    border-top-color: #6366f1;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.bysykkel-availability-data {
+    display: flex;
+    gap: 2rem;
+}
+
+.bysykkel-availability-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.bysykkel-availability-label {
+    font-size: 0.75rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.bysykkel-availability-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.bysykkel-availability-value.low {
+    color: #f59e0b;
+}
+
+.bysykkel-availability-value.empty {
+    color: #ef4444;
+}
+
+.bysykkel-availability-error {
+    color: #ef4444;
+    font-size: 0.875rem;
+}

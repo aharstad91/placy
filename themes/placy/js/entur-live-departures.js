@@ -38,8 +38,13 @@
      * Load all departures for all POI cards on the page
      */
     async function loadAllDepartures() {
-        // Find all POI cards with Entur data
-        const poiCards = document.querySelectorAll('[data-entur-stopplace-id][data-show-live-departures="1"]');
+        // Find all POI cards with Entur data (exclude new block structure which has its own script)
+        const allElements = document.querySelectorAll('[data-entur-stopplace-id][data-show-live-departures="1"]');
+        
+        // Filter out elements that are handled by api-accordion.js or bus-stops-block
+        const poiCards = Array.from(allElements).filter(function(el) {
+            return !el.closest('.bus-stops-block') && !el.classList.contains('ns-api-card');
+        });
 
         if (poiCards.length === 0) {
             console.log('Entur: No POIs with live departures enabled');
@@ -199,8 +204,19 @@
      * @param {Object} params - Request parameters
      */
     function displayDepartures(poiCard, result, params) {
+        // Check if there's an accordion structure - if so, insert into accordion content
+        const accordionContent = poiCard.querySelector('.poi-api-accordion-content');
+        
         // Find where to insert departures
-        const contentDiv = poiCard.querySelector('.poi-card-content, .poi-content, .poi-highlight-content, .poi-list-content, .poi-gallery-content');
+        let contentDiv;
+        if (accordionContent) {
+            // Insert into accordion content area
+            contentDiv = accordionContent;
+        } else {
+            // Fallback: insert after description (old behavior)
+            contentDiv = poiCard.querySelector('.poi-card-content, .poi-content, .poi-highlight-content, .poi-list-content, .poi-gallery-content');
+        }
+        
         if (!contentDiv) {
             console.warn('Entur: Could not find content div to insert departures');
             return;

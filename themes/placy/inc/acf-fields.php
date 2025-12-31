@@ -124,60 +124,6 @@ if ( function_exists( 'acf_add_local_field_group' ) ) {
 }
 
 /**
- * Register Story Fields
- */
-if ( function_exists( 'acf_add_local_field_group' ) ) {
-    acf_add_local_field_group( array(
-        'key' => 'group_story_fields',
-        'title' => 'Story Fields',
-        'fields' => array(
-            array(
-                'key' => 'field_story_customer',
-                'label' => 'Kunde',
-                'name' => 'customer',
-                'type' => 'post_object',
-                'instructions' => 'Velg hvilken kunde denne historien tilhører',
-                'required' => 1,
-                'post_type' => array(
-                    0 => 'customer',
-                ),
-                'allow_null' => 0,
-                'multiple' => 0,
-                'return_format' => 'object',
-            ),
-            array(
-                'key' => 'field_story_project',
-                'label' => 'Prosjekt',
-                'name' => 'project',
-                'type' => 'post_object',
-                'instructions' => 'Velg hvilket prosjekt denne historien tilhører',
-                'required' => 1,
-                'post_type' => array(
-                    0 => 'project',
-                ),
-                'allow_null' => 0,
-                'multiple' => 0,
-                'return_format' => 'object',
-            ),
-        ),
-        'location' => array(
-            array(
-                array(
-                    'param' => 'post_type',
-                    'operator' => '==',
-                    'value' => 'story',
-                ),
-            ),
-        ),
-        'menu_order' => 0,
-        'position' => 'normal',
-        'style' => 'default',
-        'label_placement' => 'top',
-        'instruction_placement' => 'label',
-    ) );
-}
-
-/**
  * Register Point Fields
  */
 if ( function_exists( 'acf_add_local_field_group' ) ) {
@@ -647,13 +593,13 @@ if ( function_exists( 'acf_add_local_field_group' ) ) {
             ),
             array(
                 'key' => 'field_theme_story_parent_story',
-                'label' => 'Parent Story',
+                'label' => 'Parent Project',
                 'name' => 'parent_story',
                 'type' => 'post_object',
-                'instructions' => 'Velg overordnet story som denne tema-story tilhører (for tilbake-knapp)',
+                'instructions' => 'Velg overordnet prosjekt som denne tema-story tilhører (for tilbake-knapp)',
                 'required' => 0,
                 'post_type' => array(
-                    0 => 'story',
+                    0 => 'project',
                 ),
                 'allow_null' => 1,
                 'multiple' => 0,
@@ -671,6 +617,129 @@ if ( function_exists( 'acf_add_local_field_group' ) ) {
         ),
         'menu_order' => 0,
         'position' => 'side',
+        'style' => 'default',
+        'label_placement' => 'top',
+        'instruction_placement' => 'label',
+    ) );
+    
+    // Theme Story - POI Relations (Mega-modal data)
+    acf_add_local_field_group( array(
+        'key' => 'group_theme_story_poi_fields',
+        'title' => 'Mega-Modal Innstillinger',
+        'fields' => array(
+            // Tab: Steder
+            array(
+                'key' => 'field_theme_story_poi_tab_places',
+                'label' => 'Steder',
+                'name' => '',
+                'type' => 'tab',
+                'placement' => 'top',
+            ),
+            array(
+                'key' => 'field_theme_story_all_locations',
+                'label' => 'Alle steder',
+                'name' => 'all_locations',
+                'type' => 'relationship',
+                'instructions' => 'Velg alle POI-er som skal vises i mega-modalen (under "All Locations")',
+                'required' => 0,
+                'post_type' => array(
+                    0 => 'placy_native_point',
+                    1 => 'placy_google_point',
+                ),
+                'filters' => array(
+                    0 => 'search',
+                    1 => 'post_type',
+                ),
+                'elements' => array(
+                    0 => 'featured_image',
+                ),
+                'min' => 0,
+                'max' => '',
+                'return_format' => 'object',
+            ),
+            array(
+                'key' => 'field_theme_story_highlighted_locations',
+                'label' => 'Fremhevede steder',
+                'name' => 'highlighted_locations',
+                'type' => 'relationship',
+                'instructions' => 'Velg steder som skal vises i front-seksjonen (kort-visningen)',
+                'required' => 0,
+                'post_type' => array(
+                    0 => 'placy_native_point',
+                    1 => 'placy_google_point',
+                ),
+                'filters' => array(
+                    0 => 'search',
+                    1 => 'post_type',
+                ),
+                'elements' => array(
+                    0 => 'featured_image',
+                ),
+                'min' => 0,
+                'max' => 6,
+                'return_format' => 'object',
+            ),
+            // Tab: Kart & Reise-innstillinger
+            array(
+                'key' => 'field_theme_story_poi_tab_map',
+                'label' => 'Kart & Reise',
+                'name' => '',
+                'type' => 'tab',
+                'placement' => 'top',
+            ),
+            array(
+                'key' => 'field_theme_story_map_zoom',
+                'label' => 'Kart zoom',
+                'name' => 'map_zoom',
+                'type' => 'number',
+                'instructions' => 'Standard zoomnivå for kartet (1-18). Kartsentrum hentes automatisk fra prosjektets koordinater.',
+                'required' => 0,
+                'default_value' => 13,
+                'min' => 1,
+                'max' => 18,
+                'step' => 1,
+            ),
+            array(
+                'key' => 'field_theme_story_travel_mode',
+                'label' => 'Standard reisemåte',
+                'name' => 'travel_mode',
+                'type' => 'select',
+                'instructions' => 'Standard transportmåte for reisetidsberegning',
+                'required' => 0,
+                'choices' => array(
+                    'walking' => 'Gåing',
+                    'cycling' => 'Sykkel',
+                    'driving' => 'Bil',
+                ),
+                'default_value' => 'walking',
+                'allow_null' => 0,
+                'multiple' => 0,
+                'return_format' => 'value',
+            ),
+            array(
+                'key' => 'field_theme_story_time_budget',
+                'label' => 'Tidsbudsjett (minutter)',
+                'name' => 'time_budget',
+                'type' => 'number',
+                'instructions' => 'Standard tidsbudsjett i minutter',
+                'required' => 0,
+                'default_value' => 15,
+                'min' => 5,
+                'max' => 120,
+                'step' => 5,
+            ),
+        ),
+        'location' => array(
+            array(
+                array(
+                    'param' => 'post_type',
+                    'operator' => '==',
+                    'value' => 'theme-story',
+                ),
+            ),
+        ),
+        'menu_order' => 1,
+        'position' => 'normal',
         'style' => 'default',
         'label_placement' => 'top',
         'instruction_placement' => 'label',
@@ -1249,7 +1318,7 @@ if ( function_exists( 'acf_add_local_field_group' ) ) {
                 array(
                     'param' => 'post_type',
                     'operator' => '==',
-                    'value' => 'story',
+                    'value' => 'project',
                 ),
             ),
         ),
@@ -1827,6 +1896,204 @@ if ( function_exists( 'acf_add_local_field_group' ) ) {
             ),
         ),
         'menu_order' => 0,
+        'position' => 'side',
+        'style' => 'default',
+        'label_placement' => 'top',
+        'instruction_placement' => 'label',
+    ) );
+}
+
+/**
+ * ============================================================================
+ * PROJECT SIDEBAR FIELDS
+ * Sidebar Navigation and Global Settings for Projects
+ * Note: Story chapters are handled by Story Chapter blocks, not ACF repeater
+ * ============================================================================
+ */
+
+/**
+ * Register Project Sidebar Navigation (Manual Curation)
+ * Allows custom navigation items beyond just chapters
+ */
+if ( function_exists( 'acf_add_local_field_group' ) ) {
+    acf_add_local_field_group( array(
+        'key' => 'group_project_sidebar_nav',
+        'title' => 'Sidebar Navigasjon',
+        'fields' => array(
+            array(
+                'key' => 'field_project_sidebar_header',
+                'label' => 'Sidebar Header',
+                'name' => 'sidebar_header',
+                'type' => 'group',
+                'layout' => 'block',
+                'sub_fields' => array(
+                    array(
+                        'key' => 'field_sidebar_header_title',
+                        'label' => 'Tittel',
+                        'name' => 'title',
+                        'type' => 'text',
+                        'default_value' => 'Story Index',
+                        'wrapper' => array( 'width' => '50' ),
+                    ),
+                    array(
+                        'key' => 'field_sidebar_header_subtitle',
+                        'label' => 'Undertittel (adresse)',
+                        'name' => 'subtitle',
+                        'type' => 'text',
+                        'placeholder' => 'F.eks. Ferjemannsveien 10',
+                        'wrapper' => array( 'width' => '50' ),
+                    ),
+                ),
+            ),
+            array(
+                'key' => 'field_project_sidebar_nav_items',
+                'label' => 'Navigasjonselementer',
+                'name' => 'sidebar_nav_items',
+                'type' => 'repeater',
+                'instructions' => 'Kuratert liste med navigasjonselementer. Kan inkludere kapitler og egendefinerte scroll-ankere.',
+                'required' => 0,
+                'min' => 0,
+                'max' => 20,
+                'layout' => 'table',
+                'button_label' => 'Legg til navigasjonselement',
+                'sub_fields' => array(
+                    array(
+                        'key' => 'field_nav_item_label',
+                        'label' => 'Tekst',
+                        'name' => 'label',
+                        'type' => 'text',
+                        'required' => 1,
+                        'placeholder' => 'Daily logistics',
+                        'wrapper' => array( 'width' => '30' ),
+                    ),
+                    array(
+                        'key' => 'field_nav_item_anchor',
+                        'label' => 'Anker',
+                        'name' => 'anchor',
+                        'type' => 'text',
+                        'required' => 1,
+                        'placeholder' => 'daily-logistics',
+                        'prepend' => '#',
+                        'wrapper' => array( 'width' => '25' ),
+                    ),
+                    array(
+                        'key' => 'field_nav_item_icon',
+                        'label' => 'Ikon',
+                        'name' => 'icon',
+                        'type' => 'select',
+                        'required' => 0,
+                        'choices' => array(
+                            'train' => '🚂 Tog',
+                            'bus' => '🚌 Buss',
+                            'bike' => '🚲 Sykkel',
+                            'car' => '🚗 Bil',
+                            'walk' => '🚶 Gange',
+                            'food' => '🍽️ Mat',
+                            'coffee' => '☕ Kaffe',
+                            'shopping' => '🛒 Shopping',
+                            'hotel' => '🏨 Hotell',
+                            'meeting' => '👥 Møte',
+                            'nature' => '🌲 Natur',
+                            'gym' => '💪 Trening',
+                            'culture' => '🎭 Kultur',
+                            'nightlife' => '🌙 Uteliv',
+                            'summary' => '📄 Oppsummering',
+                        ),
+                        'default_value' => 'walk',
+                        'wrapper' => array( 'width' => '25' ),
+                    ),
+                    array(
+                        'key' => 'field_nav_item_type',
+                        'label' => 'Type',
+                        'name' => 'type',
+                        'type' => 'select',
+                        'choices' => array(
+                            'chapter' => 'Kapittel (åpner modal)',
+                            'scroll' => 'Scroll (kun scroll)',
+                        ),
+                        'default_value' => 'chapter',
+                        'wrapper' => array( 'width' => '20' ),
+                    ),
+                ),
+            ),
+        ),
+        'location' => array(
+            array(
+                array(
+                    'param' => 'post_type',
+                    'operator' => '==',
+                    'value' => 'project',
+                ),
+            ),
+        ),
+        'menu_order' => 11,
+        'position' => 'normal',
+        'style' => 'default',
+        'label_placement' => 'top',
+        'instruction_placement' => 'label',
+    ) );
+}
+
+/**
+ * Register Project Global Settings (Travel Mode, Time Budget defaults)
+ */
+if ( function_exists( 'acf_add_local_field_group' ) ) {
+    acf_add_local_field_group( array(
+        'key' => 'group_project_global_settings',
+        'title' => 'Global Innstillinger (Neighborhood Story)',
+        'fields' => array(
+            array(
+                'key' => 'field_project_default_travel_mode',
+                'label' => 'Standard reisemodus',
+                'name' => 'default_travel_mode',
+                'type' => 'select',
+                'instructions' => 'Standard reisemodus ved første besøk',
+                'required' => 0,
+                'choices' => array(
+                    'walk' => 'Til fots',
+                    'bike' => 'Sykkel',
+                    'car' => 'Bil',
+                ),
+                'default_value' => 'walk',
+                'wrapper' => array( 'width' => '50' ),
+            ),
+            array(
+                'key' => 'field_project_default_time_budget',
+                'label' => 'Standard tidsbudsjett',
+                'name' => 'default_time_budget',
+                'type' => 'select',
+                'instructions' => 'Standard tidsbudsjett i minutter',
+                'required' => 0,
+                'choices' => array(
+                    '5' => '≤ 5 min',
+                    '10' => '≤ 10 min',
+                    '15' => '≤ 15 min',
+                    '20' => '≤ 20 min',
+                    '30' => '≤ 30 min',
+                ),
+                'default_value' => '10',
+                'wrapper' => array( 'width' => '50' ),
+            ),
+            array(
+                'key' => 'field_project_enable_global_map',
+                'label' => 'Aktiver globalt kart',
+                'name' => 'enable_global_map',
+                'type' => 'true_false',
+                'instructions' => 'Vis "Open full map"-knapp som samler alle POIs fra alle kapitler',
+                'default_value' => 1,
+                'ui' => 1,
+            ),
+        ),
+        'location' => array(
+            array(
+                array(
+                    'param' => 'post_type',
+                    'operator' => '==',
+                    'value' => 'project',
+                ),
+            ),
+        ),
+        'menu_order' => 12,
         'position' => 'side',
         'style' => 'default',
         'label_placement' => 'top',

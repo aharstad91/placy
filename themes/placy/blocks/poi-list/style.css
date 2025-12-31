@@ -1,1 +1,646 @@
 .mb-2{margin-bottom:.5rem}.mb-6{margin-bottom:1.5rem}.mt-1{margin-top:.25rem}.line-clamp-2{overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2}.block{display:block}.inline-block{display:inline-block}.flex{display:flex}.h-24{height:6rem}.h-3{height:.75rem}.h-4{height:1rem}.w-24{width:6rem}.w-3{width:.75rem}.w-4{width:1rem}.w-full{width:100%}.min-w-0{min-width:0}.flex-1{flex:1 1 0%}.flex-shrink-0{flex-shrink:0}.flex-col{flex-direction:column}.items-start{align-items:flex-start}.items-center{align-items:center}.justify-between{justify-content:space-between}.gap-1{gap:.25rem}.gap-2{gap:.5rem}.gap-4{gap:1rem}.overflow-hidden{overflow:hidden}.whitespace-nowrap{white-space:nowrap}.rounded{border-radius:.25rem}.rounded-lg{border-radius:.5rem}.border{border-width:1px}.border-2{border-width:2px}.border-dashed{border-style:dashed}.border-gray-200{--tw-border-opacity:1;border-color:rgb(229 231 235/var(--tw-border-opacity,1))}.border-gray-300{--tw-border-opacity:1;border-color:rgb(209 213 219/var(--tw-border-opacity,1))}.bg-gray-100{--tw-bg-opacity:1;background-color:rgb(243 244 246/var(--tw-bg-opacity,1))}.bg-gray-50{background-color:rgb(249 250 251/var(--tw-bg-opacity,1))}.bg-gray-50,.bg-white{--tw-bg-opacity:1}.bg-white{background-color:rgb(255 255 255/var(--tw-bg-opacity,1))}.object-cover{-o-object-fit:cover;object-fit:cover}.p-4{padding:1rem}.p-8{padding:2rem}.px-2{padding-left:.5rem;padding-right:.5rem}.px-4{padding-left:1rem;padding-right:1rem}.py-1{padding-top:.25rem;padding-bottom:.25rem}.py-2{padding-top:.5rem;padding-bottom:.5rem}.text-center{text-align:center}.text-\[10px\]{font-size:10px}.text-lg{font-size:1.125rem;line-height:1.75rem}.text-sm{font-size:.875rem;line-height:1.25rem}.text-xs{font-size:.75rem;line-height:1rem}.font-medium{font-weight:500}.font-semibold{font-weight:600}.text-gray-400{--tw-text-opacity:1;color:rgb(156 163 175/var(--tw-text-opacity,1))}.text-gray-500{--tw-text-opacity:1;color:rgb(107 114 128/var(--tw-text-opacity,1))}.text-gray-600{--tw-text-opacity:1;color:rgb(75 85 99/var(--tw-text-opacity,1))}.text-gray-700{--tw-text-opacity:1;color:rgb(55 65 81/var(--tw-text-opacity,1))}.text-gray-900{--tw-text-opacity:1;color:rgb(17 24 39/var(--tw-text-opacity,1))}.text-yellow-500{--tw-text-opacity:1;color:rgb(234 179 8/var(--tw-text-opacity,1))}.transition-all{transition-property:all;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}.transition-colors{transition-property:color,background-color,border-color,text-decoration-color,fill,stroke;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}.duration-200{transition-duration:.2s}.duration-300{transition-duration:.3s}.poi-list-container{margin:2rem 0}.poi-list-card{margin-bottom:2rem;background:#fff;border-radius:.5rem;overflow:hidden;box-shadow:0 1px 3px 0 rgba(0,0,0,.1);transition:box-shadow .2s}.poi-list-card img{width:6rem!important;height:6rem!important;-o-object-fit:cover!important;object-fit:cover!important;max-width:none!important;max-height:none!important}.poi-list-card:hover{box-shadow:0 4px 6px -1px rgba(0,0,0,.1)}.poi-list-card-content{padding:1.5rem}.block-editor-block-list__block .poi-list-container{margin:1.5rem 0;padding:1rem;background:#f9fafb;border-radius:.5rem}.acf-block-preview .poi-list-card button{pointer-events:none}.hover\:border-gray-300:hover{--tw-border-opacity:1;border-color:rgb(209 213 219/var(--tw-border-opacity,1))}.hover\:bg-gray-200:hover{--tw-bg-opacity:1;background-color:rgb(229 231 235/var(--tw-bg-opacity,1))}.hover\:text-gray-600:hover{--tw-text-opacity:1;color:rgb(75 85 99/var(--tw-text-opacity,1))}
+
+/* ============================================
+   POI API ACCORDION STYLES - FIGMA DESIGN
+   ============================================ */
+
+.poi-api-accordion {
+    margin-top: 16px;
+}
+
+.poi-api-accordion-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.poi-api-accordion-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    gap: 16px;
+}
+
+.poi-api-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+}
+
+/* Icon wrapper with background colors by type */
+.poi-api-icon-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+
+.poi-api-icon-wrapper[data-api-type="entur"] {
+    background: #22c55e;
+}
+
+.poi-api-icon-wrapper[data-api-type="bysykkel"] {
+    background: #1f2937;
+}
+
+.poi-api-icon-wrapper[data-api-type="hyre"] {
+    background: #22c55e;
+}
+
+.poi-api-icon {
+    width: 20px;
+    height: 20px;
+    color: #ffffff;
+}
+
+.poi-api-hyre-badge {
+    font-size: 10px;
+    font-weight: 800;
+    color: #ffffff;
+    letter-spacing: 0.05em;
+}
+
+.poi-api-title-group {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.poi-api-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #111827;
+    margin: 0;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.poi-api-travel-time {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.poi-api-travel-time svg {
+    flex-shrink: 0;
+    color: #9ca3af;
+}
+
+.poi-api-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.poi-api-map-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #374151;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.poi-api-map-btn:hover {
+    background: #f3f4f6;
+    border-color: #d1d5db;
+}
+
+.poi-api-map-btn svg {
+    color: #6b7280;
+}
+
+.poi-api-accordion-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.poi-api-accordion-trigger:hover {
+    background: #f3f4f6;
+}
+
+.poi-api-accordion-chevron {
+    width: 20px;
+    height: 20px;
+    color: #9ca3af;
+    transition: transform 0.2s ease;
+}
+
+/* Expanded state */
+.poi-api-accordion[data-expanded="true"] .poi-api-accordion-chevron {
+    transform: rotate(180deg);
+}
+
+.poi-api-accordion-body {
+    display: none;
+    overflow: hidden;
+    border-top: 1px solid #f3f4f6;
+}
+
+.poi-api-accordion[data-expanded="true"] .poi-api-accordion-body {
+    display: block;
+}
+
+.poi-api-accordion-content {
+    background: white;
+}
+
+/* Loading state */
+.poi-api-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 32px;
+    color: rgb(156 163 175);
+    font-size: 14px;
+}
+
+.poi-api-loading svg {
+    width: 20px;
+    height: 20px;
+}
+
+.poi-api-loading .animate-spin {
+    animation: spin 1s linear infinite;
+}
+
+/* Legacy support */
+.poi-api-accordion-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: rgb(17 24 39);
+}
+
+.poi-api-accordion-icon {
+    width: 20px;
+    height: 20px;
+}
+
+/* Icon colors by API type */
+[data-api-type="entur"] .poi-api-accordion-icon {
+    color: #e11d48;
+}
+
+[data-api-type="bysykkel"] .poi-api-accordion-icon {
+    color: #059669;
+}
+
+[data-api-type="hyre"] .poi-api-accordion-icon {
+    color: #2563eb;
+}
+
+.poi-api-accordion-chevron {
+    width: 20px;
+    height: 20px;
+    color: rgb(156 163 175);
+    transition: transform 0.2s ease;
+}
+
+/* Expanded state */
+.poi-api-accordion[data-expanded="true"] .poi-api-accordion-chevron {
+    transform: rotate(180deg);
+}
+
+.poi-api-accordion-body {
+    display: none;
+    overflow: hidden;
+}
+
+.poi-api-accordion[data-expanded="true"] .poi-api-accordion-body {
+    display: block;
+}
+
+.poi-api-accordion-content {
+    padding: 16px;
+    background: white;
+}
+
+/* Loading state */
+.poi-api-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 24px;
+    color: rgb(156 163 175);
+    font-size: 14px;
+}
+
+.poi-api-loading svg {
+    width: 20px;
+    height: 20px;
+}
+
+.poi-api-loading .animate-spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Hide loading when content is loaded */
+.poi-api-accordion-content:has(.bysykkel-section),
+.poi-api-accordion-content:has(.entur-section),
+.poi-api-accordion-content:has(.hyre-section),
+.poi-api-accordion-content:has(.bysykkel-availability-section),
+.poi-api-accordion-content:has(.entur-departures-section),
+.poi-api-accordion-content:has(.hyre-availability-section) {
+    padding: 0;
+}
+
+.poi-api-accordion-content:has(.bysykkel-section) .poi-api-loading,
+.poi-api-accordion-content:has(.entur-section) .poi-api-loading,
+.poi-api-accordion-content:has(.hyre-section) .poi-api-loading,
+.poi-api-accordion-content:has(.bysykkel-availability-section) .poi-api-loading,
+.poi-api-accordion-content:has(.entur-departures-section) .poi-api-loading,
+.poi-api-accordion-content:has(.hyre-availability-section) .poi-api-loading {
+    display: none;
+}
+
+/* ============================================
+   API SECTIONS - FIGMA DESIGN STYLES
+   ============================================ */
+
+/* Common API Section Styles */
+.entur-section,
+.bysykkel-section,
+.hyre-section {
+    padding: 20px;
+    background: #ffffff;
+}
+
+/* API Section Header */
+.api-section-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.api-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.api-status-dot--active {
+    background-color: #22c55e;
+}
+
+.api-status-dot--inactive {
+    background-color: #d1d5db;
+}
+
+.api-section-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #374151;
+}
+
+/* API Section Footer */
+.api-section-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid #f3f4f6;
+}
+
+.api-attribution-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #f97316;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.api-attribution-link:hover {
+    color: #ea580c;
+    text-decoration: underline;
+}
+
+.api-attribution-link svg {
+    flex-shrink: 0;
+}
+
+.api-timestamp {
+    font-size: 12px;
+    color: #9ca3af;
+}
+
+.api-empty-state {
+    padding: 24px;
+    text-align: center;
+    color: #6b7280;
+    font-size: 14px;
+}
+
+/* ============================================
+   ENTUR DEPARTURES - FIGMA DESIGN
+   ============================================ */
+
+.entur-departures-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.entur-departure-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #f9fafb;
+}
+
+.entur-departure-row:last-child {
+    border-bottom: none;
+}
+
+.entur-departure-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+}
+
+.entur-line-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 24px;
+    padding: 0 8px;
+    background: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #374151;
+}
+
+.entur-destination {
+    font-size: 14px;
+    color: #374151;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.entur-departure-time {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.entur-time-value {
+    font-size: 14px;
+    font-weight: 700;
+    color: #111827;
+}
+
+.entur-time-relative {
+    font-size: 13px;
+    color: #6b7280;
+}
+
+/* ============================================
+   BYSYKKEL AVAILABILITY - FIGMA DESIGN
+   ============================================ */
+
+.bysykkel-stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.bysykkel-stat-card {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+}
+
+.bysykkel-stat-card.api-value--empty {
+    border-color: #fecaca;
+    background: #fef2f2;
+}
+
+.bysykkel-stat-card.api-value--low {
+    border-color: #fed7aa;
+    background: #fffbeb;
+}
+
+.bysykkel-stat-value {
+    display: block;
+    font-size: 36px;
+    font-weight: 700;
+    color: #111827;
+    line-height: 1;
+    margin-bottom: 8px;
+}
+
+.bysykkel-stat-card.api-value--empty .bysykkel-stat-value {
+    color: #dc2626;
+}
+
+.bysykkel-stat-card.api-value--low .bysykkel-stat-value {
+    color: #d97706;
+}
+
+.bysykkel-stat-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #6b7280;
+}
+
+/* ============================================
+   HYRE AVAILABILITY - FIGMA DESIGN
+   ============================================ */
+
+.hyre-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.hyre-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.hyre-car-icon {
+    color: #6b7280;
+}
+
+.hyre-brand-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+}
+
+.hyre-charging-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.hyre-charging-badge svg {
+    color: #f59e0b;
+}
+
+.hyre-availability-row {
+    margin-bottom: 12px;
+}
+
+.hyre-cars-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.hyre-mini-car {
+    color: #6b7280;
+}
+
+.hyre-mini-car.api-value--available {
+    color: #22c55e;
+}
+
+.hyre-mini-car.api-value--low {
+    color: #f59e0b;
+}
+
+.hyre-mini-car.api-value--empty {
+    color: #ef4444;
+}
+
+.hyre-cars-count {
+    font-size: 14px;
+    font-weight: 600;
+    color: #22c55e;
+}
+
+.hyre-cars-count.api-value--low {
+    color: #f59e0b;
+}
+
+.hyre-cars-count.api-value--empty {
+    color: #ef4444;
+}
+
+.hyre-capacity {
+    font-size: 14px;
+    color: #6b7280;
+}
+
+.hyre-vehicles-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #f3f4f6;
+}
+
+.hyre-vehicle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.hyre-vehicle-model {
+    font-size: 14px;
+    color: #374151;
+}
+
+.hyre-vehicle-count {
+    font-size: 14px;
+    color: #6b7280;
+}
+
+.hyre-book-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #f97316;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.hyre-book-link:hover {
+    color: #ea580c;
+    text-decoration: underline;
+}
+
+.hyre-book-link svg {
+    flex-shrink: 0;
+}
+
+/* Override default section styling inside accordion */
+.poi-api-accordion-content .bysykkel-availability-section,
+.poi-api-accordion-content .entur-departures-section,
+.poi-api-accordion-content .hyre-availability-section {
+    margin-top: 0 !important;
+    padding-top: 16px !important;
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+    padding-bottom: 16px !important;
+    border-top: none !important;
+}

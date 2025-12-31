@@ -317,11 +317,14 @@ function placy_fetch_hyre_vehicle_types() {
     foreach ( $data['data']['vehicle_types'] as $vt ) {
         $id = $vt['vehicle_type_id'];
         // Build readable name from make and model
-        $name = trim( ( $vt['make'] ?? '' ) . ' ' . ( $vt['model'] ?? '' ) );
-        if ( empty( $name ) && isset( $vt['name'][0]['text'] ) ) {
-            $name = $vt['name'][0]['text'];
+        // Handle case where make/model could be arrays or strings
+        $make = isset( $vt['make'] ) ? ( is_array( $vt['make'] ) ? ( $vt['make'][0]['text'] ?? '' ) : $vt['make'] ) : '';
+        $model = isset( $vt['model'] ) ? ( is_array( $vt['model'] ) ? ( $vt['model'][0]['text'] ?? '' ) : $vt['model'] ) : '';
+        $name = trim( $make . ' ' . $model );
+        if ( empty( $name ) && isset( $vt['name'] ) ) {
+            $name = is_array( $vt['name'] ) ? ( $vt['name'][0]['text'] ?? '' ) : $vt['name'];
         }
-        $types[ $id ] = $name;
+        $types[ $id ] = $name ?: $id;
     }
     
     set_transient( $cache_key, $types, HOUR_IN_SECONDS );
