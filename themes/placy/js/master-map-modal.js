@@ -226,9 +226,12 @@
         }
 
         // Standard map configuration (shared across all modals)
+        // Allow overriding style via localized `window.placyMapbox.style` (set in PHP)
+        var mapStyle = (window.placyMapbox && window.placyMapbox.style) ? window.placyMapbox.style : 'mapbox://styles/mapbox/light-v11';
+
         mapInstance = new mapboxgl.Map({
             container: mapContainer,
-            style: 'mapbox://styles/mapbox/light-v11',
+            style: mapStyle,
             center: [projectLng, projectLat],
             zoom: 14,
             attributionControl: true
