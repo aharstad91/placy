@@ -232,7 +232,7 @@
 
         // Standard map configuration (shared across all modals)
         // Allow overriding style via localized `window.placyMapbox.style` (set in PHP)
-        var mapStyle = (window.placyMapbox && window.placyMapbox.style) ? window.placyMapbox.style : 'mapbox://styles/mapbox/light-v11';
+        var mapStyle = (window.placyMapbox && window.placyMapbox.style) ? window.placyMapbox.style : 'mapbox://styles/mapbox/streets-v12';
 
         mapInstance = new mapboxgl.Map({
             container: mapContainer,

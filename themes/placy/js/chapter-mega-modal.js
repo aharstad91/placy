@@ -1659,7 +1659,7 @@
             
             // Create new map with bird's eye view (top-down, no 3D tilt)
             // Use bounds center as initial center for smoother load
-            var drawerMapStyle = (window.placyMapbox && window.placyMapbox.style) ? window.placyMapbox.style : 'mapbox://styles/mapbox/light-v11';
+            var drawerMapStyle = (window.placyMapbox && window.placyMapbox.style) ? window.placyMapbox.style : 'mapbox://styles/mapbox/streets-v12';
             // Use bounds center as initial center for smoother load
             window.placyDrawerMap = new mapboxgl.Map({
                 container: mapContainer,
