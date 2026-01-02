@@ -11,6 +11,11 @@
 (function() {
     'use strict';
 
+    // Ensure a sane default style is available if not localized by PHP
+    if (typeof window !== 'undefined' && window.placyMapbox && !window.placyMapbox.style) {
+        window.placyMapbox.style = 'mapbox://styles/mapbox/streets-v12';
+    }
+
     // Global state
     window.placyChapterModals = window.placyChapterModals || {};
     
