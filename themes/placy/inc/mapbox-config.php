@@ -59,6 +59,7 @@ function placy_localize_mapbox_settings() {
         'accessToken' => placy_get_mapbox_token(),
         'defaultCenter' => array( 6.1326, 62.3113 ), // Ranheim coordinates [lng, lat]
         'defaultZoom' => 13,
+        // Mapbox Default gallery style: https://www.mapbox.com/gallery#mapbox-default
         'style' => 'mapbox://styles/mapbox/streets-v12'
     ) );
 }
