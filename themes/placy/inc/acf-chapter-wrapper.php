@@ -334,9 +334,10 @@ function placy_get_point_data( $post_id ) {
         $data['address'] = isset( $cache_data['formatted_address'] ) ? $cache_data['formatted_address'] : '';
         
         // Get photo URL from cache photos array
-        if ( isset( $cache_data['photos'][0]['name'] ) && defined( 'GOOGLE_PLACES_API_KEY' ) ) {
+        if ( isset( $cache_data['photos'][0]['name'] ) ) {
             $photo_reference = $cache_data['photos'][0]['name'];
-            $data['image'] = 'https://places.googleapis.com/v1/' . $photo_reference . '/media?maxWidthPx=400&key=' . GOOGLE_PLACES_API_KEY;
+            // Use caching proxy to reduce API calls (30-day cache)
+            $data['image'] = rest_url( 'placy/v1/photo/proxy/' . urlencode( $photo_reference ) ) . '?maxwidth=400';
         }
     } else {
         // Native Point - get data from ACF

@@ -8,7 +8,7 @@
 
 ## Communication Style
 
-Act as a calm, critical advisor.
+Act as a calm advisor.
 
 **Do NOT:**
 - Oversell solutions
@@ -17,8 +17,7 @@ Act as a calm, critical advisor.
 **DO:**
 1. Identify weak assumptions
 2. Point out logical gaps
-3. Highlight hidden risks and trade-offs
-4. Say clearly what is unclear or unsupported
+3. Say clearly what is unclear or unsupported
 
 If something is risky or wrong, say it directly. No hedging.
 
@@ -38,7 +37,7 @@ If something is risky or wrong, say it directly. No hedging.
 2. **New features** - ask clarifying questions first
 3. **Breaking changes** - inform and fix immediately
 4. **Validate programmatically** - check functionality works via WP-CLI/terminal
-5. **Chrome MCP** - only when explicitly requested
+5. **Chrome MCP** - always use and setup tests, we have access to several Chrome MCP Servers
 
 **Code Standards:**
 - All code/comments in **English**
@@ -276,11 +275,6 @@ define('WP_DEBUG_LOG', true);  # Logs to /wp-content/debug.log
 - **Config**: `/tailwind.config.js`
 
 **CRITICAL**: Always run `npm run watch:css` when developing.
-
-### Custom Colors
-- `overvik-green`: #78908E
-- `overvik-light`: #D1E5E6
-- `overvik-dark`: #1a1a1a
 
 ### Fonts
 - **Primary**: Figtree (Google Fonts)

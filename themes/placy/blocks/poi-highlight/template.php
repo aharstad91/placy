@@ -188,7 +188,8 @@ $category_icon = placy_get_poi_category_icon( $poi_id );
     <?php elseif ( isset( $place_data_for_photo_hl ) && ! empty( $place_data_for_photo_hl['photo_reference'] ) ) : ?>
         <!-- Google Places photo if no featured image -->
         <?php 
-            $photo_url_hl = 'https://places.googleapis.com/v1/' . $place_data_for_photo_hl['photo_reference'] . '/media?maxWidthPx=1200&key=' . ( defined( 'GOOGLE_PLACES_API_KEY' ) ? GOOGLE_PLACES_API_KEY : '' );
+            // Use caching proxy to reduce API calls (30-day cache)
+            $photo_url_hl = rest_url( 'placy/v1/photo/proxy/' . urlencode( $place_data_for_photo_hl['photo_reference'] ) ) . '?maxwidth=1200';
         ?>
         <div class="poi-highlight-image mb-6 rounded-lg overflow-hidden">
             <img src="<?php echo esc_url( $photo_url_hl ); ?>" 

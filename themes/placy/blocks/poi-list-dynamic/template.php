@@ -257,8 +257,8 @@ if ( $places_enabled ) {
                                 </div>
                             <?php elseif ( isset( $place_data_for_photo ) && ! empty( $place_data_for_photo['photo_reference'] ) ) : ?>
                                 <?php 
-                                    // Show Google Places photo if no featured image
-                                    $photo_url_list = 'https://places.googleapis.com/v1/' . $place_data_for_photo['photo_reference'] . '/media?maxWidthPx=400&key=' . ( defined( 'GOOGLE_PLACES_API_KEY' ) ? GOOGLE_PLACES_API_KEY : '' );
+                                    // Use caching proxy to reduce API calls (30-day cache)
+                                    $photo_url_list = rest_url( 'placy/v1/photo/proxy/' . urlencode( $place_data_for_photo['photo_reference'] ) ) . '?maxwidth=400';
                                 ?>
                                 <div class="flex-shrink-0">
                                     <img src="<?php echo esc_url( $photo_url_list ); ?>" 

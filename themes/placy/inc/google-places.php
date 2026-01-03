@@ -274,8 +274,11 @@ function placy_register_places_api_endpoints() {
         ),
     ) );
     
-    // Places Photo endpoint
-    register_rest_route( 'placy/v1', '/places/photo/(?P<photo_reference>[a-zA-Z0-9_-]+)', array(
+    // Places Photo caching proxy endpoint - supports both old and new API formats
+    // Examples: 
+    //   Old: /wp-json/placy/v1/photo/proxy/AeJBBaH123...?maxwidth=400
+    //   New: /wp-json/placy/v1/photo/proxy/places%2FChIJN1t_tDeuEmsRUsoyG83frY4%2Fphotos%2FAeJBBaH123...?maxwidth=400
+    register_rest_route( 'placy/v1', '/photo/proxy/(?P<photo_reference>.+)', array(
         'methods' => 'GET',
         'callback' => 'placy_places_photo',
         'permission_callback' => '__return_true',
@@ -283,12 +286,13 @@ function placy_register_places_api_endpoints() {
             'photo_reference' => array(
                 'required' => true,
                 'type' => 'string',
-                'description' => 'Google Places photo reference',
+                'description' => 'Google Places photo reference (URL encoded for new API format)',
+                'sanitize_callback' => 'sanitize_text_field',
             ),
             'maxwidth' => array(
                 'required' => false,
                 'type' => 'integer',
-                'description' => 'Maximum photo width',
+                'description' => 'Maximum photo width in pixels',
                 'default' => 400,
             ),
         ),
@@ -510,7 +514,8 @@ function placy_places_nearby_search( $request ) {
 }
 
 /**
- * Handle Places Photo API request
+ * Handle Places Photo API request with 30-day caching proxy
+ * Compliant with Google Places API terms - caches images for up to 30 days
  *
  * @param WP_REST_Request $request Request object
  * @return WP_HTTP_Response|WP_Error Response or error
@@ -518,6 +523,30 @@ function placy_places_nearby_search( $request ) {
 function placy_places_photo( $request ) {
     $photo_reference = $request->get_param( 'photo_reference' );
     $max_width = $request->get_param( 'maxwidth' );
+    
+    // Validate parameters
+    if ( empty( $photo_reference ) ) {
+        return new WP_Error(
+            'missing_parameter',
+            'Photo reference is required',
+            array( 'status' => 400 )
+        );
+    }
+    
+    // Create cache key based on photo reference and size
+    $cache_key = 'placy_photo_' . md5( $photo_reference . '_' . $max_width );
+    
+    // Check if we have a cached image (30 days)
+    $cached_image = get_transient( $cache_key );
+    
+    if ( false !== $cached_image ) {
+        // Serve cached image with proper headers
+        header( 'Content-Type: image/jpeg' );
+        header( 'Cache-Control: public, max-age=2592000' ); // 30 days
+        header( 'Expires: ' . gmdate( 'D, d M Y H:i:s', time() + 2592000 ) . ' GMT' );
+        echo $cached_image;
+        exit;
+    }
     
     // Get API key
     $api_key = defined( 'GOOGLE_PLACES_API_KEY' ) ? GOOGLE_PLACES_API_KEY : '';
@@ -530,17 +559,59 @@ function placy_places_photo( $request ) {
         );
     }
     
-    // Build Google Places Photo URL
-    $photo_url = add_query_arg( array(
-        'maxwidth' => $max_width,
-        'photo_reference' => $photo_reference,
-        'key' => $api_key,
-    ), 'https://maps.googleapis.com/maps/api/place/photo' );
+    // Determine which API format to use
+    $photo_url = '';
+    if ( strpos( $photo_reference, 'places/' ) === 0 ) {
+        // New Places API (New) format
+        $photo_url = 'https://places.googleapis.com/v1/' . $photo_reference . '/media?maxWidthPx=' . $max_width . '&key=' . $api_key;
+    } else {
+        // Old API format
+        $photo_url = add_query_arg( array(
+            'maxwidth' => $max_width,
+            'photo_reference' => $photo_reference,
+            'key' => $api_key,
+        ), 'https://maps.googleapis.com/maps/api/place/photo' );
+    }
     
-    // Return the URL for frontend to fetch directly
-    // This avoids storing/proxying images through WordPress
-    return rest_ensure_response( array(
-        'success' => true,
-        'photoUrl' => $photo_url,
+    // Fetch image from Google
+    $response = wp_remote_get( $photo_url, array(
+        'timeout' => 15,
     ) );
+    
+    if ( is_wp_error( $response ) ) {
+        return new WP_Error(
+            'fetch_failed',
+            'Failed to fetch image from Google: ' . $response->get_error_message(),
+            array( 'status' => 500 )
+        );
+    }
+    
+    $response_code = wp_remote_retrieve_response_code( $response );
+    if ( $response_code !== 200 ) {
+        return new WP_Error(
+            'api_error',
+            'Google API returned error: ' . $response_code,
+            array( 'status' => $response_code )
+        );
+    }
+    
+    $image_data = wp_remote_retrieve_body( $response );
+    
+    if ( empty( $image_data ) ) {
+        return new WP_Error(
+            'empty_response',
+            'Empty image data received',
+            array( 'status' => 500 )
+        );
+    }
+    
+    // Cache the image for 30 days (Google's allowed cache duration)
+    set_transient( $cache_key, $image_data, 30 * DAY_IN_SECONDS );
+    
+    // Serve the image with proper caching headers
+    header( 'Content-Type: image/jpeg' );
+    header( 'Cache-Control: public, max-age=2592000' ); // 30 days browser cache
+    header( 'Expires: ' . gmdate( 'D, d M Y H:i:s', time() + 2592000 ) . ' GMT' );
+    echo $image_data;
+    exit;
 }

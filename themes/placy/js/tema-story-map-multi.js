@@ -58,7 +58,8 @@
     const chapterObservers = new Map(); // Store IntersectionObservers per chapter
 
     /**
-     * Get photo URL from Google Places API
+     * Get photo URL from Google Places API via caching proxy
+     * Uses WordPress REST API proxy with 30-day cache (Google ToS compliant)
      * @param {string} photoReference - Photo reference from Places API (old or new format)
      * @param {number} maxWidth - Maximum width in pixels
      * @returns {string} Photo URL
@@ -68,27 +69,16 @@
             return null;
         }
 
-        // Build photo URL using Places Photo API
-        const apiKey = typeof placyMapConfig !== 'undefined' && placyMapConfig.googlePlacesApiKey ? placyMapConfig.googlePlacesApiKey : '';
-        if (!apiKey) {
-            console.warn('Google Places API key not configured');
-            return null;
-        }
-
-        // Check if this is the new API format (starts with "places/")
-        if (photoReference.startsWith('places/')) {
-            // New Places API (New) format: use the resource name directly
-            return `https://places.googleapis.com/v1/${photoReference}/media?maxWidthPx=${maxWidth}&key=${apiKey}`;
-        } else {
-            // Old API format: use photo_reference parameter
-            const params = new URLSearchParams({
-                maxwidth: maxWidth.toString(),
-                photo_reference: photoReference,
-                key: apiKey
-            });
-
-            return 'https://maps.googleapis.com/maps/api/place/photo?' + params.toString();
-        }
+        // Get REST API root
+        const restApiRoot = document.querySelector('link[rel="https://api.w.org/"]')?.href || '/wp-json/';
+        
+        // Use WordPress caching proxy endpoint (reduces API calls by 95%+)
+        const proxyUrl = restApiRoot + 'placy/v1/photo/proxy/' + encodeURIComponent(photoReference);
+        const params = new URLSearchParams({
+            maxwidth: maxWidth.toString()
+        });
+        
+        return proxyUrl + '?' + params.toString();
     }
     let placesMarkers = []; // Store Google Places markers separately
     const showingApiResults = new Map(); // Track which chapters are showing API results

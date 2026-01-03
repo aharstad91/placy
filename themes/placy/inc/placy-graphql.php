@@ -292,18 +292,13 @@ function placy_format_google_point( $post_id ) {
     $tags = wp_get_post_terms( $post_id, 'placy_tags', array( 'fields' => 'names' ) );
     $lifestyle_segments = wp_get_post_terms( $post_id, 'lifestyle_segments', array( 'fields' => 'names' ) );
     
-    // Format images from Google photos
+    // Format images from Google photos using caching proxy
     $images = array();
     if ( isset( $nearby_data['photos'] ) && is_array( $nearby_data['photos'] ) ) {
         foreach ( array_slice( $nearby_data['photos'], 0, 5 ) as $photo ) {
             if ( isset( $photo['photo_reference'] ) ) {
-                $api_key = defined( 'GOOGLE_PLACES_API_KEY' ) ? GOOGLE_PLACES_API_KEY : '';
                 $images[] = array(
-                    'url' => sprintf(
-                        'https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=%s&key=%s',
-                        $photo['photo_reference'],
-                        $api_key
-                    ),
+                    'url' => rest_url( 'placy/v1/photo/proxy/' . urlencode( $photo['photo_reference'] ) ) . '?maxwidth=800',
                     'alt' => $nearby_data['name'] ?? '',
                     'width' => 800,
                     'height' => 600,

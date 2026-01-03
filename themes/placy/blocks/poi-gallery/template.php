@@ -145,8 +145,8 @@ if ( ! $pois || empty( $pois ) ) {
             </div>
         <?php elseif ( isset( $place_data ) && ! empty( $place_data['photo_reference'] ) ) : ?>
             <?php 
-                // Show Google Places photo if no featured image
-                $photo_url = 'https://places.googleapis.com/v1/' . $place_data['photo_reference'] . '/media?maxWidthPx=800&key=' . ( defined( 'GOOGLE_PLACES_API_KEY' ) ? GOOGLE_PLACES_API_KEY : '' );
+                // Use caching proxy to reduce API calls (30-day cache)
+                $photo_url = rest_url( 'placy/v1/photo/proxy/' . urlencode( $place_data['photo_reference'] ) ) . '?maxwidth=800';
             ?>
             <div class="poi-gallery-image">
                 <img src="<?php echo esc_url( $photo_url ); ?>" 

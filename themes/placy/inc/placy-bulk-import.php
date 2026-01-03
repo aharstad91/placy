@@ -345,11 +345,11 @@ function placy_bulk_import_page() {
                     const ratingCount = place.userRatingCount || 0;
                     const distance = place.distance ? place.distance + 'm' : '';
                     
-                    // Build photo URL if available
+                    // Build photo URL if available using caching proxy
                     let photoHtml = '';
                     if (place.photoReference) {
-                        // Extract just the photo name from the full resource name (e.g., "places/ChIJ.../photos/...")
-                        const photoUrl = `https://places.googleapis.com/v1/${place.photoReference}/media?maxWidthPx=100&key=<?php echo esc_js( defined( 'GOOGLE_PLACES_API_KEY' ) ? GOOGLE_PLACES_API_KEY : '' ); ?>`;
+                        // Use WordPress REST API caching proxy (30-day cache, Google ToS compliant)
+                        const photoUrl = '<?php echo rest_url( "placy/v1/photo/proxy/" ); ?>' + encodeURIComponent(place.photoReference) + '?maxwidth=100';
                         photoHtml = `<img src="${photoUrl}" alt="${place.displayName.text}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px;">`;
                     } else {
                         photoHtml = '<div style="width: 60px; height: 60px; background: #e0e0e0; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #999;">📷</div>';
