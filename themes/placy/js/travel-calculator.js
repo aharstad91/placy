@@ -94,7 +94,6 @@
                     hideSuggestions();
                 }
             } catch (error) {
-                console.error('Geocoding error:', error);
                 hideSuggestions();
             }
         }, 300);
@@ -204,7 +203,6 @@
                     showError('Kunne ikke beregne rute.');
                 }
             } catch (error) {
-                console.error('Directions error:', error);
                 showError('Noe gikk galt. Prøv igjen.');
             }
 
@@ -243,7 +241,6 @@
             }
 
             if (!mapboxgl.accessToken) {
-                console.warn('Mapbox token not found');
                 mapContainer.style.display = 'none';
                 return;
             }
@@ -422,7 +419,6 @@
             }
         });
         
-        console.log('[TravelCalculator] Initialized for:', container.id || 'unknown block');
     }
 
     // Initialize on DOM ready

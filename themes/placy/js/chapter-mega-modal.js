@@ -56,7 +56,6 @@
                         calculateTravelTimes(currentModal);
                         updateDrawerMapMarkers();
                     }
-                    console.log('[ChapterModal] Synced travel mode from', e.detail.source, ':', mode);
                 }
             }
         });
@@ -71,7 +70,6 @@
                     updateHighlightCount();
                     updatePOIListStyling();
                     updateDrawerMapMarkers();
-                    console.log('[ChapterModal] Synced time budget from', e.detail.source, ':', budget);
                 }
             }
         });
@@ -142,7 +140,6 @@
                     currentTimeBudget = data.defaultTimeBudget;
                 }
             } catch (e) {
-                console.error('Failed to parse chapter modal data:', e);
             }
         });
     }
@@ -284,7 +281,6 @@
     window.openChapterMegaModal = function(chapterId, targetPoiId) {
         const data = window.placyChapterModals[chapterId];
         if (!data) {
-            console.error('No modal data found for chapter:', chapterId);
             return;
         }
 
@@ -298,7 +294,6 @@
             if (window.PlacyGlobalState.timeBudget) {
                 currentTimeBudget = window.PlacyGlobalState.timeBudget;
             }
-            console.log('[ChapterModal] Synced from global state:', currentTravelMode, currentTimeBudget);
         }
         
         // Lock body scroll
@@ -689,7 +684,6 @@
                 throw new Error(data.message || 'Unknown error');
             }
         } catch (error) {
-            console.error('[ChapterModal] Hyre availability error:', error);
             if (loadingEl) loadingEl.style.display = 'none';
             if (errorEl) errorEl.style.display = 'block';
         }
@@ -764,7 +758,6 @@
                 throw new Error(data.message || 'Unknown error');
             }
         } catch (error) {
-            console.error('[ChapterModal] Bus departures error:', error);
             if (loadingEl) loadingEl.style.display = 'none';
             if (errorEl) errorEl.style.display = 'block';
         }
@@ -830,7 +823,6 @@
                 throw new Error(data.message || 'Unknown error');
             }
         } catch (error) {
-            console.error('[ChapterModal] Bysykkel availability error:', error);
             if (loadingEl) loadingEl.style.display = 'none';
             if (errorEl) errorEl.style.display = 'block';
         }
@@ -892,7 +884,6 @@
                         lng = coords[1];
                     }
                 } catch (e) {
-                    console.warn('Failed to parse POI coords:', coordsAttr);
                 }
             }
             
@@ -903,7 +894,6 @@
                 try {
                     travelTimes = JSON.parse(travelTimesAttr);
                 } catch (e) {
-                    console.warn('Failed to parse travel times:', travelTimesAttr);
                 }
             }
             
@@ -1244,11 +1234,9 @@
         
         // If all points have pre-calculated values, we're done
         if (pointsNeedingAPI.length === 0) {
-            console.log('[ChapterModal] All travel times from cache, no API calls needed');
             return;
         }
         
-        console.log('[ChapterModal] Fetching travel times for', pointsNeedingAPI.length, 'points via API');
         
         // Second pass: fetch from API for points without cached values
         const batchSize = 5;
@@ -1273,7 +1261,6 @@
                         updatePointTravelTime(point.id, minutes);
                     }
                 } catch (error) {
-                    console.warn('Failed to fetch directions for point:', point.id, error);
                 }
             }));
             
@@ -1393,7 +1380,6 @@
                         updatePointTravelTime(point.id, minutes);
                     }
                 } catch (error) {
-                    console.warn('Failed to fetch initial travel time:', error);
                 }
             });
         });
@@ -1476,7 +1462,6 @@
             detail: { mode: mode, travelMode: mode, source: 'chapterModal' }
         }));
         
-        console.log('[ChapterModal] Travel mode set to:', mode);
     };
     
     /**
@@ -1556,7 +1541,6 @@
             detail: { budget: budget, timeBudget: budget, source: 'chapterModal' }
         }));
         
-        console.log('[ChapterModal] Time budget set to:', budget);
     };
 
     /**
@@ -1900,7 +1884,6 @@
                 }
             }
         } catch (error) {
-            console.warn('Failed to draw route:', error);
         }
     }
     
@@ -1982,7 +1965,6 @@
                 }
             }
         } else {
-            console.warn('[ChapterModal] highlightPOIInList: Could not find element for pointId:', pointId);
         }
     }
     
@@ -2210,7 +2192,6 @@
      */
     function showPOIOnMap(button) {
         if (!currentModal) {
-            console.warn('[ChapterModal] showPOIOnMap called but no modal is active');
             return;
         }
 
@@ -2225,11 +2206,9 @@
         }
 
         if (!pointId) {
-            console.warn('[ChapterModal] No data-poi-id found on button or parent');
             return;
         }
 
-        console.log('[ChapterModal] showPOIOnMap triggered for point:', pointId);
 
         // Use existing handlePOICardClick function to activate marker and draw route
         handlePOICardClick(pointId);
@@ -2270,11 +2249,9 @@
         }
         
         if (!targetElement) {
-            console.warn('[ChapterModal] Could not find POI element with ID:', targetId);
             return;
         }
         
-        console.log('[ChapterModal] Scrolling to and activating POI:', targetId);
         
         // Scroll to the element
         const scrollContainer = drawer.querySelector('.pl-mega-drawer__scroll');

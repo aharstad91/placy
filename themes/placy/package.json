@@ -6,9 +6,8 @@
   "scripts": {
     "build:css": "tailwindcss -i ./css/tailwind-input.css -o ./css/tailwind-output.css --minify",
     "watch:css": "tailwindcss -i ./css/tailwind-input.css -o ./css/tailwind-output.css --watch",
-    "build:js": "terser js/tema-story-map-multi.js -o js/tema-story-map-multi.min.js -c -m --source-map",
     "build:blocks": "./build-blocks.sh",
-    "build": "npm run build:css && npm run build:js && npm run build:blocks",
+    "build": "npm run build:css && npm run build:blocks",
     "lint": "eslint js/*.js --ignore-pattern '*.min.js'",
     "lint:fix": "eslint js/*.js --ignore-pattern '*.min.js' --fix"
   },

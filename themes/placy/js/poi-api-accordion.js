@@ -35,7 +35,6 @@
             }
         });
 
-        console.log('POI API Accordion: Initialized');
     }
 
     /**

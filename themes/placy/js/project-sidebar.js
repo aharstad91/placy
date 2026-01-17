@@ -50,7 +50,6 @@
                     state.travelMode = mode;
                     updateTravelModeUI(mode);
                     saveToLocalStorage();
-                    console.log('[Sidebar] Synced travel mode from', e.detail.source, ':', mode);
                 }
             }
         });
@@ -64,7 +63,6 @@
                     state.timeBudget = budget;
                     updateTimeBudgetUI(budget);
                     saveToLocalStorage();
-                    console.log('[Sidebar] Synced time budget from', e.detail.source, ':', budget);
                 }
             }
         });
@@ -151,7 +149,6 @@
         // Note: window.setTravelMode (from chapter-mega-modal) is called via
         // the placy:travelModeChange event handler, so no need to call directly
         
-        console.log('[PlacyGlobalState] Travel mode changed to:', mode);
     }
 
     function updateTravelModeUI(mode) {
@@ -202,7 +199,6 @@
         // Note: window.setTimeBudget (from chapter-mega-modal) is called via
         // the placy:timeBudgetChange event handler, so no need to call directly
         
-        console.log('[PlacyGlobalState] Time budget changed to:', budget);
     }
 
     function updateTimeBudgetUI(budget) {
@@ -229,7 +225,6 @@
     }
 
     function openFullMap() {
-        console.log('[ProjectSidebar] Opening full map...');
         
         // Option 1: Use Master Map Modal (preferred)
         if (window.openMasterMap) {
@@ -261,7 +256,6 @@
             return;
         }
         
-        console.warn('[ProjectSidebar] No map or chapter found to open');
     }
 
     function initNavigation() {
@@ -291,7 +285,6 @@
                        document.querySelector('[data-chapter-id="' + anchor + '"]');
         
         if (!element) {
-            console.warn('[ProjectSidebar] Anchor not found:', anchor);
             return;
         }
 
@@ -313,7 +306,6 @@
             localStorage.setItem('placy_travel_mode', state.travelMode);
             localStorage.setItem('placy_time_budget', state.timeBudget.toString());
         } catch (e) {
-            console.warn('[ProjectSidebar] Could not save to localStorage');
         }
     }
 
@@ -335,7 +327,6 @@
                 }
             }
         } catch (e) {
-            console.warn('[ProjectSidebar] Could not restore from localStorage');
         }
     }
 

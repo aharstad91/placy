@@ -27,7 +27,6 @@
      * Initialize Hyre integration
      */
     function init() {
-        console.log('Hyre Live Availability: Initializing...');
         loadAllAvailability();
     }
 
@@ -44,11 +43,9 @@
         });
 
         if (poiCards.length === 0) {
-            console.log('Hyre: No POIs with car availability enabled');
             return;
         }
 
-        console.log(`Hyre: Loading availability for ${poiCards.length} POIs...`);
 
         // Group by station ID to minimize API requests
         const uniqueStations = new Map();
@@ -67,7 +64,6 @@
             showLoadingState(poiCard);
         });
 
-        console.log(`Hyre: Making ${uniqueStations.size} unique API requests`);
 
         // Fetch all unique stations
         const fetchPromises = Array.from(uniqueStations.keys()).map(async function(stationId) {
@@ -79,17 +75,13 @@
                     cards.forEach(function(poiCard) {
                         displayAvailability(poiCard, result);
                     });
-                    console.log(`Hyre: Loaded availability for station ${result.station_name}`);
                 } else {
-                    console.log(`Hyre: No availability data for ${stationId}`);
                 }
             } catch (error) {
-                console.error(`Hyre: Failed to fetch ${stationId}`, error);
             }
         });
 
         await Promise.all(fetchPromises);
-        console.log('Hyre: All availability loaded');
     }
 
     /**
@@ -130,7 +122,6 @@
         // Check cache
         const cached = availabilityCache.get(stationId);
         if (cached && (Date.now() - cached.timestamp) < CONFIG.REFRESH_INTERVAL) {
-            console.log('Hyre: Using cached data');
             return cached.data;
         }
 
@@ -164,9 +155,7 @@
 
             } catch (error) {
                 if (error.name === 'AbortError') {
-                    console.warn(`Hyre: Request timeout on attempt ${attempt + 1}`);
                 } else {
-                    console.error(`Hyre: Fetch attempt ${attempt + 1} failed:`, error);
                 }
 
                 if (attempt < CONFIG.MAX_RETRIES) {
@@ -198,7 +187,6 @@
         }
         
         if (!contentDiv) {
-            console.warn('Hyre: Could not find content div');
             return;
         }
 
@@ -292,7 +280,6 @@
         `;
 
         contentDiv.appendChild(availabilitySection);
-        console.log('Hyre: Availability displayed successfully');
     }
 
     /**

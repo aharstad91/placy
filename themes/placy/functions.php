@@ -268,7 +268,6 @@ function placy_enqueue_block_assets() {
         'poi-bysykkel'      => '/blocks/poi-bysykkel/style.css',
         'poi-hyre'          => '/blocks/poi-hyre/style.css',
         'image-column'      => '/blocks/image-column/style.css',
-        'proximity-filter'  => '/blocks/proximity-filter/style.css',
         'travel-mode-selector' => '/blocks/travel-mode-selector/style.css',
     );
     
@@ -419,22 +418,6 @@ function placy_register_acf_blocks() {
             'category'          => 'placy-content',
             'icon'              => 'grid-view',
             'keywords'          => array( 'poi', 'gallery', 'grid', 'list' ),
-            'mode'              => 'preview',
-            'supports'          => array(
-                'align' => false,
-                'anchor' => true,
-            ),
-        ) );
-        
-        // Register Proximity Filter block (DEPRECATED - use proximity-timeline instead)
-        acf_register_block_type( array(
-            'name'              => 'proximity-filter',
-            'title'             => __( '⚠️ Proximity Filter (Deprecated)', 'placy' ),
-            'description'       => __( 'DEPRECATED - Use Proximity Timeline block instead. Filter POIs based on travel time and mode', 'placy' ),
-            'render_template'   => get_template_directory() . '/blocks/proximity-filter/template.php',
-            'category'          => 'placy-content',
-            'icon'              => 'warning',
-            'keywords'          => array( 'proximity', 'filter', 'time', 'distance', 'deprecated' ),
             'mode'              => 'preview',
             'supports'          => array(
                 'align' => false,
@@ -773,8 +756,7 @@ function placy_block_editor_styles() {
         'poi-list-dynamic',
         'poi-highlight',
         'poi-gallery',
-        'image-column',
-        'proximity-filter'
+        'image-column'
     );
     
     foreach ( $blocks as $block ) {

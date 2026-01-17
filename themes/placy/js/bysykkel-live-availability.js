@@ -28,7 +28,6 @@
      * Initialize Bysykkel integration
      */
     function init() {
-        console.log('Trondheim Bysykkel: Initializing...');
 
         // Load all availability data on page load
         loadAllAvailability();
@@ -50,11 +49,9 @@
         });
 
         if (poiCards.length === 0) {
-            console.log('Bysykkel: No POIs with bike availability enabled');
             return;
         }
 
-        console.log(`Bysykkel: Loading availability for ${poiCards.length} POIs...`);
 
         // Group POIs by station_id to minimize API requests
         const uniqueStations = new Map();
@@ -70,7 +67,6 @@
             poisByStation.get(stationId).push(poiCard);
         });
 
-        console.log(`Bysykkel: Making ${uniqueStations.size} unique API requests for ${poiCards.length} POIs`);
 
         // Fetch all unique stations in parallel
         const fetchPromises = Array.from(uniqueStations.keys()).map(async function(stationId) {
@@ -83,18 +79,14 @@
                     cards.forEach(function(poiCard) {
                         displayAvailability(poiCard, result);
                     });
-                    console.log(`Bysykkel: Loaded availability for station ${stationId} (${result.bikes_available} bikes, ${result.docks_available} docks)`);
                 } else {
-                    console.log(`Bysykkel: No availability data for station ${stationId}`);
                 }
             } catch (error) {
-                console.error(`Bysykkel: Failed to fetch station ${stationId}`, error);
             }
         });
 
         // Wait for all requests to complete
         await Promise.all(fetchPromises);
-        console.log('Bysykkel: All availability data loaded');
     }
 
     /**
@@ -107,7 +99,6 @@
         const cached = availabilityCache.get(stationId);
 
         if (cached && (Date.now() - cached.timestamp) < CONFIG.REFRESH_INTERVAL) {
-            console.log('Bysykkel: Using cached data for station', stationId);
             return cached.data;
         }
 
@@ -131,7 +122,6 @@
                 clearTimeout(timeoutId);
 
                 if (!response.ok) {
-                    console.warn(`Bysykkel API returned status: ${response.status}`);
 
                     if (response.status >= 400 && response.status < 500) {
                         return { bikes_available: 0, docks_available: 0 };
@@ -152,15 +142,12 @@
 
             } catch (error) {
                 if (error.name === 'AbortError') {
-                    console.warn(`Bysykkel: Request timeout on attempt ${attempt + 1}`);
                 } else {
-                    console.error(`Bysykkel: Fetch attempt ${attempt + 1} failed:`, error);
                 }
 
                 if (attempt < CONFIG.MAX_RETRIES) {
                     await new Promise(resolve => setTimeout(resolve, CONFIG.RETRY_DELAY));
                 } else {
-                    console.warn('Bysykkel: All retry attempts exhausted');
                     return { bikes_available: 0, docks_available: 0 };
                 }
             }
@@ -195,13 +182,11 @@
         }
         
         if (!contentDiv) {
-            console.warn('Bysykkel: Could not find content div to insert availability');
             return;
         }
 
         // Check if station is operational
         if (!availability.is_renting || !availability.is_installed) {
-            console.log('Bysykkel: Station not operational');
             return;
         }
 
@@ -270,7 +255,6 @@
         availabilitySection.innerHTML = html;
         contentDiv.appendChild(availabilitySection);
 
-        console.log('Bysykkel: Availability displayed successfully');
     }
 
     /**

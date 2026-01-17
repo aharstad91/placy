@@ -46,7 +46,6 @@ function openPOIMapModal(blockId, poiSlug) {
     const mapData = window.placyPOIMaps[blockId];
 
     if (!mapData || !mapData.points || mapData.points.length === 0) {
-        console.error('No Point data found for block:', blockId);
         return;
     }
 
@@ -74,7 +73,6 @@ function initializeMapInline(blockId, mapData, poiSlug) {
     // Find the block element
     const blockElement = document.querySelector(`[data-block-id="${blockId}"]`);
     if (!blockElement) {
-        console.error('Block element not found:', blockId);
         return;
     }
 
@@ -90,7 +88,6 @@ function initializeMapInline(blockId, mapData, poiSlug) {
     // Get the preview element
     const previewElement = blockElement.querySelector('.poi-map-preview');
     if (!previewElement) {
-        console.error('Preview element not found');
         return;
     }
 
@@ -246,7 +243,6 @@ function openMapModal(mapData, poiSlug) {
  */
 function initializeMapboxMap(mapData, poiSlug, containerId) {
     if (typeof mapboxgl === 'undefined') {
-        console.error('Mapbox GL JS is not loaded');
         return;
     }
 
@@ -306,13 +302,11 @@ function initializeMapboxMap(mapData, poiSlug, containerId) {
  */
 function initializeMapboxMapInline(blockId, mapData, poiSlug, hideMarkers) {
     if (typeof mapboxgl === 'undefined') {
-        console.error('Mapbox GL JS is not loaded');
         return;
     }
 
     // Validate points exist
     if (!mapData.points || mapData.points.length === 0) {
-        console.error('No points to display on map');
         return;
     }
 
@@ -333,7 +327,6 @@ function initializeMapboxMapInline(blockId, mapData, poiSlug, hideMarkers) {
 
     // Validate coordinates
     if (isNaN(centerLat) || isNaN(centerLng)) {
-        console.error('Invalid coordinates calculated:', centerLat, centerLng);
         return;
     }
 

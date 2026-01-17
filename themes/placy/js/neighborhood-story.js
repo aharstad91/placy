@@ -74,7 +74,6 @@
             // Initial UI sync
             this.syncAllUI();
 
-            console.log('[NeighborhoodStory] Initialized', this.state);
         },
 
         // =====================================================================
@@ -250,7 +249,6 @@
                 localStorage.setItem('placy_travel_mode', this.state.travelMode);
                 localStorage.setItem('placy_time_budget', this.state.timeBudget.toString());
             } catch (e) {
-                console.warn('[NeighborhoodStory] Could not persist state', e);
             }
         },
 
@@ -270,7 +268,6 @@
                     }
                 }
             } catch (e) {
-                console.warn('[NeighborhoodStory] Could not restore state', e);
             }
         },
 
@@ -352,7 +349,6 @@
                         timeValue.textContent = `${travelTime} min ${modeLabel}`;
                     }
                 } catch (e) {
-                    console.warn('[NeighborhoodStory] Invalid POI times data', e);
                 }
             });
 
@@ -380,7 +376,6 @@
         openChapterModal: function(chapterId) {
             const modal = document.querySelector(`[data-chapter-modal="${chapterId}"]`);
             if (!modal) {
-                console.warn(`[NeighborhoodStory] Modal not found: ${chapterId}`);
                 return;
             }
 
@@ -433,7 +428,6 @@
         openGlobalMap: function() {
             const globalMap = document.querySelector('.ns-global-map');
             if (!globalMap) {
-                console.warn('[NeighborhoodStory] Global map not found');
                 return;
             }
 
@@ -479,7 +473,6 @@
         createMap: function(container, points) {
             // Check if Mapbox is available
             if (typeof mapboxgl === 'undefined') {
-                console.warn('[NeighborhoodStory] Mapbox GL not loaded');
                 container.innerHTML = '<div class="ns-map-placeholder">Map loading...</div>';
                 return;
             }
@@ -606,7 +599,6 @@
         scrollToAnchor: function(anchor) {
             const element = document.getElementById(anchor) || document.querySelector(`[data-anchor="${anchor}"]`);
             if (!element) {
-                console.warn(`[NeighborhoodStory] Anchor not found: ${anchor}`);
                 return;
             }
 

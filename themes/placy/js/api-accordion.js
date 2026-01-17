@@ -44,7 +44,6 @@
         // Bind keyboard handlers for accessibility
         document.addEventListener('keydown', handleAccordionKeydown);
 
-        console.log('[ApiAccordion] Initialized');
     }
 
     /**
@@ -139,7 +138,6 @@
             contentWrapper.dataset.loaded = 'true';
 
         } catch (error) {
-            console.error('[ApiAccordion] Error loading data:', error);
             contentWrapper.innerHTML = '<div class="ns-api-error">Kunne ikke laste data</div>';
         } finally {
             // Hide loading

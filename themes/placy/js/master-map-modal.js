@@ -62,7 +62,6 @@
                 currentTravelMode = data.defaultTravelMode || 'walk';
                 currentTimeBudget = data.defaultTimeBudget || 10;
             } catch (e) {
-                console.error('[MasterMap] Failed to parse data:', e);
             }
         }
 
@@ -77,7 +76,6 @@
         // Bind events
         bindEvents();
 
-        console.log('[MasterMap] Initialized with', placesData.length, 'places');
     }
 
     /**
@@ -202,7 +200,6 @@
             updateHighlighting();
         }, 100);
 
-        console.log('[MasterMap] Opened with', placesData.length, 'places');
     }
 
     /**
@@ -216,7 +213,6 @@
         modal.setAttribute('aria-hidden', 'true');
         document.body.style.overflow = '';
 
-        console.log('[MasterMap] Closed');
     }
 
     /**
@@ -225,7 +221,6 @@
     function initMap() {
         if (!mapContainer || mapInstance) return;
         if (typeof mapboxgl === 'undefined') {
-            console.warn('[MasterMap] Mapbox GL not loaded');
             mapContainer.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#737373;">Map loading...</div>';
             return;
         }

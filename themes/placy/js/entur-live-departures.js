@@ -28,7 +28,6 @@
      * Initialize Entur integration
      */
     function init() {
-        console.log('Entur Live Departures: Initializing...');
 
         // Load all departures on page load
         loadAllDepartures();
@@ -47,11 +46,9 @@
         });
 
         if (poiCards.length === 0) {
-            console.log('Entur: No POIs with live departures enabled');
             return;
         }
 
-        console.log(`Entur: Loading departures for ${poiCards.length} POIs...`);
 
         // Group POIs by stopplace+quay+mode to minimize API requests
         const uniqueRequests = new Map();
@@ -77,7 +74,6 @@
             poisByRequest.get(cacheKey).push(poiCard);
         });
 
-        console.log(`Entur: Making ${uniqueRequests.size} unique API requests for ${poiCards.length} POIs`);
 
         // Fetch all unique requests in parallel
         const fetchPromises = Array.from(uniqueRequests.entries()).map(async function([cacheKey, params]) {
@@ -90,18 +86,14 @@
                     cards.forEach(function(poiCard) {
                         displayDepartures(poiCard, result, params);
                     });
-                    console.log(`Entur: Loaded departures for ${cards.length} POI(s)`);
                 } else {
-                    console.log(`Entur: No departures for ${cacheKey}`);
                 }
             } catch (error) {
-                console.error(`Entur: Failed to fetch ${cacheKey}`, error);
             }
         });
 
         // Wait for all requests to complete
         await Promise.all(fetchPromises);
-        console.log('Entur: All departures loaded');
     }
 
     /**
@@ -122,7 +114,6 @@
         const cached = departureCache.get(cacheKey);
 
         if (cached && (Date.now() - cached.timestamp) < CONFIG.REFRESH_INTERVAL) {
-            console.log('Entur: Using cached data');
             return cached.data;
         }
 
@@ -161,7 +152,6 @@
                 clearTimeout(timeoutId);
 
                 if (!response.ok) {
-                    console.warn(`Entur API returned status: ${response.status}`);
                     if (response.status >= 400 && response.status < 500) {
                         return { success: false, departures: [], grouped: [] };
                     }
@@ -180,15 +170,12 @@
 
             } catch (error) {
                 if (error.name === 'AbortError') {
-                    console.warn(`Entur: Request timeout on attempt ${attempt + 1}`);
                 } else {
-                    console.error(`Entur: Fetch attempt ${attempt + 1} failed:`, error);
                 }
 
                 if (attempt < CONFIG.MAX_RETRIES) {
                     await new Promise(resolve => setTimeout(resolve, CONFIG.RETRY_DELAY));
                 } else {
-                    console.warn('Entur: All retry attempts exhausted');
                     return { success: false, departures: [], grouped: [] };
                 }
             }
@@ -218,7 +205,6 @@
         }
         
         if (!contentDiv) {
-            console.warn('Entur: Could not find content div to insert departures');
             return;
         }
 
@@ -249,7 +235,6 @@
         departuresSection.innerHTML = html;
         contentDiv.appendChild(departuresSection);
 
-        console.log('Entur: Departures displayed successfully');
     }
 
     /**
