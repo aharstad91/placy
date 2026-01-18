@@ -1677,6 +1677,11 @@
             
             // Wait for map to load before adding markers
             window.placyDrawerMap.on('load', function() {
+                // Hide Mapbox's built-in POI labels to reduce clutter
+                if (window.PlacyMapUtils && window.PlacyMapUtils.hideMapboxPOILayers) {
+                    window.PlacyMapUtils.hideMapboxPOILayers(window.placyDrawerMap);
+                }
+
                 // Note: 3D buildings removed - using bird's eye view now
 
                 // Add origin marker (property/start point)

@@ -71,9 +71,12 @@ function placy_enqueue_scripts() {
     // Enqueue Mapbox GL JS
     wp_enqueue_style( 'mapbox-gl-css', 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css', array(), '2.15.0' );
     wp_enqueue_script( 'mapbox-gl-js', 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js', array(), '2.15.0', true );
-    
+
+    // Mapbox utilities (hide POI labels, etc.) - load before other map scripts
+    wp_enqueue_script( 'placy-mapbox-utils', get_template_directory_uri() . '/js/mapbox-utils.js', array( 'mapbox-gl-js' ), '1.0.0', true );
+
     // POI Map Modal script
-    wp_enqueue_script( 'placy-poi-map-modal', get_template_directory_uri() . '/js/poi-map-modal.js', array(), '1.0.0', true );
+    wp_enqueue_script( 'placy-poi-map-modal', get_template_directory_uri() . '/js/poi-map-modal.js', array( 'placy-mapbox-utils' ), '1.0.0', true );
     
     // Story Chapter styles and scripts (on project post type)
     if ( is_singular( 'project' ) ) {
@@ -87,7 +90,7 @@ function placy_enqueue_scripts() {
         
         // Story Chapter Mega Modal CSS and JS (use filemtime for cache busting)
         wp_enqueue_style( 'placy-chapter-mega-modal', get_template_directory_uri() . '/css/chapter-mega-modal.css', array(), filemtime( get_template_directory() . '/css/chapter-mega-modal.css' ) );
-        wp_enqueue_script( 'placy-chapter-mega-modal', get_template_directory_uri() . '/js/chapter-mega-modal.js', array( 'mapbox-gl-js' ), filemtime( get_template_directory() . '/js/chapter-mega-modal.js' ), true );
+        wp_enqueue_script( 'placy-chapter-mega-modal', get_template_directory_uri() . '/js/chapter-mega-modal.js', array( 'placy-mapbox-utils' ), filemtime( get_template_directory() . '/js/chapter-mega-modal.js' ), true );
         
         // Project Sidebar CSS and JS (navigation + global settings)
         wp_enqueue_style( 'placy-project-sidebar', get_template_directory_uri() . '/css/project-sidebar.css', array(), '1.0.0' );
@@ -105,7 +108,7 @@ function placy_enqueue_scripts() {
         
         // Master Map Modal CSS and JS (Open full map)
         wp_enqueue_style( 'placy-master-map-modal', get_template_directory_uri() . '/css/master-map-modal.css', array( 'placy-neighborhood-story' ), '1.0.0' );
-        wp_enqueue_script( 'placy-master-map-modal', get_template_directory_uri() . '/js/master-map-modal.js', array( 'mapbox-gl-js' ), '1.0.0', true );
+        wp_enqueue_script( 'placy-master-map-modal', get_template_directory_uri() . '/js/master-map-modal.js', array( 'placy-mapbox-utils' ), '1.0.0', true );
         
         // Localize for Mapbox access and REST API URLs
         wp_localize_script( 'placy-chapter-mega-modal', 'placyMapbox', array(
@@ -441,7 +444,7 @@ function placy_register_acf_blocks() {
             ),
             'enqueue_assets'    => function() {
                 wp_enqueue_style( 'placy-travel-calculator', get_template_directory_uri() . '/blocks/travel-calculator/style.css', array(), '1.0.0' );
-                wp_enqueue_script( 'placy-travel-calculator', get_template_directory_uri() . '/js/travel-calculator.js', array( 'mapbox-gl-js' ), '1.0.0', true );
+                wp_enqueue_script( 'placy-travel-calculator', get_template_directory_uri() . '/js/travel-calculator.js', array( 'placy-mapbox-utils' ), '1.0.0', true );
                 wp_localize_script( 'placy-travel-calculator', 'travelCalcSettings', array(
                     'restUrl' => esc_url_raw( rest_url( 'placy/v1/travel-calc' ) ),
                     'mapboxToken' => placy_get_mapbox_token(),

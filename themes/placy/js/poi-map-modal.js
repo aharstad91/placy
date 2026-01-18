@@ -276,6 +276,11 @@ function initializeMapboxMap(mapData, poiSlug, containerId) {
 
     // Add Point markers after map loads
     map.on('load', function() {
+        // Hide Mapbox's built-in POI labels to reduce clutter
+        if (window.PlacyMapUtils && window.PlacyMapUtils.hideMapboxPOILayers) {
+            window.PlacyMapUtils.hideMapboxPOILayers(map);
+        }
+
         mapData.points.forEach(function(poi) {
             addMapboxMarker(map, poi);
         });
@@ -361,6 +366,11 @@ function initializeMapboxMapInline(blockId, mapData, poiSlug, hideMarkers) {
 
     // Add Point markers after map loads
     map.on('load', function() {
+        // Hide Mapbox's built-in POI labels to reduce clutter
+        if (window.PlacyMapUtils && window.PlacyMapUtils.hideMapboxPOILayers) {
+            window.PlacyMapUtils.hideMapboxPOILayers(map);
+        }
+
         mapData.points.forEach(function(poi) {
             const markerEl = addMapboxMarker(map, poi);
             if (hideMarkers && markerEl) {

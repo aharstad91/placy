@@ -240,6 +240,10 @@
         mapInstance.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
 
         mapInstance.on('load', () => {
+            // Hide Mapbox's built-in POI labels to reduce clutter
+            if (window.PlacyMapUtils && window.PlacyMapUtils.hideMapboxPOILayers) {
+                window.PlacyMapUtils.hideMapboxPOILayers(mapInstance);
+            }
             addMarkers();
             fitMapToBounds();
         });

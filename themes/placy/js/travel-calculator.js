@@ -263,6 +263,11 @@
             });
 
             routeMap.on('load', () => {
+                // Hide Mapbox's built-in POI labels to reduce clutter
+                if (window.PlacyMapUtils && window.PlacyMapUtils.hideMapboxPOILayers) {
+                    window.PlacyMapUtils.hideMapboxPOILayers(routeMap);
+                }
+
                 // Add route line
                 routeMap.addSource('route', {
                     type: 'geojson',

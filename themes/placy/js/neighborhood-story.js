@@ -489,6 +489,13 @@
                 zoom: 14,
             });
 
+            // Hide Mapbox's built-in POI labels when map loads
+            map.on('load', function() {
+                if (window.PlacyMapUtils && window.PlacyMapUtils.hideMapboxPOILayers) {
+                    window.PlacyMapUtils.hideMapboxPOILayers(map);
+                }
+            });
+
             // Add markers for each point
             points.forEach(point => {
                 if (!point.latitude || !point.longitude) return;
