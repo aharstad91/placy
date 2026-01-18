@@ -24,7 +24,10 @@
     let currentTravelMode = 'walk';
     let currentTimeBudget = 15;
     let travelTimeCache = {};
-    
+
+    // Currently selected point for route display (for redrawing when travel mode changes)
+    let currentRoutePoint = null;
+
     // Map interaction state
     let poiCardToMarkerMap = new Map(); // Maps POI card element -> marker data
     let poiScrollObserver = null; // IntersectionObserver for scroll-based marker activation
@@ -334,11 +337,12 @@
         if (drawer) {
             drawer.classList.remove('is-open');
         }
-        
+
         // Restore body scroll
         document.body.style.overflow = '';
-        
+
         currentModal = null;
+        currentRoutePoint = null; // Clear selected route point
     };
 
     /**
@@ -1449,19 +1453,30 @@
             
             calculateTravelTimes(currentModal);
             updateDrawerMapMarkers();
-            clearDrawerRoute(); // Clear route when mode changes
+
+            // Redraw route with new travel mode if a point is selected
+            if (currentRoutePoint) {
+                drawRouteToPoint(
+                    currentRoutePoint.originLng,
+                    currentRoutePoint.originLat,
+                    currentRoutePoint.destLng,
+                    currentRoutePoint.destLat,
+                    currentRoutePoint.point,
+                    currentRoutePoint.activeMarkerEl
+                );
+            }
         }
-        
+
         // Update global state
         if (window.PlacyGlobalState) {
             window.PlacyGlobalState.travelMode = mode;
         }
-        
+
         // Emit global event for other components
         document.dispatchEvent(new CustomEvent('placy:travelModeChange', {
             detail: { mode: mode, travelMode: mode, source: 'chapterModal' }
         }));
-        
+
     };
     
     /**
@@ -1761,17 +1776,26 @@
                 });
                 
                 // Fit bounds using pre-calculated bounds (already computed before map creation)
-                window.placyDrawerMap.fitBounds(bounds, { 
+                window.placyDrawerMap.fitBounds(bounds, {
                     padding: 80,
                     pitch: 0,        // Bird's eye view
                     bearing: 0,      // North up
                     maxZoom: 17,
                     animate: false   // No zoom animation on load - reduce UI noise
                 });
-                
+
                 // Show map now that it's properly positioned
                 mapContainer.style.opacity = '1';
                 mapContainer.style.transition = 'opacity 0.2s ease-out';
+
+                // Click on map (not on marker) resets to normal view
+                window.placyDrawerMap.on('click', function(e) {
+                    // Check if click was on a marker element
+                    const clickedOnMarker = e.originalEvent.target.closest('.pl-mega-drawer__map-marker');
+                    if (!clickedOnMarker) {
+                        resetMapToNormalView();
+                    }
+                });
             });
         } else {
             // Fallback: show placeholder map with markers
@@ -1791,27 +1815,16 @@
             drawerActiveMarker.classList.remove('pl-mega-drawer__map-marker--active');
             drawerActiveMarker.classList.remove('pl-mega-drawer__map-marker--hover');
         }
-        
+
         // Activate this marker
         drawerActiveMarker = markerEl;
         markerEl.classList.add('pl-mega-drawer__map-marker--active');
         markerEl.classList.remove('pl-mega-drawer__map-marker--hover');
-        
-        // Fit bounds to show origin and clicked point while preserving 3D perspective
-        const bounds = new mapboxgl.LngLatBounds();
-        bounds.extend([data.originLng, data.originLat]);
-        bounds.extend([point.lng, point.lat]);
-        
-        window.placyDrawerMap.fitBounds(bounds, {
-            padding: 80,
-            duration: 500,   // Calmer, shorter animation
-            maxZoom: 17,
-            pitch: 0,        // Bird's eye view
-            bearing: 0       // North up
-        });
-        
-        // Draw route from origin to point
-        drawRouteToPoint(data.originLng, data.originLat, point.lng, point.lat, point);
+        markerEl.classList.remove('pl-mega-drawer__map-marker--route-dimmed');
+
+        // Draw route from origin to point (fitBounds happens after route is drawn)
+        // Note: drawRouteToPoint will call dimOtherMarkers after clearing the previous route
+        drawRouteToPoint(data.originLng, data.originLat, point.lng, point.lat, point, markerEl);
         
         // Highlight corresponding item in list AFTER map animation completes
         // Map animation duration is 500ms, add small buffer for smoother UX
@@ -1827,11 +1840,27 @@
      * @param {number} destLng - Destination longitude
      * @param {number} destLat - Destination latitude
      * @param {Object} point - Point data
+     * @param {HTMLElement} activeMarkerEl - Optional active marker element to keep visible
      */
-    async function drawRouteToPoint(originLng, originLat, destLng, destLat, point) {
-        // Clear existing route
+    async function drawRouteToPoint(originLng, originLat, destLng, destLat, point, activeMarkerEl) {
+        // Clear existing route (this also undims all markers)
         clearDrawerRoute();
-        
+
+        // Dim all other markers except the active one (after clearing route undimmed them)
+        if (activeMarkerEl) {
+            dimOtherMarkers(activeMarkerEl);
+        }
+
+        // Store current route point for redrawing when travel mode changes
+        currentRoutePoint = {
+            originLng: originLng,
+            originLat: originLat,
+            destLng: destLng,
+            destLat: destLat,
+            point: point,
+            activeMarkerEl: activeMarkerEl || drawerActiveMarker
+        };
+
         try {
             const result = await fetchDirections(originLng, originLat, destLng, destLat, currentTravelMode);
             
@@ -1882,6 +1911,9 @@
                         .setLngLat(midPoint)
                         .addTo(window.placyDrawerMap);
                 }
+
+                // Note: Removed panTo to keep map stable when selecting markers
+                // (Apple/Google Maps don't move the map when selecting visible markers)
             }
         } catch (error) {
         }
@@ -1905,8 +1937,61 @@
         document.querySelectorAll('.pl-mega-drawer__route-duration').forEach(function(el) {
             el.remove();
         });
+
+        // Restore all markers to normal (undim)
+        undimAllMarkers();
     }
-    
+
+    /**
+     * Dim all markers except the active one
+     * @param {HTMLElement} activeMarkerEl - The active marker element to keep visible
+     */
+    function dimOtherMarkers(activeMarkerEl) {
+        const allMarkers = document.querySelectorAll('.pl-mega-drawer__map-marker');
+        console.log('[dimOtherMarkers] Found', allMarkers.length, 'markers, activeMarkerEl:', activeMarkerEl);
+        allMarkers.forEach(function(marker) {
+            if (marker !== activeMarkerEl) {
+                marker.classList.add('pl-mega-drawer__map-marker--route-dimmed');
+                console.log('[dimOtherMarkers] Dimmed marker:', marker);
+            }
+        });
+    }
+
+    /**
+     * Restore all markers to their normal state (undim)
+     */
+    function undimAllMarkers() {
+        const allMarkers = document.querySelectorAll('.pl-mega-drawer__map-marker');
+        allMarkers.forEach(function(marker) {
+            marker.classList.remove('pl-mega-drawer__map-marker--route-dimmed');
+        });
+    }
+
+    /**
+     * Reset map to normal view - clear route, undim markers, deselect active marker
+     */
+    function resetMapToNormalView() {
+        // Clear the route and undim all markers
+        clearDrawerRoute();
+
+        // Deactivate current active marker
+        if (drawerActiveMarker) {
+            drawerActiveMarker.classList.remove('pl-mega-drawer__map-marker--active');
+            drawerActiveMarker = null;
+        }
+
+        // Clear stored route point
+        currentRoutePoint = null;
+
+        // Remove highlight from all POI items in list
+        const highlightClasses = ['pl-mega-drawer__poi-item--highlighted', 'ns-api-card--highlighted', 'poi-card--highlighted'];
+        document.querySelectorAll('.pl-mega-drawer__poi-item, .ns-api-card, .poi-list-card, .poi-list-item, [data-poi-id]').forEach(function(item) {
+            highlightClasses.forEach(function(cls) {
+                item.classList.remove(cls);
+            });
+        });
+    }
+
     /**
      * Highlight POI in list when marker is clicked
      * @param {string} pointId - Point ID
