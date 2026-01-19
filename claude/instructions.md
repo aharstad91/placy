@@ -2,6 +2,25 @@
 
 > **IMPORTANT:** Read and follow these instructions in every session.
 
+---
+
+## ⚠️ KRITISK: Git-struktur (Symlink)
+
+```
+/placy (repo root)
+├── themes/placy/              ← KILDEKODE (git sporer denne)
+├── wp-content/themes/placy    → symlink til ../../themes/placy
+└── wp-admin/, wp-includes/    ← IGNORERT av git
+```
+
+**Regler:**
+- **ALLTID** rediger filer i `themes/placy/`
+- **ALDRI** rediger i `wp-content/themes/placy/` (det er en symlink)
+- WordPress finner theme via symlinken automatisk
+- Se `.gitignore` for full dokumentasjon
+
+---
+
 ## At Session Start (ALWAYS)
 
 1. **Read session-log.md** at `claude/session-log.md`
