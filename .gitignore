@@ -1,29 +1,85 @@
-# Exclude uploads directory
+# ===========================================
+# PLACY GIT STRUCTURE
+# ===========================================
+#
+# This repo tracks ONLY custom code:
+#   - themes/placy/     (symlinked to wp-content/themes/placy)
+#   - plugins/          (custom plugins only, via !plugins/my-plugin)
+#   - claude/           (AI assistant context files)
+#
+# WordPress core and wp-content are IGNORED.
+# The symlink allows WordPress to find the theme while git tracks themes/placy/
+#
+# Structure:
+#   /placy (repo root)
+#   ├── themes/placy/              ← Git tracks this
+#   ├── wp-content/themes/placy    ← Symlink to ../../themes/placy
+#   ├── plugins/.gitkeep
+#   ├── claude/
+#   └── .gitignore
+#
+# ===========================================
+
+# -------------------------------------------
+# WordPress Core (IGNORE ALL)
+# -------------------------------------------
+wp-admin/
+wp-includes/
+wp-*.php
+xmlrpc.php
+license.txt
+readme.html
+index.php
+.htaccess
+
+# -------------------------------------------
+# wp-content (IGNORE - we use symlinks)
+# -------------------------------------------
+wp-content/
+
+# -------------------------------------------
+# WordPress config (contains secrets)
+# -------------------------------------------
+wp-config.php
+wp-config-sample.php
+wp-cli.yml
+
+# -------------------------------------------
+# Plugins - exclude all by default
+# -------------------------------------------
+plugins/*
+!plugins/.gitkeep
+# To track a custom plugin, add: !plugins/my-custom-plugin/
+
+# -------------------------------------------
+# Uploads (user content, not in repo)
+# -------------------------------------------
 uploads/
 
-# Exclude default WordPress themes
+# -------------------------------------------
+# Theme-specific ignores
+# -------------------------------------------
+# Default WordPress themes
 themes/twentytwenty*/
 
-# Exclude ALL plugins by default
-plugins/*
+# Tailwind build output (regenerated from source)
+themes/placy/css/tailwind-output.css
 
-# But INCLUDE custom plugins (add your custom plugins here)
-# Example: !plugins/my-custom-plugin/
-!plugins/.gitkeep
+# Screenshots/dev artifacts in theme
+themes/placy/*.png
+themes/placy/*.jpg
 
-# WordPress cache and backup files
+# Node modules
+themes/placy/node_modules/
+
+# -------------------------------------------
+# General development ignores
+# -------------------------------------------
+node_modules/
+package-lock.json
 *.log
 *.cache
 .DS_Store
-
-# Node modules and build files
-node_modules/
-package-lock.json
-
-# Tailwind build output (generated from source)
-themes/placy/css/tailwind-output.css
-
-# Database backups
 *.sql
 
 # Test/debug files
@@ -33,6 +89,16 @@ check-*.php
 clear-*.php
 bulk-*.php
 
-# Screenshots/dev artifacts in theme
-themes/placy/*.png
-themes/placy/*.jpg
+# -------------------------------------------
+# IDE and tools
+# -------------------------------------------
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# -------------------------------------------
+# Local dev files (keep in repo root)
+# -------------------------------------------
+# .wp-cli-wrapper.sh - OK to ignore, local helper
+.wp-cli-wrapper.sh

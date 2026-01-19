@@ -6,16 +6,51 @@
 ---
 
 ## Last Updated
-- **When:** 2025-01-19 04:30
+- **When:** 2025-01-19 11:35
 - **By:** Claude Code
-- **What:** ✅ LØST markør floating-bug - labels påvirket Mapbox størrelses-beregning
+- **What:** Git-struktur ryddet opp - symlink løsning + oppdatert .gitignore
 
 ---
 
 ## Active Context
 
 ### Current Focus
-✅ **LØST:** Markør floating-bug er fikset!
+✅ Git-struktur er nå korrekt satt opp og dokumentert.
+
+### ⚠️ VIKTIG: Git-struktur for Placy
+
+**Problem som ble løst:** Det var to `themes/placy/` mapper - én i repo-roten og én i `wp-content/`. Dette skapte forvirring om hvilken som var "riktig".
+
+**Løsning: Symlink-struktur**
+```
+/placy (repo root - git tracks this)
+├── themes/placy/              ← KILDEKODE (git sporer)
+├── plugins/.gitkeep
+├── claude/
+├── .gitignore
+│
+├── wp-content/
+│   └── themes/
+│       └── placy → ../../themes/placy  ← SYMLINK (WordPress bruker)
+│
+└── wp-admin/, wp-includes/, etc.  ← IGNORERT av git
+```
+
+**Hvordan det fungerer:**
+1. Git sporer `themes/placy/` (kildekoden)
+2. WordPress finner theme via symlink `wp-content/themes/placy`
+3. Når du redigerer filer, endrer du `themes/placy/` som git sporer
+4. WordPress ser endringene umiddelbart via symlinken
+
+**Regler:**
+- ALDRI rediger filer i `wp-content/themes/placy/` direkte (det er bare en symlink)
+- ALL kode-redigering skjer i `themes/placy/`
+- `wp-content/`, `wp-admin/`, `wp-includes/` er IGNORERT av git
+
+---
+
+### Markør floating-bug (LØST)
+✅ Markør floating-bug er fikset!
 
 ### Løsning på floating-bug
 **Root cause:** Labelen med `opacity: 0` tok fortsatt opp plass i document flow, noe som gjorde at Mapbox beregnet feil elementstørrelse for anchor-posisjonering.
@@ -88,6 +123,17 @@ Eksempel: /klp-eiendom-trondheim/ferjemannsveien-10/
 
 ### 2025-01-19
 
+#### [Code] 11:35 - Git-struktur ryddet opp
+- **Problem:** To `themes/placy/` mapper skapte forvirring
+- **Løsning:** Symlink-struktur
+  - `themes/placy/` = kildekode (git sporer)
+  - `wp-content/themes/placy` = symlink til `../../themes/placy`
+- **Oppdatert .gitignore:** WordPress core ignoreres (wp-admin, wp-includes, wp-*.php)
+- **Dokumentert:** Struktur beskrevet i session-log "Active Context"
+- **Commits:**
+  - `fix(map): resolve marker floating/drifting bug on zoom`
+  - `chore: sync accumulated theme improvements`
+
 #### [Code] 04:30 - ✅ Markør floating-bug LØST
 - **Root cause:** Label med `opacity: 0` tok opp plass i layout, påvirket Mapbox anchor-beregning
 - **Løsning:**
@@ -137,13 +183,10 @@ Eksempel: /klp-eiendom-trondheim/ferjemannsveien-10/
 
 ## Next Steps (Prioritized)
 
-1. 🔴 **FIX MARKØR FLOATING BUG** - Høyeste prioritet
-   - Test med helt ren markør (ingen custom CSS) for å isolere problemet
-   - Undersøk Mapbox Marker anchor-options
-   - Sjekk om `anchor: 'center'` i stedet for `'bottom'` hjelper
-   - Vurder å bruke Mapbox symbol layers i stedet for HTML markers
-2. [ ] Når floating er fikset: Test alle states visuelt
-3. [ ] Utvid til poi-map-modal.js og master-map-modal.js (senere)
+1. ✅ ~~FIX MARKØR FLOATING BUG~~ - LØST
+2. ✅ ~~Git-struktur ryddet opp~~ - LØST
+3. [ ] Test alle markør-states visuelt i browser
+4. [ ] Utvid markør-forbedringer til poi-map-modal.js og master-map-modal.js
 
 ---
 
@@ -151,10 +194,12 @@ Eksempel: /klp-eiendom-trondheim/ferjemannsveien-10/
 
 | File | Description |
 |------|-------------|
-| `wp-content/themes/placy/css/chapter-mega-modal.css` | Markør CSS (seksjon 1015-1350) |
-| `wp-content/themes/placy/js/chapter-mega-modal.js` | Markør JS (createMapMarker rundt linje 1720) |
-| `wp-content/themes/placy/js/mapbox-utils.js` | Delte Mapbox utilities |
+| `themes/placy/css/chapter-mega-modal.css` | Markør CSS (seksjon 1015-1350) |
+| `themes/placy/js/chapter-mega-modal.js` | Markør JS (createMapMarker rundt linje 1720) |
+| `themes/placy/js/mapbox-utils.js` | Delte Mapbox utilities |
 | `claude/PRD-marker-visibility.md` | Opprinnelig PRD for markør-visibility |
+
+> **Merk:** Bruk alltid `themes/placy/` paths, IKKE `wp-content/themes/placy/`
 
 ---
 
