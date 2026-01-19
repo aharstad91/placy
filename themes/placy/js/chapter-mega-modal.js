@@ -1923,8 +1923,29 @@
                         .addTo(window.placyDrawerMap);
                 }
 
-                // Note: Removed panTo to keep map stable when selecting markers
-                // (Apple/Google Maps don't move the map when selecting visible markers)
+                // Fit map to show both origin and destination with the route
+                const bounds = new mapboxgl.LngLatBounds();
+                bounds.extend([originLng, originLat]);
+                bounds.extend([destLng, destLat]);
+
+                window.placyDrawerMap.fitBounds(bounds, {
+                    padding: { top: 80, bottom: 80, left: 60, right: 60 },
+                    maxZoom: 17,
+                    duration: 500
+                });
+
+                // After zoom animation, update active marker with zoom-based classes
+                window.placyDrawerMap.once('moveend', function() {
+                    if (activeMarkerEl) {
+                        const currentZoom = window.placyDrawerMap.getZoom();
+                        if (currentZoom >= 15) {
+                            activeMarkerEl.classList.add('pl-mega-drawer__map-marker--show-icon');
+                        }
+                        if (currentZoom >= 17) {
+                            activeMarkerEl.classList.add('pl-mega-drawer__map-marker--base');
+                        }
+                    }
+                });
             }
         } catch (error) {
         }
@@ -1983,9 +2004,21 @@
         // Clear the route and undim all markers
         clearDrawerRoute();
 
-        // Deactivate current active marker
+        // Deactivate current active marker and restore base size if needed
         if (drawerActiveMarker) {
             drawerActiveMarker.classList.remove('pl-mega-drawer__map-marker--active');
+
+            // Restore zoom-based classes if zoom level warrants it
+            if (window.placyDrawerMap) {
+                const currentZoom = window.placyDrawerMap.getZoom();
+                if (currentZoom >= 15) {
+                    drawerActiveMarker.classList.add('pl-mega-drawer__map-marker--show-icon');
+                }
+                if (currentZoom >= 17) {
+                    drawerActiveMarker.classList.add('pl-mega-drawer__map-marker--base');
+                }
+            }
+
             drawerActiveMarker = null;
         }
 
@@ -2002,25 +2035,35 @@
     }
 
     /**
-     * Initialize zoom-based marker sizing (Mini ↔ Base)
-     * Mini: default, used at zoom < 16
-     * Base: larger with icon, used at zoom >= 16
+     * Initialize zoom-based marker appearance
+     * Zoom < 15: Mini (no icon)
+     * Zoom >= 15: Show icon (same size)
+     * Zoom >= 17: Base size (1.75x larger with icon)
      */
     function initZoomBasedMarkerSizing() {
         if (!window.placyDrawerMap) return;
 
-        const ZOOM_THRESHOLD = 16;
+        const ICON_THRESHOLD = 15;  // Show icons at zoom >= 15
+        const SIZE_THRESHOLD = 17;  // Enlarge markers at zoom >= 17
 
-        // Function to update all marker sizes based on current zoom
+        // Function to update all marker appearance based on current zoom
         function updateMarkerSizes() {
             const currentZoom = window.placyDrawerMap.getZoom();
-            const isBaseSize = currentZoom >= ZOOM_THRESHOLD;
-            console.log('[Placy Markers] Zoom:', currentZoom.toFixed(2), '| Size:', isBaseSize ? 'BASE (32px)' : 'MINI (20px)');
+            const showIcon = currentZoom >= ICON_THRESHOLD;
+            const isBaseSize = currentZoom >= SIZE_THRESHOLD;
 
             drawerMapMarkers.forEach(function(markerData) {
-                // Don't modify active markers - they have their own size
+                // Don't modify active markers - they have their own styling
                 if (markerData.element === drawerActiveMarker) return;
 
+                // Handle icon visibility (zoom >= 15)
+                if (showIcon) {
+                    markerData.element.classList.add('pl-mega-drawer__map-marker--show-icon');
+                } else {
+                    markerData.element.classList.remove('pl-mega-drawer__map-marker--show-icon');
+                }
+
+                // Handle marker size (zoom >= 17)
                 if (isBaseSize) {
                     markerData.element.classList.add('pl-mega-drawer__map-marker--base');
                 } else {

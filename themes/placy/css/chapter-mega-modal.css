@@ -1077,15 +1077,17 @@
     border: 2px solid #ffffff;
     background: #0f172a;
     color: #ffffff;
-    /* NO transitions - instant state changes */
+    transition: transform 0.2s ease-out;
 }
 
-/* Base size - use scale on inner wrapper instead of changing dot dimensions */
-.pl-mega-drawer__map-marker--base .pl-mega-drawer__map-marker-inner {
-    /* TEMP DISABLED: transform: scale(1.15); */
+/* Show icon state (zoom >= 15) - icon visible but marker same size */
+.pl-mega-drawer__map-marker--show-icon .pl-mega-drawer__map-marker-icon {
+    opacity: 1;
 }
 
+/* Base size (zoom >= 17) - larger marker with icon */
 .pl-mega-drawer__map-marker--base .pl-mega-drawer__map-marker-dot {
+    transform: scale(1.75);
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
 }
 
@@ -1119,14 +1121,14 @@
     width: 100%;
     height: 100%;
     /* Use flexbox centering instead of position+transform */
-    transition: opacity 0.2s ease;
+    transition: opacity 0.2s ease, transform 0.2s ease-out;
     /* Hidden by default in Mini size */
     opacity: 0;
 }
 
-/* Show icon in Base size */
+/* Counter-scale icon in Base size to maintain icon size when dot scales */
 .pl-mega-drawer__map-marker--base .pl-mega-drawer__map-marker-icon {
-    opacity: 1;
+    transform: scale(0.571); /* 1/1.75 to counteract parent dot scale */
 }
 
 .pl-mega-drawer__map-marker-icon i,
@@ -1285,6 +1287,8 @@
     padding: 0.25rem 0.5rem;
     border-radius: 0.25rem;
     text-shadow: none;
+    max-width: none;
+    white-space: nowrap;
 }
 
 /* Active marker stops pulse animation if it was highlighted */
@@ -1343,8 +1347,9 @@
 .pl-mega-drawer__origin-marker {
     cursor: default;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 0.5rem;
+    position: relative;
 }
 
 .pl-mega-drawer__origin-dot {
@@ -1359,6 +1364,7 @@
     justify-content: center;
     color: #ffffff;
     flex-shrink: 0;
+    z-index: 1;
 }
 
 /* Origin marker with logo */
@@ -1388,6 +1394,8 @@
     color: #1e293b;
     white-space: nowrap;
     border: 1px solid #e2e8f0;
+    z-index: 2;
+    margin-top: -20px;
 }
 
 /* Route duration label - Apple Maps inspired */
@@ -1399,10 +1407,11 @@
     font-size: 0.875rem;
     font-weight: 600;
     color: #ffffff;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 0.375rem;
     border: none;
+    white-space: nowrap;
 }
 
 .pl-mega-drawer__route-duration svg {
