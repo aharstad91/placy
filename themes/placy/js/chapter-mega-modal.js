@@ -1898,9 +1898,8 @@
                     },
                     paint: {
                         'line-color': '#2563eb',
-                        'line-width': 4,
-                        'line-opacity': 0.8,
-                        'line-dasharray': [0.001, 2]
+                        'line-width': 6,
+                        'line-opacity': 1
                     }
                 });
                 
