@@ -208,33 +208,80 @@
 }
 
 /* =========================================================================
-   Map Markers - Standardized across all modals
+   Map Markers - Inner wrapper pattern (Mapbox-safe)
+   IMPORTANT: All transforms go on inner elements, NEVER on outer!
+   The outer .ns-map-marker is controlled by Mapbox for positioning.
    ========================================================================= */
 
+/* Outer container - controlled by Mapbox, NO transforms here! */
 .ns-map-marker {
-    width: 32px;
-    height: 32px;
+    cursor: pointer;
+    z-index: 10;
+}
+
+/* Inner wrapper - visual structure container */
+.ns-map-marker-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+}
+
+/* Dot - fixed size, all visual transforms go here */
+.ns-map-marker-dot {
+    width: 28px;
+    height: 28px;
     background: var(--ns-primary, #1a1a1a);
     border: 3px solid #fff;
     border-radius: 50%;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-    cursor: pointer;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.ns-map-marker:hover {
+/* Hover - scale on DOT, not outer element */
+.ns-map-marker:hover .ns-map-marker-dot {
     transform: scale(1.15);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
-.ns-map-marker.is-highlighted {
+/* Highlighted state - scale on DOT */
+.ns-map-marker.is-highlighted .ns-map-marker-dot {
     background: var(--ns-accent, #059669);
     transform: scale(1.1);
 }
 
-.ns-map-marker.is-dimmed {
-    background: #a3a3a3;
+/* Dimmed state - opacity on INNER wrapper */
+.ns-map-marker.is-dimmed .ns-map-marker-inner {
     opacity: 0.6;
+}
+
+.ns-map-marker.is-dimmed .ns-map-marker-dot {
+    background: #a3a3a3;
+}
+
+/* Label - hidden by default, positioned absolutely so it doesn't affect sizing */
+.ns-map-marker-label {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-top: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+    pointer-events: none;
+    color: #1a1a1a;
+    text-shadow:
+        -1px -1px 0 #fff,
+        1px -1px 0 #fff,
+        -1px 1px 0 #fff,
+        1px 1px 0 #fff;
+}
+
+/* Show label on hover */
+.ns-map-marker:hover .ns-map-marker-label {
+    display: block;
 }
 
 /* Marker popup */

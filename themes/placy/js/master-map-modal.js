@@ -251,6 +251,11 @@
 
     /**
      * Add markers to map using standardized marker style
+     *
+     * IMPORTANT: Uses inner wrapper pattern (Mapbox-safe)
+     * - Outer element (.ns-map-marker) is controlled by Mapbox for positioning
+     * - All visual transforms go on inner elements, NEVER on outer
+     * - anchor: 'bottom' ensures consistent positioning
      */
     function addMarkers() {
         if (!mapInstance) return;
@@ -262,11 +267,18 @@
         placesData.forEach((place, index) => {
             if (!place.lat || !place.lng) return;
 
-            // Create standardized marker element
+            // Create outer container (Mapbox-controlled - NO transforms here!)
             const el = document.createElement('div');
             el.className = 'ns-map-marker';
             el.dataset.placeId = place.id || index;
             el.dataset.category = place.category_id || '';
+
+            // Inner wrapper for transforms (Mapbox-safe)
+            el.innerHTML =
+                '<div class="ns-map-marker-inner">' +
+                    '<div class="ns-map-marker-dot"></div>' +
+                    '<div class="ns-map-marker-label">' + escapeHtml(place.name) + '</div>' +
+                '</div>';
 
             // Create popup with standardized styling
             const popup = new mapboxgl.Popup({
@@ -280,7 +292,8 @@
                 '</div>'
             );
 
-            const marker = new mapboxgl.Marker(el)
+            // anchor: 'bottom' is critical for correct positioning
+            const marker = new mapboxgl.Marker({ element: el, anchor: 'bottom' })
                 .setLngLat([place.lng, place.lat])
                 .setPopup(popup)
                 .addTo(mapInstance);

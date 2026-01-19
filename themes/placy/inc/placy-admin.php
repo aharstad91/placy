@@ -35,6 +35,15 @@ function placy_add_admin_menu() {
         'placy-status',
         'placy_status_page'
     );
+
+    add_submenu_page(
+        'placy-settings',
+        'POI Map',
+        'POI Map',
+        'manage_options',
+        'placy-poi-map',
+        'placy_poi_map_page'
+    );
 }
 
 /**
@@ -561,4 +570,224 @@ function placy_add_taxonomy_filters( $post_type ) {
 
         echo '</select>';
     }
+}
+
+/**
+ * POI Map admin page
+ * Displays all POIs from the library on a single map
+ */
+function placy_poi_map_page() {
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_die( esc_html__( 'Unauthorized access', 'placy' ) );
+    }
+
+    // Gather all Native POIs with coordinates
+    $native_pois = get_posts( array(
+        'post_type'      => 'placy_native_point',
+        'posts_per_page' => -1,
+        'post_status'    => 'publish',
+    ) );
+
+    // Gather all Google POIs with coordinates
+    $google_pois = get_posts( array(
+        'post_type'      => 'placy_google_point',
+        'posts_per_page' => -1,
+        'post_status'    => 'publish',
+    ) );
+
+    // Get all categories with their ACF fields
+    $categories = get_terms( array(
+        'taxonomy'   => 'placy_categories',
+        'hide_empty' => false,
+    ) );
+
+    $categories_data = array();
+    foreach ( $categories as $cat ) {
+        $categories_data[] = array(
+            'slug'  => $cat->slug,
+            'name'  => $cat->name,
+            'icon'  => get_field( 'category_icon', 'placy_categories_' . $cat->term_id ) ?: 'fa-map-marker-alt',
+            'color' => get_field( 'category_color', 'placy_categories_' . $cat->term_id ) ?: '#3B82F6',
+            'count' => $cat->count,
+        );
+    }
+
+    // Build POI data array
+    $pois_data = array();
+
+    // Process Native POIs
+    foreach ( $native_pois as $poi ) {
+        // ACF stores coordinates as separate fields: coordinates_latitude, coordinates_longitude
+        $lat = get_post_meta( $poi->ID, 'coordinates_latitude', true );
+        $lng = get_post_meta( $poi->ID, 'coordinates_longitude', true );
+
+        if ( empty( $lat ) || empty( $lng ) ) {
+            continue;
+        }
+
+        $poi_categories = wp_get_post_terms( $poi->ID, 'placy_categories', array( 'fields' => 'slugs' ) );
+        $category_slug = ! empty( $poi_categories ) ? $poi_categories[0] : '';
+
+        // Find category data
+        $cat_data = null;
+        foreach ( $categories_data as $cat ) {
+            if ( $cat['slug'] === $category_slug ) {
+                $cat_data = $cat;
+                break;
+            }
+        }
+
+        $pois_data[] = array(
+            'id'            => $poi->ID,
+            'title'         => get_the_title( $poi->ID ),
+            'lat'           => (float) $lat,
+            'lng'           => (float) $lng,
+            'type'          => 'native',
+            'category'      => $category_slug,
+            'categoryName'  => $cat_data ? $cat_data['name'] : '',
+            'categoryIcon'  => $cat_data ? $cat_data['icon'] : 'fa-map-marker-alt',
+            'categoryColor' => $cat_data ? $cat_data['color'] : '#3B82F6',
+            'editUrl'       => admin_url( 'post.php?post=' . $poi->ID . '&action=edit' ),
+        );
+    }
+
+    // Process Google POIs
+    foreach ( $google_pois as $poi ) {
+        $cache = get_field( 'nearby_search_cache', $poi->ID );
+        $data = json_decode( $cache, true );
+
+        if ( empty( $data['geometry']['location']['lat'] ) || empty( $data['geometry']['location']['lng'] ) ) {
+            continue;
+        }
+
+        $poi_categories = wp_get_post_terms( $poi->ID, 'placy_categories', array( 'fields' => 'slugs' ) );
+        $category_slug = ! empty( $poi_categories ) ? $poi_categories[0] : '';
+
+        // Find category data
+        $cat_data = null;
+        foreach ( $categories_data as $cat ) {
+            if ( $cat['slug'] === $category_slug ) {
+                $cat_data = $cat;
+                break;
+            }
+        }
+
+        $pois_data[] = array(
+            'id'            => $poi->ID,
+            'title'         => get_the_title( $poi->ID ),
+            'lat'           => (float) $data['geometry']['location']['lat'],
+            'lng'           => (float) $data['geometry']['location']['lng'],
+            'type'          => 'google',
+            'category'      => $category_slug,
+            'categoryName'  => $cat_data ? $cat_data['name'] : '',
+            'categoryIcon'  => $cat_data ? $cat_data['icon'] : 'fa-map-marker-alt',
+            'categoryColor' => $cat_data ? $cat_data['color'] : '#3B82F6',
+            'editUrl'       => admin_url( 'post.php?post=' . $poi->ID . '&action=edit' ),
+        );
+    }
+
+    // Calculate map center from POIs
+    $center_lat = 63.4305;
+    $center_lng = 10.3951;
+    if ( ! empty( $pois_data ) ) {
+        $sum_lat = 0;
+        $sum_lng = 0;
+        foreach ( $pois_data as $poi ) {
+            $sum_lat += $poi['lat'];
+            $sum_lng += $poi['lng'];
+        }
+        $center_lat = $sum_lat / count( $pois_data );
+        $center_lng = $sum_lng / count( $pois_data );
+    }
+
+    // Prepare data for JavaScript
+    $map_data = array(
+        'pois'        => $pois_data,
+        'categories'  => $categories_data,
+        'center'      => array( $center_lng, $center_lat ),
+        'mapboxToken' => placy_get_mapbox_token(),
+    );
+    ?>
+    <div class="wrap placy-poi-map-wrap">
+        <h1>POI Map</h1>
+
+        <div class="placy-poi-map-toolbar">
+            <div class="placy-poi-map-filters">
+                <button type="button" class="placy-filter-chip active" data-filter="all">
+                    All (<?php echo count( $pois_data ); ?>)
+                </button>
+                <?php foreach ( $categories_data as $cat ) : ?>
+                    <?php if ( $cat['count'] > 0 ) : ?>
+                        <button type="button" class="placy-filter-chip" data-filter="<?php echo esc_attr( $cat['slug'] ); ?>" style="--chip-color: <?php echo esc_attr( $cat['color'] ); ?>">
+                            <?php echo esc_html( $cat['name'] ); ?> (<?php echo esc_html( $cat['count'] ); ?>)
+                        </button>
+                    <?php endif; ?>
+                <?php endforeach; ?>
+            </div>
+
+            <div class="placy-poi-map-search">
+                <input type="search" id="placy-poi-search" placeholder="Search POIs..." />
+            </div>
+        </div>
+
+        <div id="placy-poi-map-container"></div>
+
+        <div class="placy-poi-map-status">
+            <span id="placy-poi-count">Showing <?php echo count( $pois_data ); ?> POIs</span>
+        </div>
+    </div>
+
+    <script type="application/json" id="placy-poi-map-data">
+    <?php echo wp_json_encode( $map_data ); ?>
+    </script>
+    <?php
+}
+
+/**
+ * Enqueue scripts for POI Map admin page
+ */
+add_action( 'admin_enqueue_scripts', 'placy_poi_map_enqueue_scripts' );
+function placy_poi_map_enqueue_scripts( $hook ) {
+    // Only load on our POI Map page
+    if ( $hook !== 'placy_page_placy-poi-map' ) {
+        return;
+    }
+
+    // Mapbox GL JS
+    wp_enqueue_script(
+        'mapbox-gl',
+        'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js',
+        array(),
+        '2.15.0',
+        true
+    );
+    wp_enqueue_style(
+        'mapbox-gl',
+        'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css',
+        array(),
+        '2.15.0'
+    );
+
+    // Font Awesome for icons
+    wp_enqueue_style(
+        'font-awesome',
+        'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
+        array(),
+        '6.4.0'
+    );
+
+    // Admin POI Map scripts
+    wp_enqueue_script(
+        'placy-admin-poi-map',
+        get_template_directory_uri() . '/js/admin-poi-map.js',
+        array( 'mapbox-gl' ),
+        time(),
+        true
+    );
+    wp_enqueue_style(
+        'placy-admin-poi-map',
+        get_template_directory_uri() . '/css/admin-poi-map.css',
+        array( 'mapbox-gl' ),
+        time()
+    );
 }

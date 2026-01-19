@@ -1,0 +1,257 @@
+/**
+ * Admin POI Map Styles
+ *
+ * @package Placy
+ * @since 2.0.0
+ */
+
+/* Container */
+.placy-poi-map-wrap {
+    margin-right: 20px;
+}
+
+.placy-poi-map-wrap h1 {
+    margin-bottom: 15px;
+}
+
+/* Toolbar */
+.placy-poi-map-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    align-items: center;
+    margin-bottom: 15px;
+    padding: 15px;
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+}
+
+.placy-poi-map-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    flex: 1;
+}
+
+.placy-poi-map-search {
+    width: 250px;
+}
+
+.placy-poi-map-search input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #8c8f94;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.placy-poi-map-search input:focus {
+    border-color: #2271b1;
+    box-shadow: 0 0 0 1px #2271b1;
+    outline: none;
+}
+
+/* Filter Chips */
+.placy-filter-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    border: 1px solid #c3c4c7;
+    border-radius: 16px;
+    background: #fff;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.placy-filter-chip:hover {
+    border-color: #2271b1;
+    color: #2271b1;
+}
+
+.placy-filter-chip.active {
+    background: var(--chip-color, #2271b1);
+    border-color: var(--chip-color, #2271b1);
+    color: #fff;
+}
+
+/* Map Container */
+#placy-poi-map-container {
+    width: 100%;
+    height: calc(100vh - 280px);
+    min-height: 500px;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    background: #f0f0f1;
+}
+
+/* Status Bar */
+.placy-poi-map-status {
+    margin-top: 10px;
+    padding: 10px 15px;
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #50575e;
+}
+
+/* ============================================
+   MARKER STYLES
+   ============================================ */
+
+.placy-admin-marker {
+    cursor: pointer;
+    position: relative;
+}
+
+.placy-admin-marker-dot {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--marker-color, #3B82F6);
+    border: 2px solid #fff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.15s ease;
+}
+
+.placy-admin-marker-dot i {
+    color: #fff;
+    font-size: 12px;
+}
+
+.placy-admin-marker:hover .placy-admin-marker-dot,
+.placy-admin-marker.is-hover .placy-admin-marker-dot {
+    transform: scale(1.15);
+}
+
+/* Marker Label */
+.placy-admin-marker-label {
+    display: none;
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-bottom: 5px;
+    padding: 4px 8px;
+    background: #1e1e1e;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    z-index: 10;
+}
+
+.placy-admin-marker:hover .placy-admin-marker-label,
+.placy-admin-marker.is-hover .placy-admin-marker-label {
+    display: block;
+}
+
+.placy-admin-marker-label::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: #1e1e1e;
+}
+
+/* ============================================
+   POPUP STYLES
+   ============================================ */
+
+.placy-admin-popup .mapboxgl-popup-content {
+    padding: 0;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    min-width: 200px;
+}
+
+.placy-admin-popup .mapboxgl-popup-close-button {
+    font-size: 18px;
+    padding: 4px 8px;
+    color: #666;
+}
+
+.placy-admin-popup .mapboxgl-popup-close-button:hover {
+    color: #000;
+    background: transparent;
+}
+
+.placy-admin-popup-content {
+    padding: 12px 15px;
+}
+
+.placy-admin-popup-title {
+    font-weight: 600;
+    font-size: 14px;
+    color: #1e1e1e;
+    margin-bottom: 4px;
+    padding-right: 20px;
+}
+
+.placy-admin-popup-meta {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 6px;
+}
+
+.placy-admin-popup-type {
+    display: inline-block;
+    padding: 1px 6px;
+    background: #f0f0f1;
+    border-radius: 3px;
+    font-size: 11px;
+    text-transform: uppercase;
+}
+
+.placy-admin-popup-coords {
+    font-size: 11px;
+    color: #888;
+    font-family: monospace;
+    margin-bottom: 10px;
+}
+
+.placy-admin-popup-edit {
+    display: inline-block;
+    padding: 6px 12px;
+    background: #2271b1;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    transition: background 0.15s ease;
+}
+
+.placy-admin-popup-edit:hover {
+    background: #135e96;
+    color: #fff;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media screen and (max-width: 782px) {
+    .placy-poi-map-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .placy-poi-map-search {
+        width: 100%;
+    }
+
+    #placy-poi-map-container {
+        height: 400px;
+        min-height: 300px;
+    }
+}
