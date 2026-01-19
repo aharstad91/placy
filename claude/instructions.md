@@ -173,6 +173,16 @@ This hook automatically reads session-log.md and instructions.md on every prompt
 
 ---
 
+## WordPress Admin Access
+
+| Field | Value |
+|-------|-------|
+| URL | `http://localhost:8888/placy/wp-admin/` |
+| Username | `Claude-Agent` |
+| Password | `sckmQ4@geNr4#eoatjGzrB%t` |
+
+---
+
 ## Database Access (WP-CLI)
 
 **IMPORTANT:** For all database operations, use WP-CLI with MAMP's MySQL in PATH:

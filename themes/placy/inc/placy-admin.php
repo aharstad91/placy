@@ -508,3 +508,57 @@ function placy_admin_notices() {
         }
     }
 }
+
+/**
+ * Add taxonomy filter dropdown to Native Points and Google Points admin lists
+ */
+add_action( 'restrict_manage_posts', 'placy_add_taxonomy_filters' );
+function placy_add_taxonomy_filters( $post_type ) {
+    // Only add filter for our point post types
+    if ( ! in_array( $post_type, array( 'placy_native_point', 'placy_google_point' ) ) ) {
+        return;
+    }
+
+    // Get all taxonomies registered for this post type
+    $taxonomies = get_object_taxonomies( $post_type, 'objects' );
+
+    foreach ( $taxonomies as $taxonomy ) {
+        // Skip if taxonomy is not meant to be shown in admin
+        if ( ! $taxonomy->show_ui ) {
+            continue;
+        }
+
+        // Get current filter value
+        $selected = isset( $_GET[ $taxonomy->name ] ) ? sanitize_text_field( $_GET[ $taxonomy->name ] ) : '';
+
+        // Get all terms for this taxonomy
+        $terms = get_terms( array(
+            'taxonomy'   => $taxonomy->name,
+            'hide_empty' => false,
+        ) );
+
+        if ( empty( $terms ) || is_wp_error( $terms ) ) {
+            continue;
+        }
+
+        // Build dropdown
+        echo '<select name="' . esc_attr( $taxonomy->name ) . '" id="filter-by-' . esc_attr( $taxonomy->name ) . '">';
+        echo '<option value="">' . sprintf( 'All %s', esc_html( $taxonomy->labels->name ) ) . '</option>';
+
+        foreach ( $terms as $term ) {
+            $term_label = $term->name;
+            if ( $term->count > 0 ) {
+                $term_label .= ' (' . $term->count . ')';
+            }
+
+            printf(
+                '<option value="%s" %s>%s</option>',
+                esc_attr( $term->slug ),
+                selected( $selected, $term->slug, false ),
+                esc_html( $term_label )
+            );
+        }
+
+        echo '</select>';
+    }
+}
