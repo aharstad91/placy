@@ -6,29 +6,63 @@
 ---
 
 ## Last Updated
-- **When:** 2025-01-18 (kveld)
+- **When:** 2025-01-19 04:30
 - **By:** Claude Code
-- **What:** La til POI-label hiding for Mapbox-kart, satt opp session-log hook
+- **What:** ✅ LØST markør floating-bug - labels påvirket Mapbox størrelses-beregning
 
 ---
 
 ## Active Context
 
 ### Current Focus
-- Miljø-setup og dokumentasjon
+✅ **LØST:** Markør floating-bug er fikset!
 
-### Latest Changes
-- Satt opp WP-CLI tilgang til MAMP MySQL database
-- Utforsket live prototype: `/klp-eiendom-trondheim/ferjemannsveien-10/`
+### Løsning på floating-bug
+**Root cause:** Labelen med `opacity: 0` tok fortsatt opp plass i document flow, noe som gjorde at Mapbox beregnet feil elementstørrelse for anchor-posisjonering.
 
-### Open Questions / Blockers
-- Ingen
+**Fix:**
+1. Endret label fra `opacity: 0` til `display: none` som default
+2. Satt label til `position: absolute` så den ikke påvirker markør-dimensjoner
+3. La til `position: relative` på inner wrapper som referanse
+4. Endret alle states fra `opacity: 1` til `display: block` for å vise label
+
+### Nåværende markør-struktur (HTML)
+```html
+<div class="pl-mega-drawer__map-marker">  <!-- Mapbox kontrollerer denne med inline transform -->
+  <div class="pl-mega-drawer__map-marker-inner" style="position: relative;">
+    <div class="pl-mega-drawer__map-marker-dot">
+      <span class="pl-mega-drawer__map-marker-icon">...</span>
+    </div>
+    <div class="pl-mega-drawer__map-marker-label" style="display: none; position: absolute;">Navn</div>
+  </div>
+</div>
+```
+
+### Fungerende states
+- ✅ Default: Label skjult med `display: none`
+- ✅ Hover: Label vises med `display: block`
+- ✅ Active: Label vises med blå bakgrunn
+- ✅ Highlighted: Puls-animasjon
+- ✅ Route-dimmed: Nedtonet med label skjult
 
 ### Important to Remember
 - **WP-CLI:** Bruk alltid `PATH="/Applications/MAMP/Library/bin/mysql80/bin:$PATH" wp [command]`
 - **Chrome DevTools MCP:** Tilgjengelig for å teste frontend live
 - Placy er en stedbasert storytelling-plattform (WordPress)
 - POI-bibliotek med Google POIs og Native POIs
+
+---
+
+## Markør-states (fungerer visuelt, men floating-bug)
+
+| State | Trigger | CSS-klasse | Visuelt |
+|-------|---------|------------|---------|
+| Default | Ingen | (ingen) | 24px dot, label skjult |
+| Base | Zoom >= 16 | `--base` | scale(1.15) på inner |
+| Highlighted | Scroll til kort | `--highlighted` | Blå + puls-animasjon |
+| Hover | Mus over | `--hover` | Label synlig, skygge |
+| Active | Klikk | `--active` | scale(1.25), blå, label, rute |
+| Route-dimmed | Annen aktiv | `--route-dimmed` | scale(0.8), grå, opacity 0.25 |
 
 ---
 
@@ -42,13 +76,6 @@
 | **Global Settings** | Travel Mode (fots/sykkel/bil), Time Budget (5/10/15 min) |
 | **Mega Drawer** | Fullskjerm kategorivisning med kart og søk |
 
-### Funksjonalitet
-- **Dynamiske reisetider:** Oppdateres basert på Travel Mode
-- **Live API-data:** Bysykkel viser sanntid tilgjengelighet
-- **Kategorivisning:** POIs gruppert (Sykkel, Buss, Bildeling)
-- **Sykkeldistanse-kalkulator:** Velg område eller skriv adresse
-- **Kart:** Mapbox med custom markers og popup
-
 ### URL-struktur
 ```
 /[customer-slug]/[project-slug]/
@@ -59,50 +86,64 @@ Eksempel: /klp-eiendom-trondheim/ferjemannsveien-10/
 
 ## Changelog
 
+### 2025-01-19
+
+#### [Code] 04:30 - ✅ Markør floating-bug LØST
+- **Root cause:** Label med `opacity: 0` tok opp plass i layout, påvirket Mapbox anchor-beregning
+- **Løsning:**
+  - Label: `display: none` (ikke `opacity: 0`) + `position: absolute`
+  - Inner wrapper: `position: relative`
+  - Alle states: `display: block` i stedet for `opacity: 1`
+- **Debug-metode:** Strippet all CSS, la til klasser én for én, identifiserte label som skyldige
+- **Files modified:**
+  - `css/chapter-mega-modal.css` (label CSS endret til display none/block)
+  - `js/chapter-mega-modal.js` (markør-struktur uendret)
+
+#### [Code] 03:00 - Markør floating-bug debug (ULØST)
+- **Problem:** Markører drifter fra korrekt posisjon ved zoom
+- **Forsøk 1:** Inner wrapper for transforms → Ingen effekt
+- **Forsøk 2:** Fjernet alle transitions → Ingen effekt
+- **Forsøk 3:** Kun scale() på inner, konstant dot-størrelse → Ingen effekt
+- **Status:** 🔴 ULØST - trenger ny tilnærming i neste session
+- **Files modified:**
+  - `css/chapter-mega-modal.css` (refaktorert markør-CSS)
+  - `js/chapter-mega-modal.js` (la til inner wrapper i HTML)
+
+#### [Code] 02:30 - Ny markør-modell implementert
+- **Implementert:** Mini/Base størrelser + Highlighted/Hover/Active states
+- **CSS:** Ryddet opp og forenklet markør-states
+- **JS:** Zoom-basert størrelses-switching ved terskel 16
+- **Slettet:** Forvirrende `/themes/placy/` mappe (kun `/wp-content/themes/placy/` brukes)
+
 ### 2025-01-18
 
+#### [Code] Natt - Zoom-basert marker/label visibility
+- **Problem:** Ved utzooming overlapper markører og labels hverandre
+- **Løsning:** `PlacyMarkerVisibility` modul (fjernet senere pga kompleksitet)
+
 #### [Code] Kveld - Mapbox POI-label hiding + Session hook
-- **Problem:** Mapbox streets-v12 viser masse irrelevante POI-labels (butikker, restauranter, etc.) som skaper visuelt rot
-- **Løsning:** Opprettet `mapbox-utils.js` med `PlacyMapUtils.hideMapboxPOILayers()` funksjon
-- **Implementert i alle kart-filer:**
-  - `master-map-modal.js`
-  - `poi-map-modal.js` (2 steder)
-  - `chapter-mega-modal.js`
-  - `neighborhood-story.js`
-  - `travel-calculator.js`
-- **Session-log hook:** La til `UserPromptSubmit` hook i `.claude/settings.local.json` som automatisk leser `session-log.md` og `instructions.md`
-- **Files modified:**
-  - `js/mapbox-utils.js` (ny)
-  - `functions.php` (enqueue + dependencies)
-  - Alle kart JS-filer (la til hideMapboxPOILayers-kall)
-  - `.claude/settings.local.json` (la til hooks)
-  - `claude/instructions.md` (korrigert stier fra `_claude/` til `claude/`)
+- **Løsning:** `PlacyMapUtils.hideMapboxPOILayers()` funksjon
+- **Session-log hook:** Automatisk lesing av context-filer
 
 ---
 
 ### 2025-01-16
 
-#### [Code] 22:00 - Prototype exploration
-- Utforsket prototype via Chrome DevTools MCP
-- Testet mega drawer, kartvisning, travel mode switching
-- Dokumentert UI-struktur og funksjonalitet
-
-#### [Code] 21:45 - Database access setup
+#### [Code] Database access setup
 - Konfigurert WP-CLI til å fungere med MAMP MySQL
 - Opprettet wrapper-script: `.wp-cli-wrapper.sh`
-- Dokumentert i `claude/instructions.md`
-- **Files modified:**
-  - `claude/instructions.md`
-  - `claude/session-log.md`
-  - `.wp-cli-wrapper.sh` (ny)
 
 ---
 
 ## Next Steps (Prioritized)
 
-1. [ ] Fylle ut CLAUDE.md med prosjekt-spesifikk dokumentasjon
-2. [ ] Utforske datastrukturen i databasen
-3. [ ] Dokumentere ACF-felter og custom post types
+1. 🔴 **FIX MARKØR FLOATING BUG** - Høyeste prioritet
+   - Test med helt ren markør (ingen custom CSS) for å isolere problemet
+   - Undersøk Mapbox Marker anchor-options
+   - Sjekk om `anchor: 'center'` i stedet for `'bottom'` hjelper
+   - Vurder å bruke Mapbox symbol layers i stedet for HTML markers
+2. [ ] Når floating er fikset: Test alle states visuelt
+3. [ ] Utvid til poi-map-modal.js og master-map-modal.js (senere)
 
 ---
 
@@ -110,12 +151,10 @@ Eksempel: /klp-eiendom-trondheim/ferjemannsveien-10/
 
 | File | Description |
 |------|-------------|
-| `claude/CLAUDE.md` | Project documentation template |
-| `claude/instructions.md` | Workflow instructions for Claude Code |
-| `claude/feature-request-guide.md` | Feature request guide |
-| `context-placy.md` | Placy konseptrapport |
-| `context-poi-bibliotek-strategi.md` | POI-bibliotek strategi |
-| `context-poi-gjenbruk-datahygiene.md` | POI gjenbruk og datahygiene |
+| `wp-content/themes/placy/css/chapter-mega-modal.css` | Markør CSS (seksjon 1015-1350) |
+| `wp-content/themes/placy/js/chapter-mega-modal.js` | Markør JS (createMapMarker rundt linje 1720) |
+| `wp-content/themes/placy/js/mapbox-utils.js` | Delte Mapbox utilities |
+| `claude/PRD-marker-visibility.md` | Opprinnelig PRD for markør-visibility |
 
 ---
 
@@ -124,3 +163,4 @@ Eksempel: /klp-eiendom-trondheim/ferjemannsveien-10/
 - **Tech stack:** WordPress, ACF Pro, Tailwind CSS, Mapbox, Google Places API
 - **Lokal utvikling:** MAMP på macOS
 - **Database:** MySQL via WP-CLI (se instructions.md for kommandoer)
+- **Cache busting:** functions.php bruker `time()` for CSS/JS versjonering under utvikling

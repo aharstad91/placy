@@ -1716,36 +1716,39 @@
                 
                 // Clear previous card-to-marker mapping
                 poiCardToMarkerMap.clear();
-                
+
                 // Add POI markers (start in compact/minimized state)
                 pointsToUse.forEach(function(point) {
                     if (!point.lat || !point.lng) return;
-                    
+
                     const travelTime = getTravelTime(point);
                     const isWithinBudget = travelTime <= currentTimeBudget;
-                    
+
                     const el = document.createElement('div');
-                    // Start in compact state - only show dot, hide label and icon
-                    el.className = 'pl-mega-drawer__map-marker pl-mega-drawer__map-marker--compact' + (isWithinBudget ? '' : ' pl-mega-drawer__map-marker--dimmed');
+                    // TEST 5: Add ONLY outer class back
+                    el.className = 'pl-mega-drawer__map-marker';
                     el.setAttribute('data-point-id', point.id);
-                    
+                    el.setAttribute('data-within-budget', isWithinBudget ? 'true' : 'false');
+
                     // Use category icon from data or fallback
-                    const iconHtml = point.icon ? `<i class="fa-solid ${point.icon}" style="color: white;"></i>` : getCategoryIcon(point.category);
-                    
+                    const iconHtml = point.icon ? '<i class="fa-solid ' + point.icon + '" style="color: white;"></i>' : getCategoryIcon(point.category);
+
                     // Get point name for tooltip label
                     const pointName = point.name || point.title || 'Sted';
-                    
-                    el.innerHTML = `
-                        <div class="pl-mega-drawer__map-marker-dot" style="${point.iconColor ? 'background-color:' + point.iconColor : ''}">
-                            <span class="pl-mega-drawer__map-marker-icon">${iconHtml}</span>
-                        </div>
-                        <div class="pl-mega-drawer__map-marker-label">${pointName}</div>
-                    `;
-                    
+
+                    // TEST 9: Full structure with all classes including label
+                    el.innerHTML =
+                        '<div class="pl-mega-drawer__map-marker-inner">' +
+                            '<div class="pl-mega-drawer__map-marker-dot" style="' + (point.iconColor ? 'background-color:' + point.iconColor : '') + '">' +
+                                '<span class="pl-mega-drawer__map-marker-icon">' + iconHtml + '</span>' +
+                            '</div>' +
+                            '<div class="pl-mega-drawer__map-marker-label">' + pointName + '</div>' +
+                        '</div>';
+
                     const marker = new mapboxgl.Marker({ element: el, anchor: 'bottom' })
                         .setLngLat([point.lng, point.lat])
                         .addTo(window.placyDrawerMap);
-                    
+
                     // Store marker reference with point data
                     const markerData = {
                         marker: marker,
@@ -1755,13 +1758,13 @@
                         lat: point.lat
                     };
                     drawerMapMarkers.push(markerData);
-                    
+
                     // Add click handler for route drawing
                     el.addEventListener('click', function(e) {
                         e.stopPropagation();
                         handleMarkerClick(point, el, data);
                     });
-                    
+
                     // Hover effects - use classes instead of inline transform to not interfere with Mapbox positioning
                     el.addEventListener('mouseenter', function() {
                         if (el !== drawerActiveMarker) {
@@ -1770,7 +1773,7 @@
                             highlightPOICardOnHover(point.id, true);
                         }
                     });
-                    
+
                     el.addEventListener('mouseleave', function() {
                         if (el !== drawerActiveMarker) {
                             el.classList.remove('pl-mega-drawer__map-marker--hover');
@@ -1779,7 +1782,10 @@
                         }
                     });
                 });
-                
+
+                // Initialize zoom-based marker size switching (Mini ↔ Base)
+                initZoomBasedMarkerSizing();
+
                 // Fit bounds using pre-calculated bounds (already computed before map creation)
                 window.placyDrawerMap.fitBounds(bounds, {
                     padding: 80,
@@ -1825,6 +1831,7 @@
         drawerActiveMarker = markerEl;
         markerEl.classList.add('pl-mega-drawer__map-marker--active');
         markerEl.classList.remove('pl-mega-drawer__map-marker--hover');
+        markerEl.classList.remove('pl-mega-drawer__map-marker--highlighted');
         markerEl.classList.remove('pl-mega-drawer__map-marker--route-dimmed');
 
         // Draw route from origin to point (fitBounds happens after route is drawn)
@@ -1953,11 +1960,9 @@
      */
     function dimOtherMarkers(activeMarkerEl) {
         const allMarkers = document.querySelectorAll('.pl-mega-drawer__map-marker');
-        console.log('[dimOtherMarkers] Found', allMarkers.length, 'markers, activeMarkerEl:', activeMarkerEl);
         allMarkers.forEach(function(marker) {
             if (marker !== activeMarkerEl) {
                 marker.classList.add('pl-mega-drawer__map-marker--route-dimmed');
-                console.log('[dimOtherMarkers] Dimmed marker:', marker);
             }
         });
     }
@@ -1995,6 +2000,41 @@
                 item.classList.remove(cls);
             });
         });
+    }
+
+    /**
+     * Initialize zoom-based marker sizing (Mini ↔ Base)
+     * Mini: default, used at zoom < 16
+     * Base: larger with icon, used at zoom >= 16
+     */
+    function initZoomBasedMarkerSizing() {
+        if (!window.placyDrawerMap) return;
+
+        const ZOOM_THRESHOLD = 16;
+
+        // Function to update all marker sizes based on current zoom
+        function updateMarkerSizes() {
+            const currentZoom = window.placyDrawerMap.getZoom();
+            const isBaseSize = currentZoom >= ZOOM_THRESHOLD;
+            console.log('[Placy Markers] Zoom:', currentZoom.toFixed(2), '| Size:', isBaseSize ? 'BASE (32px)' : 'MINI (20px)');
+
+            drawerMapMarkers.forEach(function(markerData) {
+                // Don't modify active markers - they have their own size
+                if (markerData.element === drawerActiveMarker) return;
+
+                if (isBaseSize) {
+                    markerData.element.classList.add('pl-mega-drawer__map-marker--base');
+                } else {
+                    markerData.element.classList.remove('pl-mega-drawer__map-marker--base');
+                }
+            });
+        }
+
+        // Listen for zoom changes
+        window.placyDrawerMap.on('zoomend', updateMarkerSizes);
+
+        // Also update on initial load (after fitBounds completes)
+        window.placyDrawerMap.once('idle', updateMarkerSizes);
     }
 
     /**
@@ -2083,18 +2123,21 @@
                 // Support both data-point-id and data-poi-id attributes
                 const pointId = entry.target.getAttribute('data-point-id') || entry.target.getAttribute('data-poi-id');
                 if (!pointId) return;
-                
+
                 // Find corresponding marker
                 const markerData = drawerMapMarkers.find(m => m.point.id == pointId);
                 if (!markerData) return;
-                
+
+                // Don't override active marker
+                if (markerData.element === drawerActiveMarker) return;
+
                 if (entry.isIntersecting) {
-                    // Card is in center zone - expand marker permanently (once activated, stays activated)
-                    markerData.element.classList.remove('pl-mega-drawer__map-marker--compact');
-                    markerData.element.classList.add('pl-mega-drawer__map-marker--activated');
+                    // Card is in center zone - add highlighted state (pulse + color shift)
+                    markerData.element.classList.add('pl-mega-drawer__map-marker--highlighted');
+                } else {
+                    // Card left center zone - remove highlighted state
+                    markerData.element.classList.remove('pl-mega-drawer__map-marker--highlighted');
                 }
-                // Note: We intentionally do NOT collapse markers back to compact
-                // Once a marker is activated, it stays that way to reduce UI noise
             });
         }, observerOptions);
         
@@ -2133,23 +2176,14 @@
     function highlightMarkerOnHover(pointId, highlight) {
         const markerData = drawerMapMarkers.find(m => m.point.id == pointId);
         if (!markerData) return;
-        
+
+        // Don't override active marker
+        if (markerData.element === drawerActiveMarker) return;
+
         if (highlight) {
-            // Don't override active marker
-            if (markerData.element !== drawerActiveMarker) {
-                markerData.element.classList.add('pl-mega-drawer__map-marker--hover');
-                // Expand marker temporarily
-                markerData.element.classList.remove('pl-mega-drawer__map-marker--compact');
-            }
+            markerData.element.classList.add('pl-mega-drawer__map-marker--hover');
         } else {
-            // Only remove hover if not active
-            if (markerData.element !== drawerActiveMarker) {
-                markerData.element.classList.remove('pl-mega-drawer__map-marker--hover');
-                // Don't re-compact if already activated by scroll
-                if (!markerData.element.classList.contains('pl-mega-drawer__map-marker--activated')) {
-                    markerData.element.classList.add('pl-mega-drawer__map-marker--compact');
-                }
-            }
+            markerData.element.classList.remove('pl-mega-drawer__map-marker--hover');
         }
     }
     

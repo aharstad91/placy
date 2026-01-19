@@ -1012,78 +1012,92 @@
     pointer-events: none;
 }
 
-/* Map Markers (for placeholder) */
+/* ================================
+   MAP MARKER SYSTEM
+   Two sizes: Mini (default) and Base (high zoom)
+   States: Default → Highlighted → Hover → Active
+
+   IMPORTANT: All visual transforms go on .pl-mega-drawer__map-marker-inner
+   The outer .pl-mega-drawer__map-marker is controlled by Mapbox - DO NOT transform it!
+   ================================ */
+
+/* Map Markers - Outer container (controlled by Mapbox) */
 .pl-mega-drawer__map-marker {
-    /* Note: Do NOT set transform here - Mapbox uses inline transform for positioning */
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.25rem;
-    transition: opacity 0.3s ease, filter 0.3s ease;
+    /* NEVER set transform here - Mapbox uses inline transform for positioning */
     cursor: pointer;
     z-index: 10;
 }
 
-.pl-mega-drawer__map-marker--dimmed {
+/* Inner wrapper - all visual transforms go here */
+.pl-mega-drawer__map-marker-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    /* Position relative so absolutely-positioned label uses this as reference */
+    position: relative;
+    /* NO transitions - instant state changes to prevent interference with Mapbox */
+}
+
+.pl-mega-drawer__map-marker--dimmed .pl-mega-drawer__map-marker-inner {
     opacity: 0.4;
     filter: grayscale(1);
-    z-index: 0;
 }
 
 /* Route-dimmed state - subtle dimming when another marker is selected for route */
-.pl-mega-drawer__map-marker--route-dimmed {
+.pl-mega-drawer__map-marker--route-dimmed .pl-mega-drawer__map-marker-inner {
     opacity: 0.25;
     filter: grayscale(0.8);
-    z-index: 0;
+    /* TEMP DISABLED: transform: scale(0.8); */
 }
 
 .pl-mega-drawer__map-marker--route-dimmed .pl-mega-drawer__map-marker-dot {
-    transform: scale(0.8);
-    background: #94a3b8;
-}
-
-.pl-mega-drawer__map-marker--route-dimmed .pl-mega-drawer__map-marker-dot::after {
     background: #94a3b8;
 }
 
 .pl-mega-drawer__map-marker--route-dimmed .pl-mega-drawer__map-marker-label,
 .pl-mega-drawer__map-marker--activated.pl-mega-drawer__map-marker--route-dimmed .pl-mega-drawer__map-marker-label {
-    opacity: 0.2 !important;
+    display: none !important;
     pointer-events: none;
 }
 
+/* ---- MARKER DOT ----
+   FIXED SIZE ONLY - never change width/height as it breaks Mapbox anchor positioning!
+   Use transform: scale() on the inner wrapper for all size changes.
+   ================================ */
 .pl-mega-drawer__map-marker-dot {
-    width: 40px;
-    height: 40px;
+    width: 24px;
+    height: 24px;
     border-radius: 9999px;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     position: relative;
-    border: 3px solid #ffffff;
+    border: 2px solid #ffffff;
     background: #0f172a;
     color: #ffffff;
-    transform: scale(1);
-    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, width 0.2s ease, height 0.2s ease;
+    /* NO transitions - instant state changes */
+}
+
+/* Base size - use scale on inner wrapper instead of changing dot dimensions */
+.pl-mega-drawer__map-marker--base .pl-mega-drawer__map-marker-inner {
+    /* TEMP DISABLED: transform: scale(1.15); */
+}
+
+.pl-mega-drawer__map-marker--base .pl-mega-drawer__map-marker-dot {
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
 }
 
 .pl-mega-drawer__map-marker--dimmed .pl-mega-drawer__map-marker-dot {
     background: #ffffff;
     color: #64748b;
     border-color: #e2e8f0;
-    transform: scale(1);
+    /* No transform on dot - only on inner wrapper to preserve Mapbox anchor */
 }
 
 .pl-mega-drawer__map-marker-dot::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 50%;
-    transform: translate(-50%, 0.25rem) rotate(45deg);
-    width: 0.5rem;
-    height: 0.5rem;
-    background: #0f172a;
+    display: none;
 }
 
 .pl-mega-drawer__map-marker--dimmed .pl-mega-drawer__map-marker-dot::after {
@@ -1097,164 +1111,232 @@
     height: 1rem;
 }
 
-/* Icon wrapper - hidden in compact state, centered in dot */
+/* Icon wrapper - centered in dot using flexbox (NO transforms to avoid Mapbox issues) */
 .pl-mega-drawer__map-marker-icon {
     display: flex;
     align-items: center;
     justify-content: center;
     width: 100%;
     height: 100%;
-    position: absolute;
-    top: 0;
-    left: 0;
+    /* Use flexbox centering instead of position+transform */
     transition: opacity 0.2s ease;
+    /* Hidden by default in Mini size */
+    opacity: 0;
+}
+
+/* Show icon in Base size */
+.pl-mega-drawer__map-marker--base .pl-mega-drawer__map-marker-icon {
+    opacity: 1;
 }
 
 .pl-mega-drawer__map-marker-icon i,
 .pl-mega-drawer__map-marker-icon svg {
-    font-size: 1.25rem;
-    width: 1.25rem;
-    height: 1.25rem;
+    font-size: 0.75rem;
+    width: 0.75rem;
+    height: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-/* Label - tooltip style positioned to the right */
+/* Larger icon in Base size */
+.pl-mega-drawer__map-marker--base .pl-mega-drawer__map-marker-icon i,
+.pl-mega-drawer__map-marker--base .pl-mega-drawer__map-marker-icon svg {
+    font-size: 0.875rem;
+    width: 0.875rem;
+    height: 0.875rem;
+}
+
+/* Label - positioned absolutely so it doesn't affect marker size calculations
+   Hidden by default with display:none, shown on Hover/Active states */
 .pl-mega-drawer__map-marker-label {
-    background: #0f172a;
-    color: #ffffff;
-    padding: 0.5rem 0.75rem;
-    border-radius: 0.5rem;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
-    font-size: 0.8125rem;
+    /* CRITICAL: Use display:none so label doesn't affect Mapbox size calculations */
+    display: none;
+    /* Position absolutely so when shown it doesn't change marker dimensions */
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-top: 4px;
+    background: transparent;
+    color: #1a1a1a;
+    padding: 0;
+    border-radius: 0;
+    box-shadow: none;
+    font-size: 0.75rem;
     font-weight: 600;
     white-space: nowrap;
-    position: absolute;
-    left: calc(100% + 0.5rem);
-    top: 50%;
-    transform: translateY(-50%);
-    opacity: 0;
     pointer-events: none;
-    transition: opacity 0.2s ease;
-    max-width: 200px;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    max-width: 160px;
+    text-align: center;
+    text-shadow:
+        -1px -1px 0 #fff,
+        1px -1px 0 #fff,
+        -1px 1px 0 #fff,
+        1px 1px 0 #fff,
+        0 0 4px rgba(255, 255, 255, 0.9);
+    line-height: 1.3;
 }
 
-/* Tooltip arrow pointing left */
-.pl-mega-drawer__map-marker-label::before {
-    content: '';
-    position: absolute;
-    left: -6px;
-    top: 50%;
-    transform: translateY(-50%);
-    border-width: 6px;
-    border-style: solid;
-    border-color: transparent #0f172a transparent transparent;
+/* Remove pseudo-elements from label */
+.pl-mega-drawer__map-marker-label::before,
+.pl-mega-drawer__map-marker-label::after {
+    display: none;
 }
 
 .pl-mega-drawer__map-marker--dimmed .pl-mega-drawer__map-marker-label {
-    opacity: 0;
+    display: none;
 }
 
-/* Compact state - minimized marker, just a dot (no label or icon visible) */
-.pl-mega-drawer__map-marker--compact .pl-mega-drawer__map-marker-dot {
-    width: 28px;
-    height: 28px;
-    border-width: 2px;
+/* ================================
+   MARKER INTERACTION STATES
+   State hierarchy: Default → Highlighted → Hover → Active
+   ================================ */
+
+/* ---- HIGHLIGHTED STATE ----
+   Triggered by: Scrolling to corresponding card in left column
+   Visual: Subtle color shift + pulse animation
+   No label shown */
+.pl-mega-drawer__map-marker--highlighted .pl-mega-drawer__map-marker-dot {
+    background: #3b82f6; /* Lighter blue to indicate attention */
+    animation: markerPulse 2s ease-in-out infinite;
 }
 
-.pl-mega-drawer__map-marker--compact .pl-mega-drawer__map-marker-icon {
-    opacity: 0 !important;
-    display: none !important;
-    visibility: hidden !important;
+@keyframes markerPulse {
+    0%, 100% {
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2), 0 0 0 0 rgba(59, 130, 246, 0.4);
+    }
+    50% {
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2), 0 0 0 6px rgba(59, 130, 246, 0);
+    }
 }
 
-/* Also hide the icon's inner i and svg elements */
-.pl-mega-drawer__map-marker--compact .pl-mega-drawer__map-marker-icon i,
-.pl-mega-drawer__map-marker--compact .pl-mega-drawer__map-marker-icon svg,
-.pl-mega-drawer__map-marker--compact .pl-mega-drawer__map-marker-dot > i,
-.pl-mega-drawer__map-marker--compact .pl-mega-drawer__map-marker-dot > svg {
-    display: none !important;
-    opacity: 0 !important;
-    visibility: hidden !important;
+/* Highlighted in Base size gets slightly larger shadow */
+.pl-mega-drawer__map-marker--base.pl-mega-drawer__map-marker--highlighted .pl-mega-drawer__map-marker-dot {
+    animation: markerPulseBase 2s ease-in-out infinite;
 }
 
-.pl-mega-drawer__map-marker--compact .pl-mega-drawer__map-marker-dot::after {
-    width: 6px;
-    height: 6px;
+@keyframes markerPulseBase {
+    0%, 100% {
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25), 0 0 0 0 rgba(59, 130, 246, 0.4);
+    }
+    50% {
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25), 0 0 0 8px rgba(59, 130, 246, 0);
+    }
 }
 
-.pl-mega-drawer__map-marker--compact .pl-mega-drawer__map-marker-label {
-    opacity: 0;
-    pointer-events: none;
-}
-
-/* Activated state - expanded from compact, show label and icon */
-.pl-mega-drawer__map-marker--activated .pl-mega-drawer__map-marker-dot {
-    width: 40px;
-    height: 40px;
-}
-
-.pl-mega-drawer__map-marker--activated .pl-mega-drawer__map-marker-icon {
-    opacity: 1 !important;
-    display: flex !important;
-    visibility: visible !important;
-}
-
-.pl-mega-drawer__map-marker--activated .pl-mega-drawer__map-marker-icon i,
-.pl-mega-drawer__map-marker--activated .pl-mega-drawer__map-marker-icon svg {
-    display: inline-block !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-}
-
-.pl-mega-drawer__map-marker--activated .pl-mega-drawer__map-marker-label {
-    opacity: 1;
-}
-
-.pl-mega-drawer__map-marker:hover .pl-mega-drawer__map-marker-label {
-    opacity: 1;
-}
-
-/* Hover state - scale the dot, not the whole marker (to avoid interfering with Mapbox transform) */
+/* ---- HOVER STATE ----
+   Triggered by: Mouse over marker (desktop)
+   Visual: Show label, slightly elevated */
 .pl-mega-drawer__map-marker--hover {
-    z-index: 20 !important;
+    z-index: 50 !important;
 }
 
 .pl-mega-drawer__map-marker--hover .pl-mega-drawer__map-marker-dot {
-    transform: scale(1.1);
-    box-shadow: 0 6px 12px -2px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 
 .pl-mega-drawer__map-marker--hover .pl-mega-drawer__map-marker-label {
+    display: block;
+}
+
+/* Hover also shows icon even in Mini size */
+.pl-mega-drawer__map-marker--hover .pl-mega-drawer__map-marker-icon {
     opacity: 1;
 }
 
-/* Active marker state */
+/* CSS :hover fallback for when JS hover class isn't applied */
+.pl-mega-drawer__map-marker:hover .pl-mega-drawer__map-marker-label {
+    display: block;
+}
+
+.pl-mega-drawer__map-marker:hover .pl-mega-drawer__map-marker-icon {
+    opacity: 1;
+}
+
+/* ---- ACTIVE STATE ----
+   Triggered by: Click on marker OR click on card
+   Visual: 1.25x scale, blue color, label visible, route drawn */
 .pl-mega-drawer__map-marker--active {
     z-index: 100 !important;
+}
+
+/* Scale the inner wrapper, not the dot - keeps Mapbox positioning stable
+   NEVER change width/height on the dot - it breaks anchor positioning! */
+.pl-mega-drawer__map-marker--active .pl-mega-drawer__map-marker-inner {
+    /* TEMP DISABLED: transform: scale(1.25); */
 }
 
 .pl-mega-drawer__map-marker--active .pl-mega-drawer__map-marker-dot {
     background: #2563eb;
     border-color: #ffffff;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.3), 0 4px 6px -1px rgba(0, 0, 0, 0.2);
-    transform: scale(1.15);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.3), 0 4px 8px rgba(0, 0, 0, 0.2);
+    /* NO width/height changes - use transform: scale() on inner wrapper instead */
 }
 
-.pl-mega-drawer__map-marker--active .pl-mega-drawer__map-marker-dot::after {
-    background: #2563eb;
+.pl-mega-drawer__map-marker--active .pl-mega-drawer__map-marker-icon {
+    opacity: 1;
 }
 
 .pl-mega-drawer__map-marker--active .pl-mega-drawer__map-marker-label {
-    opacity: 1;
+    display: block;
     background: #2563eb;
     color: #ffffff;
-    border-color: #2563eb;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    text-shadow: none;
 }
 
-.pl-mega-drawer__map-marker--active .pl-mega-drawer__map-marker-label::after {
-    background: #2563eb;
-    border-color: #2563eb;
+/* Active marker stops pulse animation if it was highlighted */
+.pl-mega-drawer__map-marker--active .pl-mega-drawer__map-marker-dot {
+    animation: none;
+}
+
+/* ================================
+   LEGACY/COMPATIBILITY STATES
+   Keeping some for backwards compatibility
+   ================================ */
+
+/* Collision-hidden: For future use if needed */
+.pl-mega-drawer__map-marker--collision-hidden .pl-mega-drawer__map-marker-inner {
+    opacity: 0.5;
+}
+
+/* Hover restores collision-hidden markers */
+.pl-mega-drawer__map-marker--collision-hidden:hover {
+    z-index: 30 !important;
+}
+
+.pl-mega-drawer__map-marker--collision-hidden:hover .pl-mega-drawer__map-marker-inner {
+    opacity: 1;
+}
+
+.pl-mega-drawer__map-marker--collision-hidden:hover .pl-mega-drawer__map-marker-label {
+    display: block !important;
+}
+
+.pl-mega-drawer__map-marker--collision-hidden:hover .pl-mega-drawer__map-marker-icon {
+    opacity: 1;
+}
+
+/* Collision-label-hidden: Dot visible, only label hidden (hybrid approach) */
+.pl-mega-drawer__map-marker--collision-label-hidden .pl-mega-drawer__map-marker-label {
+    display: none !important;
+    pointer-events: none;
+}
+
+/* Hover shows label for collision-label-hidden */
+.pl-mega-drawer__map-marker--collision-label-hidden:hover .pl-mega-drawer__map-marker-label {
+    display: block !important;
+}
+
+/* Priority marker: Won collision detection - always visible and on top */
+.pl-mega-drawer__map-marker--priority {
+    z-index: 50 !important;
+}
+
+.pl-mega-drawer__map-marker--priority .pl-mega-drawer__map-marker-label {
+    display: block;
 }
 
 /* Origin marker */
@@ -1358,19 +1440,6 @@
 .pl-mega-drawer__poi-item:hover {
     background: #f8fafc;
     border-color: #cbd5e1;
-}
-
-.pl-mega-drawer__map-marker-label::after {
-    content: '';
-    position: absolute;
-    bottom: -0.25rem;
-    left: 50%;
-    transform: translateX(-50%) rotate(45deg);
-    width: 0.5rem;
-    height: 0.5rem;
-    background: #ffffff;
-    border-right: 1px solid #f1f5f9;
-    border-bottom: 1px solid #f1f5f9;
 }
 
 /* Mobile Responsive */
