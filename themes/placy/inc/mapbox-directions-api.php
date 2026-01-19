@@ -165,8 +165,7 @@ function placy_geocode_proxy(WP_REST_Request $request) {
 
 /**
  * Directions proxy - calculate routes
- * Uses Mapbox Directions API first (best quality)
- * Falls back to OpenRouteService, then OSRM
+ * Priority: Google Routes API (best accuracy) → Mapbox → OpenRouteService → OSRM
  */
 function placy_directions_proxy(WP_REST_Request $request) {
     $origin_lng = floatval($request->get_param('origin_lng'));
@@ -175,9 +174,19 @@ function placy_directions_proxy(WP_REST_Request $request) {
     $dest_lat = floatval($request->get_param('dest_lat'));
     $mode = $request->get_param('mode');
 
-    // Try Mapbox Directions API first (best quality routes)
+    // Try Google Routes API first (best accuracy, matches Google Maps)
+    $google_api_key = defined('GOOGLE_PLACES_API_KEY') ? GOOGLE_PLACES_API_KEY : get_option('placy_google_api_key', '');
+
+    if (!empty($google_api_key)) {
+        $result = placy_get_google_routes_directions($origin_lng, $origin_lat, $dest_lng, $dest_lat, $mode, $google_api_key);
+        if ($result) {
+            return rest_ensure_response($result);
+        }
+    }
+
+    // Fallback to Mapbox Directions API
     $mapbox_token = defined('MAPBOX_ACCESS_TOKEN') ? MAPBOX_ACCESS_TOKEN : get_option('placy_mapbox_access_token', '');
-    
+
     if (!empty($mapbox_token)) {
         $result = placy_get_mapbox_directions($origin_lng, $origin_lat, $dest_lng, $dest_lat, $mode, $mapbox_token);
         if ($result) {
@@ -187,7 +196,7 @@ function placy_directions_proxy(WP_REST_Request $request) {
 
     // Try OpenRouteService as fallback for cycling/walking
     $ors_api_key = defined('OPENROUTESERVICE_API_KEY') ? OPENROUTESERVICE_API_KEY : get_option('placy_ors_api_key', '');
-    
+
     if (!empty($ors_api_key) && in_array($mode, ['cycling', 'walking'])) {
         $result = placy_get_ors_directions($origin_lng, $origin_lat, $dest_lng, $dest_lat, $mode, $ors_api_key);
         if ($result) {
@@ -200,14 +209,141 @@ function placy_directions_proxy(WP_REST_Request $request) {
 }
 
 /**
+ * Get directions from Google Routes API (best accuracy)
+ * Returns routes in GeoJSON format for Mapbox display
+ *
+ * @param float $origin_lng Origin longitude
+ * @param float $origin_lat Origin latitude
+ * @param float $dest_lng Destination longitude
+ * @param float $dest_lat Destination latitude
+ * @param string $mode Travel mode (walking, cycling, driving)
+ * @param string $api_key Google API key
+ * @return array|null Standardized route response or null on failure
+ */
+function placy_get_google_routes_directions($origin_lng, $origin_lat, $dest_lng, $dest_lat, $mode, $api_key) {
+    // Map our mode names to Google Routes API travel modes
+    // Support both short (walk/bike/car) and long (walking/cycling/driving) names
+    $travel_modes = [
+        'walking' => 'WALK',
+        'walk' => 'WALK',
+        'cycling' => 'BICYCLE',
+        'bike' => 'BICYCLE',
+        'driving' => 'DRIVE',
+        'car' => 'DRIVE',
+        'drive' => 'DRIVE',
+    ];
+    $travel_mode = $travel_modes[$mode] ?? 'WALK';
+
+    // Round coordinates to 5 decimal places (~1m precision) for better cache hit rate
+    $origin_lng_r = round($origin_lng, 5);
+    $origin_lat_r = round($origin_lat, 5);
+    $dest_lng_r = round($dest_lng, 5);
+    $dest_lat_r = round($dest_lat, 5);
+
+    // Check cache first (1 week expiry - routes don't change often)
+    $cache_key = 'placy_route_' . md5("{$origin_lng_r},{$origin_lat_r},{$dest_lng_r},{$dest_lat_r},{$travel_mode}");
+    $cached = get_transient($cache_key);
+    if ($cached !== false) {
+        return $cached;
+    }
+
+    $url = 'https://routes.googleapis.com/directions/v2:computeRoutes';
+
+    $body = [
+        'origin' => [
+            'location' => [
+                'latLng' => [
+                    'latitude' => $origin_lat,
+                    'longitude' => $origin_lng,
+                ],
+            ],
+        ],
+        'destination' => [
+            'location' => [
+                'latLng' => [
+                    'latitude' => $dest_lat,
+                    'longitude' => $dest_lng,
+                ],
+            ],
+        ],
+        'travelMode' => $travel_mode,
+        'polylineEncoding' => 'GEO_JSON_LINESTRING',
+        'computeAlternativeRoutes' => false,
+        'languageCode' => 'no',
+        'units' => 'METRIC',
+    ];
+
+    $response = wp_remote_post($url, [
+        'timeout' => 10,
+        'headers' => [
+            'Content-Type' => 'application/json',
+            'X-Goog-Api-Key' => $api_key,
+            'X-Goog-FieldMask' => 'routes.duration,routes.distanceMeters,routes.polyline',
+        ],
+        'body' => wp_json_encode($body),
+    ]);
+
+    if (is_wp_error($response)) {
+        error_log('Google Routes API error: ' . $response->get_error_message());
+        return null;
+    }
+
+    $status_code = wp_remote_retrieve_response_code($response);
+    if ($status_code !== 200) {
+        error_log('Google Routes API HTTP error: ' . $status_code . ' - ' . wp_remote_retrieve_body($response));
+        return null;
+    }
+
+    $data = json_decode(wp_remote_retrieve_body($response), true);
+
+    if (!$data || empty($data['routes'])) {
+        error_log('Google Routes API: No routes returned');
+        return null;
+    }
+
+    $route = $data['routes'][0];
+
+    // Parse duration (format: "123s" for seconds)
+    $duration_seconds = 0;
+    if (isset($route['duration'])) {
+        $duration_seconds = intval(str_replace('s', '', $route['duration']));
+    }
+
+    // Google returns polyline as GeoJSON LineString
+    $geometry = null;
+    if (isset($route['polyline']['geoJsonLinestring'])) {
+        $geometry = $route['polyline']['geoJsonLinestring'];
+    }
+
+    $result = [
+        'code' => 'Ok',
+        'routes' => [[
+            'distance' => $route['distanceMeters'] ?? 0, // meters
+            'duration' => $duration_seconds, // seconds
+            'geometry' => $geometry,
+        ]],
+    ];
+
+    // Cache for 1 week
+    set_transient($cache_key, $result, WEEK_IN_SECONDS);
+
+    return $result;
+}
+
+/**
  * Get directions from Mapbox Directions API (best quality)
  */
 function placy_get_mapbox_directions($origin_lng, $origin_lat, $dest_lng, $dest_lat, $mode, $access_token) {
     // Map mode to Mapbox profile
+    // Support both short (walk/bike/car) and long (walking/cycling/driving) names
     $profiles = [
         'cycling' => 'cycling',
+        'bike' => 'cycling',
         'walking' => 'walking',
+        'walk' => 'walking',
         'driving' => 'driving',
+        'car' => 'driving',
+        'drive' => 'driving',
     ];
     $profile = $profiles[$mode] ?? 'walking';
 
@@ -263,10 +399,15 @@ function placy_get_mapbox_directions($origin_lng, $origin_lat, $dest_lng, $dest_
  */
 function placy_get_ors_directions($origin_lng, $origin_lat, $dest_lng, $dest_lat, $mode, $api_key) {
     // Map mode to ORS profile
+    // Support both short (walk/bike/car) and long (walking/cycling/driving) names
     $profiles = [
         'cycling' => 'cycling-regular',
+        'bike' => 'cycling-regular',
         'walking' => 'foot-walking',
+        'walk' => 'foot-walking',
         'driving' => 'driving-car',
+        'car' => 'driving-car',
+        'drive' => 'driving-car',
     ];
     $profile = $profiles[$mode] ?? 'cycling-regular';
 
@@ -324,10 +465,15 @@ function placy_get_ors_directions($origin_lng, $origin_lat, $dest_lng, $dest_lat
  */
 function placy_get_osrm_directions($origin_lng, $origin_lat, $dest_lng, $dest_lat, $mode) {
     // Map our mode names to OSRM profiles
+    // Support both short (walk/bike/car) and long (walking/cycling/driving) names
     $profiles = [
         'cycling' => 'bike',
+        'bike' => 'bike',
         'walking' => 'foot',
+        'walk' => 'foot',
         'driving' => 'driving',
+        'car' => 'driving',
+        'drive' => 'driving',
     ];
 
     $profile = $profiles[$mode] ?? 'bike';

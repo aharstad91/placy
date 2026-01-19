@@ -403,7 +403,7 @@ function addMapboxMarker(map, poi) {
     const el = document.createElement('div');
     el.className = 'mapbox-poi-marker';
     el.innerHTML = `
-        <svg class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor">
+        <svg viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 0C7.31 0 3.5 3.81 3.5 8.5c0 6.13 7.33 14.46 8.02 15.2a1 1 0 001.46 0c.69-.74 8.02-9.07 8.02-15.2C20.5 3.81 16.69 0 12 0zm0 12a3.5 3.5 0 110-7 3.5 3.5 0 010 7z"/>
         </svg>
         <div class="mapbox-poi-label">${poi.title}</div>

@@ -73,7 +73,7 @@ function placy_enqueue_scripts() {
     wp_enqueue_script( 'mapbox-gl-js', 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js', array(), '2.15.0', true );
 
     // Mapbox utilities (hide POI labels, etc.) - load before other map scripts
-    wp_enqueue_script( 'placy-mapbox-utils', get_template_directory_uri() . '/js/mapbox-utils.js', array( 'mapbox-gl-js' ), '1.0.0', true );
+    wp_enqueue_script( 'placy-mapbox-utils', get_template_directory_uri() . '/js/mapbox-utils.js', array( 'mapbox-gl-js' ), '2.0.0', true );
 
     // POI Map Modal script
     wp_enqueue_script( 'placy-poi-map-modal', get_template_directory_uri() . '/js/poi-map-modal.js', array( 'placy-mapbox-utils' ), '1.0.0', true );
@@ -88,9 +88,9 @@ function placy_enqueue_scripts() {
         // POI API Accordion toggle functionality
         wp_enqueue_script( 'placy-poi-api-accordion', get_template_directory_uri() . '/js/poi-api-accordion.js', array(), '1.0.0', true );
         
-        // Story Chapter Mega Modal CSS and JS (use filemtime for cache busting)
-        wp_enqueue_style( 'placy-chapter-mega-modal', get_template_directory_uri() . '/css/chapter-mega-modal.css', array(), filemtime( get_template_directory() . '/css/chapter-mega-modal.css' ) );
-        wp_enqueue_script( 'placy-chapter-mega-modal', get_template_directory_uri() . '/js/chapter-mega-modal.js', array( 'placy-mapbox-utils' ), filemtime( get_template_directory() . '/js/chapter-mega-modal.js' ), true );
+        // Story Chapter Mega Modal CSS and JS (use time() for dev, filemtime for prod)
+        wp_enqueue_style( 'placy-chapter-mega-modal', get_template_directory_uri() . '/css/chapter-mega-modal.css', array(), time() );
+        wp_enqueue_script( 'placy-chapter-mega-modal', get_template_directory_uri() . '/js/chapter-mega-modal.js', array( 'placy-mapbox-utils' ), time(), true );
         
         // Project Sidebar CSS and JS (navigation + global settings)
         wp_enqueue_style( 'placy-project-sidebar', get_template_directory_uri() . '/css/project-sidebar.css', array(), '1.0.0' );
