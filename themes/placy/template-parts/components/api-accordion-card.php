@@ -33,6 +33,10 @@ $current_travel_mode = $args['travel_mode'] ?? 'walk';
 $point_title = get_the_title( $point_id );
 $point_type = get_post_type( $point_id );
 
+// Get display name: ACF 'name' field first, fallback to post title
+$acf_name = get_field( 'name', $point_id );
+$display_name = ! empty( $acf_name ) ? $acf_name : $point_title;
+
 // Get coordinates for "Se på kart" button
 // Use placy_get_poi_coordinates which handles both native and google points
 $poi_coords = function_exists( 'placy_get_poi_coordinates' ) ? placy_get_poi_coordinates( $point_id ) : null;
@@ -140,9 +144,12 @@ if ( $lat && $lng ) {
     $data_attrs[] = 'data-poi-coords="[' . esc_attr( $lat ) . ',' . esc_attr( $lng ) . ']"';
 }
 
-// Add POI title for modal context
+// Add POI title and display name for modal context
 if ( $point_title ) {
     $data_attrs[] = 'data-poi-title="' . esc_attr( $point_title ) . '"';
+}
+if ( $display_name ) {
+    $data_attrs[] = 'data-poi-name="' . esc_attr( $display_name ) . '"';
 }
 
 // Add category icon data

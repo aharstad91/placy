@@ -278,9 +278,15 @@ function placy_get_point_data( $post_id ) {
     }
 
     $post_type = get_post_type( $post_id );
+
+    // Get display name: ACF 'name' field first, fallback to post title
+    $acf_name = get_field( 'name', $post_id );
+    $display_name = ! empty( $acf_name ) ? $acf_name : get_the_title( $post_id );
+
     $data = array(
         'id' => $post_id,
-        'title' => get_the_title( $post_id ),
+        'title' => get_the_title( $post_id ),  // Keep original title for reference
+        'name' => $display_name,                // Short display name (ACF name or fallback to title)
         'type' => $post_type,
         'permalink' => get_permalink( $post_id ),
     );

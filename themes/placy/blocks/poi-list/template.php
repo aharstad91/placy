@@ -100,10 +100,16 @@ $is_in_chapter = strpos( $parent_classes, 'chapter' ) !== false;
                 $hyre_station_id = get_field( 'hyre_station_id', $poi->ID );
                 $show_hyre_availability = get_field( 'show_hyre_availability', $poi->ID );
             ?>
-                <article 
+                <?php
+                    // Get display name: ACF 'name' field first, fallback to post title
+                    $acf_name = get_field( 'name', $poi->ID );
+                    $display_name = ! empty( $acf_name ) ? $acf_name : get_the_title( $poi->ID );
+                ?>
+                <article
                     class="poi-list-card bg-white border border-gray-200 rounded-lg overflow-hidden transition-all duration-300 hover:border-gray-300"
                     data-poi-id="<?php echo esc_attr( $poi->ID ); ?>"
                     data-poi-title="<?php echo esc_attr( get_the_title( $poi->ID ) ); ?>"
+                    data-poi-name="<?php echo esc_attr( $display_name ); ?>"
                     <?php 
                         $google_place_id = get_field( 'google_place_id', $poi->ID );
                         if ( $google_place_id ) : 

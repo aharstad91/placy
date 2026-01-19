@@ -1273,7 +1273,7 @@
     background: #2563eb;
     border-color: #ffffff;
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.3), 0 4px 8px rgba(0, 0, 0, 0.2);
-    /* NO width/height changes - use transform: scale() on inner wrapper instead */
+    transform: scale(2); /* 24px * 2 = 48px to match origin marker */
 }
 
 .pl-mega-drawer__map-marker--active .pl-mega-drawer__map-marker-icon {

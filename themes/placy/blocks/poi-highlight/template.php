@@ -31,6 +31,10 @@ if ( ! $poi ) {
 $poi_id = $poi->ID;
 $title = get_the_title( $poi_id );
 
+// Get display name: ACF 'name' field first, fallback to post title
+$acf_name = get_field( 'name', $poi_id );
+$display_name = ! empty( $acf_name ) ? $acf_name : $title;
+
 // Get editorial text if available, otherwise use post content
 $editorial_text = get_field( 'editorial_text', $poi_id );
 $content = $editorial_text ? $editorial_text : apply_filters( 'the_content', get_post_field( 'post_content', $poi_id ) );
@@ -115,9 +119,10 @@ $show_hyre_availability = get_field( 'show_hyre_availability', $poi_id );
 $category_icon = placy_get_poi_category_icon( $poi_id );
 ?>
 
-<article class="poi-list-item poi-highlight p-6 mb-8 border border-gray-200 rounded-lg" 
+<article class="poi-list-item poi-highlight p-6 mb-8 border border-gray-200 rounded-lg"
          data-poi-id="<?php echo esc_attr( $poi_id ); ?>"
          data-poi-title="<?php echo esc_attr( $title ); ?>"
+         data-poi-name="<?php echo esc_attr( $display_name ); ?>"
          <?php 
             $google_place_id = get_field( 'google_place_id', $poi_id );
             if ( $google_place_id ) : 

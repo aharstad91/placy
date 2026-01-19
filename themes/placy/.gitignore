@@ -1,0 +1,24 @@
+# Node
+node_modules/
+npm-debug.log
+
+# OS
+.DS_Store
+*.swp
+*.swo
+Thumbs.db
+
+# Test files
+test-*.php
+test-*.json
+check-*.php
+clear-*.php
+bulk-*.php
+*-test.php
+
+# Screenshots/dev artifacts
+*.png
+*.jpg
+
+# Build artifacts (keep source, ignore generated if needed)
+# *.min.js

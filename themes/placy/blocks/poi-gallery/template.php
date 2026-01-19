@@ -33,9 +33,13 @@ if ( ! $pois || empty( $pois ) ) {
     $origin = array( 'lat' => $origin_data['lat'], 'lng' => $origin_data['lng'] );
     $project_id = $origin_data['project_id'];
     
-    foreach ( $pois as $poi ) : 
+    foreach ( $pois as $poi ) :
         $poi_id = $poi->ID;
         $title = get_the_title( $poi_id );
+
+        // Get display name: ACF 'name' field first, fallback to post title
+        $acf_name = get_field( 'name', $poi_id );
+        $display_name = ! empty( $acf_name ) ? $acf_name : $title;
         
         // Get description - check editorial_text, then ACF description field (Native Points), then post_content
         $editorial_text = get_field( 'editorial_text', $poi_id );
@@ -90,9 +94,10 @@ if ( ! $pois || empty( $pois ) ) {
         $show_bike_availability = get_field( 'show_bike_availability', $poi_id );
     ?>
     
-    <article class="poi-list-item poi-gallery-item overflow-hidden border-gray-200 border rounded-lg" 
+    <article class="poi-list-item poi-gallery-item overflow-hidden border-gray-200 border rounded-lg"
              data-poi-id="<?php echo esc_attr( $poi_id ); ?>"
              data-poi-title="<?php echo esc_attr( $title ); ?>"
+             data-poi-name="<?php echo esc_attr( $display_name ); ?>"
              <?php 
                 $google_place_id = get_field( 'google_place_id', $poi_id );
                 if ( $google_place_id ) : 

@@ -901,9 +901,14 @@
                 }
             }
             
+            // Get title and name (name is short display name, title is full post title)
+            const fullTitle = el.getAttribute('data-poi-title') || el.querySelector('h3, h4')?.textContent?.trim() || 'Unknown';
+            const displayName = el.getAttribute('data-poi-name') || fullTitle;
+
             const point = {
                 id: el.getAttribute('data-poi-id') || ('extracted-' + index),
-                title: el.getAttribute('data-poi-title') || el.querySelector('h3, h4')?.textContent?.trim() || 'Unknown',
+                title: fullTitle,
+                name: displayName, // Short display name (ACF 'name' field with fallback to title)
                 lat: lat,
                 lng: lng,
                 icon: el.getAttribute('data-poi-icon') || 'fa-map-marker-alt',
@@ -2053,17 +2058,14 @@
             const isBaseSize = currentZoom >= SIZE_THRESHOLD;
 
             drawerMapMarkers.forEach(function(markerData) {
-                // Don't modify active markers - they have their own styling
-                if (markerData.element === drawerActiveMarker) return;
-
-                // Handle icon visibility (zoom >= 15)
+                // Handle icon visibility (zoom >= 15) - applies to ALL markers including active
                 if (showIcon) {
                     markerData.element.classList.add('pl-mega-drawer__map-marker--show-icon');
                 } else {
                     markerData.element.classList.remove('pl-mega-drawer__map-marker--show-icon');
                 }
 
-                // Handle marker size (zoom >= 17)
+                // Handle marker size (zoom >= 17) - applies to ALL markers including active
                 if (isBaseSize) {
                     markerData.element.classList.add('pl-mega-drawer__map-marker--base');
                 } else {
